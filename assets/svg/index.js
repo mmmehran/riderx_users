@@ -1,0 +1,27 @@
+
+export { default as Logo } from "./logo.svg";
+export { default as SuccessIcon } from "./successIcon.svg";
+export { default as ErrorIcon } from "./errorIcon.svg";
+export { default as Marker } from "./marker.svg";
+export { default as Search } from "./search.svg";
+export { default as Menu } from "./menu.svg";
+export { default as Privacy } from "./privacy.svg";
+export { default as ChooseService } from "./chooseService.svg";
+export { default as Menu1 } from "./menu1.svg";
+export { default as ArrowLeft } from "./arrowLeft.svg";
+export { default as Info } from "./info.svg";
+export { default as Tick } from "./tick.svg";
+export { default as Star } from "./star.svg";
+export { default as ArrowDown } from "./arrowDown.svg";
+export { default as UserIcon } from "./userIcon.svg";
+export { default as AddressCircle } from "./addressCircle.svg";
+export { default as Energy } from "./energy.svg";
+export { default as Calendar } from "./calendar.svg";
+export { default as StarIcon } from "./starIcon.svg";
+export { default as Line2 } from "./line2.svg";
+export { default as MessageIcon } from "./messageIcon.svg";
+export { default as CallIcon } from "./callIcon.svg";
+export { default as SupportIcon } from "./supportIcon.svg";
+export { default as LocationPin } from "./locationPin.svg";
+export { default as OpenMap } from "./openMap.svg";
+
