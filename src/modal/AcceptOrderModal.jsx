@@ -1,33 +1,127 @@
-import React, {memo, useRef, useEffect} from 'react';
+import React, {memo, useRef, useEffect, useState, useMemo} from 'react';
 import {StyleSheet, View, TouchableOpacity, Animated} from 'react-native';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
 import {useTranslation} from 'react-i18next';
+import axios from 'axios';
 
 import CustomModal from '../components/common/CustomModal';
 import colors from '../config/colors';
 import CustomText from '../components/common/CustomText';
 import {Line2, StarIcon} from '../../assets/svg/index';
 
-const AcceptOrderModal = ({isVisible, onClose, onAccept, order}) => {
+const MAPBOX_TOKEN =
+  'sk.eyJ1IjoiYnl0ZWJyaWRnZXIiLCJhIjoiY21kbTdlOTluMWI5cjJqc2NuZHV0dzl0byJ9.xNsl53GUUBLBDrMQrFe_rQ';
+
+/**
+ * Pass user's camera/location from parent:
+ *   <AcceptOrderModal userCoord={[lng, lat]} ... />
+ */
+const AcceptOrderModal = ({
+  isVisible,
+  onClose,
+  onAccept,
+  order,
+  userCoord, // <-- [lng, lat] from parent (Mapbox camera / user location)
+}) => {
   const progressAnim = useRef(new Animated.Value(0)).current;
   const animationRef = useRef(null);
   const {t} = useTranslation();
 
+  // mins/km calculated here (no geolocation inside the modal)
+  const [userToPickupKm, setUserToPickupKm] = useState(null);
+  const [userToPickupMins, setUserToPickupMins] = useState(null);
+  const [pickupToDropKm, setPickupToDropKm] = useState(null);
+  const [pickupToDropMins, setPickupToDropMins] = useState(null);
+
+  const pickupCoord = useMemo(() => {
+    const lat = Number(order?.sender_latitude);
+    const lon = Number(order?.sender_longitude);
+    return Number.isFinite(lat) && Number.isFinite(lon) ? [lon, lat] : null;
+  }, [order]);
+
+  const dropCoord = useMemo(() => {
+    const lat = Number(order?.receiver_latitude);
+    const lon = Number(order?.receiver_longitude);
+    return Number.isFinite(lat) && Number.isFinite(lon) ? [lon, lat] : null;
+  }, [order]);
+
+  const pickupLabel = useMemo(
+    () =>
+      order?.sender_address ||
+      order?.sender_name ||
+      order?.pickup_address ||
+      '-',
+    [order],
+  );
+  const dropLabel = useMemo(
+    () =>
+      order?.receiver_address ||
+      order?.receiver_name ||
+      order?.dropoff_address ||
+      '-',
+    [order],
+  );
+
+  const buildDirectionsUrl = (a, b) =>
+    `https://api.mapbox.com/directions/v5/mapbox/driving/${a[0]},${a[1]};${b[0]},${b[1]}?geometries=geojson&overview=false&access_token=${MAPBOX_TOKEN}`;
+
+  const fetchLegMetrics = async (a, b) => {
+    try {
+      const res = await axios.get(buildDirectionsUrl(a, b));
+      const r = res?.data?.routes?.[0];
+      if (!r) return {km: null, mins: null};
+      const km = (r.distance ?? 0) / 1000; // meters -> km
+      const mins = Math.max(1, Math.round((r.duration ?? 0) / 60)); // seconds -> mins
+      return {km, mins};
+    } catch {
+      return {km: null, mins: null};
+    }
+  };
+
+  // Compute both legs whenever modal opens or inputs change
+  useEffect(() => {
+    let cancelled = false;
+
+    const compute = async () => {
+      setUserToPickupKm(null);
+      setUserToPickupMins(null);
+      setPickupToDropKm(null);
+      setPickupToDropMins(null);
+
+      if (!isVisible) return;
+      if (!userCoord || !pickupCoord || !dropCoord) return;
+
+      const [leg1, leg2] = await Promise.all([
+        fetchLegMetrics(userCoord, pickupCoord), // user -> pickup
+        fetchLegMetrics(pickupCoord, dropCoord), // pickup -> drop
+      ]);
+      if (cancelled) return;
+      const roundInt = v => (v == null ? null : Math.round(v));
+      setUserToPickupKm(roundInt(leg1.km));
+      setUserToPickupMins(leg1.mins);
+      setPickupToDropKm(roundInt(leg2.km));
+      setPickupToDropMins(leg2.mins);
+    };
+
+    compute();
+    return () => {
+      cancelled = true;
+    };
+  }, [isVisible, userCoord, pickupCoord, dropCoord]);
+
+  // Accept/Auto-close animation
   useEffect(() => {
     if (isVisible) {
       progressAnim.setValue(0);
       animationRef.current = Animated.timing(progressAnim, {
         toValue: 1,
-        duration: 10000, // 10 seconds
+        duration: 15000, // 15 seconds
         useNativeDriver: false,
       });
-      animationRef.current.start(() => {
-        // Scenario 2: Auto-close after timeout → next order
-        onClose?.();
-      });
+      animationRef.current.start(() => onClose?.());
     } else {
       progressAnim.setValue(0);
     }
@@ -39,8 +133,14 @@ const AcceptOrderModal = ({isVisible, onClose, onAccept, order}) => {
   const handleAccept = () => {
     animationRef.current?.stop();
     progressAnim.setValue(1);
-    // Scenario 3: Accept and stop showing more orders
     onAccept?.();
+  };
+
+  const fmtLeg = (mins, km) => {
+    if (mins == null || km == null) return '-';
+    return `${mins} ${t('mins') || 'mins'} (${km} ${t('km') || 'km'}) ${
+      t('away') || 'away'
+    }`;
   };
 
   return (
@@ -50,7 +150,6 @@ const AcceptOrderModal = ({isVisible, onClose, onAccept, order}) => {
           <View style={styles.deliveryContainer}>
             <CustomText style={styles.textDelivery}>{t('delivery')}</CustomText>
           </View>
-          {/* Scenario 1: Manual close → next order */}
           <TouchableOpacity onPress={onClose} style={styles.closeContainer}>
             <CustomText style={[styles.textDelivery, {fontSize: wp(5)}]}>
               x
@@ -65,38 +164,42 @@ const AcceptOrderModal = ({isVisible, onClose, onAccept, order}) => {
           <CustomText style={styles.textStar}>-</CustomText>
         </View>
 
-        <View style={styles.line}></View>
+        <View style={styles.line} />
 
         <View style={styles.addressContainer}>
           <View style={styles.circle}>
             <Line2 />
           </View>
           <View>
-            <CustomText style={styles.textTop}>- mins (- km) away</CustomText>
+            {/* User -> Pickup */}
+            <CustomText style={styles.textTop}>
+              {fmtLeg(userToPickupMins, userToPickupKm)}
+            </CustomText>
             <CustomText
               style={[
                 styles.textTop,
                 {color: 'rgba(70, 67, 67, 0.84)', marginTop: hp(0.3)},
               ]}>
-              -
+              {pickupLabel}
             </CustomText>
 
+            {/* Pickup -> Drop */}
             <CustomText style={[styles.textTop, {marginTop: hp(4)}]}>
-              - mins (- km) away
+              {fmtLeg(pickupToDropMins, pickupToDropKm)}
             </CustomText>
             <CustomText
               style={[
                 styles.textTop,
                 {color: 'rgba(70, 67, 67, 0.84)', marginTop: hp(0.3)},
               ]}>
-              -
+              {dropLabel}
             </CustomText>
           </View>
         </View>
 
         <View style={styles.buttonWrapper}>
           <TouchableOpacity
-            onPress={handleAccept} // Scenario 3
+            onPress={handleAccept}
             style={styles.button}
             activeOpacity={1}>
             <Animated.View
@@ -112,7 +215,9 @@ const AcceptOrderModal = ({isVisible, onClose, onAccept, order}) => {
                 },
               ]}
             />
-            <CustomText style={styles.textButton}>Accept</CustomText>
+            <CustomText style={styles.textButton}>
+              {t('accept') || 'Accept'}
+            </CustomText>
           </TouchableOpacity>
         </View>
       </View>

@@ -24,5 +24,6 @@
   "weeklyPayment": "Weekly Payment",
   "initiated": "Initiated",
   "paymentMethod": "Payment Method",
-  "logOut": "Log Out"
+  "logOut": "Log Out",
+  "cancel": "Cancel"
 }

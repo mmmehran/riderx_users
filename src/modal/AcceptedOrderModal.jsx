@@ -123,22 +123,32 @@ const AcceptedOrderModal = ({order, changeOrder, loading}) => {
             <OpenMap width={wp(12)} height={wp(12)} />
           </TouchableOpacity>
         </View>
-        {order?.status == 'accepted' && (
+        <View style={styles.rowButton}>
+          {order?.status == 'accepted' && (
+            <TouchableOpacity
+              onPress={() => changeOrder('pickup')}
+              style={styles.buttonPick}>
+              <CustomText style={styles.textPick}>Picked Up</CustomText>
+              {loading && <ActivityIndicator color={'#000'} />}
+            </TouchableOpacity>
+          )}
+          {order?.status == 'pickup' && (
+            <TouchableOpacity
+              onPress={() => changeOrder('completed')}
+              style={styles.buttonPick}>
+              <CustomText style={styles.textPick}>Drop Off</CustomText>
+              {loading && <ActivityIndicator color={'#000'} />}
+            </TouchableOpacity>
+          )}
           <TouchableOpacity
-            onPress={() => changeOrder('pickup')}
-            style={styles.buttonPick}>
-            <CustomText style={styles.textPick}>Picked Up</CustomText>
-            {loading && <ActivityIndicator color={'#000'} />}
+            onPress={() => changeOrder('cancel')}
+            style={[styles.buttonPick, styles.cancelButton]}>
+            <CustomText
+              style={[styles.textPick, {color: colors.white, marginLeft: 0}]}>
+              Cancel
+            </CustomText>
           </TouchableOpacity>
-        )}
-        {order?.status == 'pickup' && (
-          <TouchableOpacity
-            onPress={() => changeOrder('completed')}
-            style={styles.buttonPick}>
-            <CustomText style={styles.textPick}>Drop Off</CustomText>
-            {loading && <ActivityIndicator color={'#000'} />}
-          </TouchableOpacity>
-        )}
+        </View>
       </View>
     </View>
   );
@@ -154,6 +164,15 @@ const styles = StyleSheet.create({
     borderRadius: wp(3),
     position: 'absolute',
     bottom: hp(3),
+  },
+  rowButton: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  cancelButton: {
+    width: wp(25),
+    marginLeft: wp(3),
+    backgroundColor: colors.red,
   },
   modal: {
     alignItems: 'center',
@@ -210,7 +229,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: wp(4.5),
     backgroundColor: '#EFF65C',
-    marginHorizontal: wp(17.5),
     marginTop: hp(1),
     flexDirection: 'row-reverse',
   },

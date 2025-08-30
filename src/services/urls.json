@@ -1,6 +1,6 @@
 {
   "LOGIN": "user/login/",
-  "GETLISTDELIVERY": "delivery/rider/list",
+  "GETLISTDELIVERY": "delivery/list",
   "GETWALLET": "user/wallet/",
   "GETWALLETTRANSACTION": "user/wallet_transaction_list/",
   "CHANGESTATUSORDER": "delivery/rider/update_status_by_rider",
