@@ -5,7 +5,7 @@ import { useNavigation } from "@react-navigation/native";
 import {useTranslation} from 'react-i18next';
 
 import colors from '../../config/colors';
-import { ChooseService,Menu1 } from '../../../assets/svg';
+import { ChooseService,CarIcon } from '../../../assets/svg';
 import CustomText from '../common/CustomText';
 import routes from '../../navigation/routes';
 
@@ -26,8 +26,10 @@ const CustomBottomTab = () => {
                 <CustomText style={styles.text}>{t("findRide")}</CustomText>
             </View>
             <View style={styles.left}>
-                 <TouchableOpacity style={styles.button}>
-                  <Menu1 width={wp(8)} height={wp(8)} fill={colors.primary} />
+                 <TouchableOpacity
+                    onPress={() => navigation.navigate(routes.CHOOSEVEHICLE)}
+                 style={styles.button}>
+                  <CarIcon width={wp(8)} height={wp(8)} fill={colors.primary} />
                 </TouchableOpacity>
             </View>
         </View>

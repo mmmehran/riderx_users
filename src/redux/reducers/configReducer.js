@@ -3,7 +3,8 @@ import { createSlice } from "@reduxjs/toolkit";
 
 const initialStateObject = {
    allTypes: null,
-   userProfile: null
+   userProfile: null,
+   selectVehicle:null
 
 };
 
@@ -25,6 +26,12 @@ export const configSlice = createSlice({
             userProfile: action.payload,
          };
       },
+      setSelectVehicle: (state, action) => {
+         return {
+            ...state,
+            selectVehicle: action.payload,
+         };
+      },
       logouConfig: () => {
          return initialStateObject
       },
@@ -34,7 +41,8 @@ export const configSlice = createSlice({
 export const {
    setAllTypes,
    logouConfig,
-   setUserProfile
+   setUserProfile,
+   setSelectVehicle
 } = configSlice.actions;
 
 export default configSlice.reducer;

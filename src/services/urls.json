@@ -6,6 +6,8 @@
   "CHANGESTATUSORDER": "delivery/rider/update_status_by_rider",
   "GETLASTDELIVERY": "delivery/rider/open_list",
   "GETUSER": "user/profile/",
+  "GETVEHICLE": "vehicle/list",
+  "UPDATELOCATION": "rider/locations/update_location",
 
   "SIGNUP": "Account/Add",
   "PROFILE": "Account/Get",

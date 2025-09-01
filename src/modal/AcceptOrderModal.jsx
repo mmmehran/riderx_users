@@ -13,7 +13,7 @@ import CustomText from '../components/common/CustomText';
 import {Line2, StarIcon} from '../../assets/svg/index';
 
 const MAPBOX_TOKEN =
-  'sk.eyJ1IjoiYnl0ZWJyaWRnZXIiLCJhIjoiY21kbTdlOTluMWI5cjJqc2NuZHV0dzl0byJ9.xNsl53GUUBLBDrMQrFe_rQ';
+  'pk.eyJ1IjoiYnl0ZWJyaWRnZXIiLCJhIjoiY21kZzVoNnU2MGlhcDJpcGVuNGV1amYxdyJ9.YMqlR9OovVOp-pm9yGK7eA';
 
 /**
  * Pass user's camera/location from parent:
@@ -50,17 +50,13 @@ const AcceptOrderModal = ({
 
   const pickupLabel = useMemo(
     () =>
-      order?.sender_address ||
-      order?.sender_name ||
-      order?.pickup_address ||
+      `${order?.sender_address_json?.address} , ${order?.sender_address_json?.street}` ||
       '-',
     [order],
   );
   const dropLabel = useMemo(
     () =>
-      order?.receiver_address ||
-      order?.receiver_name ||
-      order?.dropoff_address ||
+      `${order?.receiver_address_json?.address} , ${order?.receiver_address_json?.street}` ||
       '-',
     [order],
   );
@@ -176,9 +172,14 @@ const AcceptOrderModal = ({
               {fmtLeg(userToPickupMins, userToPickupKm)}
             </CustomText>
             <CustomText
+              numberOfLines={3}
               style={[
                 styles.textTop,
-                {color: 'rgba(70, 67, 67, 0.84)', marginTop: hp(0.3)},
+                {
+                  color: 'rgba(70, 67, 67, 0.84)',
+                  marginTop: hp(0.3),
+                  width: wp(60),
+                },
               ]}>
               {pickupLabel}
             </CustomText>
@@ -188,9 +189,14 @@ const AcceptOrderModal = ({
               {fmtLeg(pickupToDropMins, pickupToDropKm)}
             </CustomText>
             <CustomText
+              numberOfLines={3}
               style={[
                 styles.textTop,
-                {color: 'rgba(70, 67, 67, 0.84)', marginTop: hp(0.3)},
+                {
+                  color: 'rgba(70, 67, 67, 0.84)',
+                  marginTop: hp(0.3),
+                  width: wp(60),
+                },
               ]}>
               {dropLabel}
             </CustomText>
@@ -230,7 +236,7 @@ export default memo(AcceptOrderModal);
 const styles = StyleSheet.create({
   container: {
     width: wp(84),
-    height: hp(45),
+    height: hp(53),
     backgroundColor: colors.white,
     borderRadius: wp(3),
     borderWidth: wp(1),

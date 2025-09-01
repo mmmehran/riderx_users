@@ -7,6 +7,7 @@ import {useDispatch, useSelector} from 'react-redux';
 
 import AcceptOrderModal from '../../../modal/AcceptOrderModal';
 import AcceptedOrderModal from '../../../modal/AcceptedOrderModal';
+import CancelModal from '../../../modal/CancelModal';
 
 import {Marker, LocationPin} from '../../../../assets/svg/index';
 import CustomHeader from '../../../components/custom/CustomHeader';
@@ -20,12 +21,17 @@ import {
   authenticated,
 } from '../../../redux/reducers/authenticationReducer';
 import {connectSocket, on} from '../../../services/socket';
+import {selectConfig} from '../../../redux/reducers/configReducer';
+
+const LOCATION_UPDATE_MS = 30 * 1000;
+const POLL_MS = 60 * 1000;
 
 const HomeMainScreen = () => {
-  const [camera, setCamera] = useState([-74.006, 40.7128]); // [lng, lat]
+  const [camera, setCamera] = useState([-74.006, 40.7128]);
   const [data, setData] = useState([]);
   const [currentOrderIndex, setCurrentOrderIndex] = useState(null);
   const [showAcceptOrder, setShowAcceptOrder] = useState(false);
+  const [cancelModalVisible, setCancelModalVisible] = useState(false);
   const [loadingChangeStatus, setLoadingChangeStatus] = useState(false);
   const [isAccepted, setIsAccepted] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -33,18 +39,24 @@ const HomeMainScreen = () => {
 
   const dispatch = useDispatch();
   const user = useSelector(authenticated);
+  const config = useSelector(selectConfig);
 
   const selectedOrderRef = useRef(null);
   const pollInFlightRef = useRef(false);
   const lastCamRef = useRef(null);
 
-  const POLL_MS = 5 * 60 * 1000; // 5 minutes
+  const cameraRef = useRef(camera);
+  useEffect(() => {
+    cameraRef.current = camera;
+  }, [camera]);
 
-  // keep ref in sync with state
+  const locationInFlightRef = useRef(false);
+
   useEffect(() => {
     selectedOrderRef.current = selectedOrder;
   }, [selectedOrder]);
 
+  // ── Socket setup ──────────────────────────────────────────────────────────────
   useEffect(() => {
     const rawUrl = user?.socketio;
     const {baseUrl, roomId} = parseSocketUrl(rawUrl);
@@ -63,7 +75,6 @@ const HomeMainScreen = () => {
 
     const anyLogger = (event, payload) => {
       if (selectedOrderRef.current != null) return;
-      console.log(payload?.message);
       const orders = [payload?.message].filter(Boolean);
       setData(orders);
       if (orders.length > 0) {
@@ -87,10 +98,12 @@ const HomeMainScreen = () => {
     };
   }, [user?.socketio]);
 
+  // ── Mapbox key ────────────────────────────────────────────────────────────────
   Mapbox.setAccessToken(
-    'sk.eyJ1IjoiYnl0ZWJyaWRnZXIiLCJhIjoiY21kbTdlOTluMWI5cjJqc2NuZHV0dzl0byJ9.xNsl53GUUBLBDrMQrFe_rQ',
+    'pk.eyJ1IjoiYnl0ZWJyaWRnZXIiLCJhIjoiY21kZzVoNnU2MGlhcDJpcGVuNGV1amYxdyJ9.YMqlR9OovVOp-pm9yGK7eA',
   );
 
+  // ── Bootstrap ────────────────────────────────────────────────────────────────
   useEffect(() => {
     getUserProfile();
     getLastDelivery();
@@ -120,15 +133,16 @@ const HomeMainScreen = () => {
     }
   };
 
+  // Smooth camera updates (debounce ~50m)
   const centerToUserLocation = location => {
     if (!location?.coords) return;
     const {latitude, longitude} = location.coords;
-    const rounded = [Number(longitude.toFixed(5)), Number(latitude.toFixed(5))]; // ~1m
+    const rounded = [Number(longitude.toFixed(5)), Number(latitude.toFixed(5))];
     const last = lastCamRef.current;
     const movedEnough =
       !last ||
       Math.abs(rounded[0] - last[0]) > 0.0005 ||
-      Math.abs(rounded[1] - last[1]) > 0.0005; // ~50m
+      Math.abs(rounded[1] - last[1]) > 0.0005;
 
     if (movedEnough) {
       lastCamRef.current = rounded;
@@ -136,6 +150,7 @@ const HomeMainScreen = () => {
     }
   };
 
+  // ── API: deliveries & user ───────────────────────────────────────────────────
   const getLastDelivery = async () => {
     const response = await getData(urls.GETLASTDELIVERY);
     if (response?.data?.status) {
@@ -181,6 +196,19 @@ const HomeMainScreen = () => {
     }
   };
 
+  // ── Guard: must select a vehicle first ───────────────────────────────────────
+  const requireVehicleOrToast = useCallback(() => {
+    if (!config?.selectVehicle?.id) {
+      showToast(
+        'Select a vehicle first (car icon below) to accept deliveries.',
+        'error',
+      );
+      return false;
+    }
+    return true;
+  }, [config?.selectVehicle?.id]);
+
+  // ── Order actions ────────────────────────────────────────────────────────────
   const handleNextOrder = useCallback(() => {
     if (isAccepted) {
       setShowAcceptOrder(false);
@@ -200,6 +228,8 @@ const HomeMainScreen = () => {
   }, [isAccepted, currentOrderIndex, data.length]);
 
   const handleAcceptOrder = useCallback(() => {
+    if (!requireVehicleOrToast()) return; // 🔒 block without vehicle
+
     const order = data[currentOrderIndex];
     if (!order) return;
     setSelectedOrder(order);
@@ -207,12 +237,12 @@ const HomeMainScreen = () => {
     setIsAccepted(true);
     setShowAcceptOrder(false);
     setCurrentOrderIndex(null);
-  }, [data, currentOrderIndex]);
+  }, [data, currentOrderIndex, requireVehicleOrToast]);
 
   const changeStatusOrderAccept = async (order, status) => {
     status !== 'cancel' && setLoadingChangeStatus(true);
     const response = await sendData(urls.CHANGESTATUSORDER, {
-      vehicle_id: order?.vehicle?.id,
+      vehicle_id: config?.selectVehicle?.id,
       delivery_id: order?.id,
       status: status,
       secure_pin: null,
@@ -220,7 +250,13 @@ const HomeMainScreen = () => {
 
     if (response?.data?.status) {
       setSelectedOrder(response?.data?.data);
-      if (status === 'completed' || status === 'cancel') {
+      if (
+        status === 'completed' ||
+        status === 'cancel' ||
+        status === 'request_new_driver' ||
+        status === 'shipment_destroyed' ||
+        status === 'address_not_found'
+      ) {
         setRoute(null);
         setSelectedOrder(null);
         showToast(
@@ -238,6 +274,7 @@ const HomeMainScreen = () => {
   const currentOrder =
     currentOrderIndex !== null ? data[currentOrderIndex] : null;
 
+  // ── Map route for active order ───────────────────────────────────────────────
   const senderCoordinate = selectedOrder
     ? selectedOrder?.status !== 'pickup'
       ? [selectedOrder.sender_longitude, selectedOrder.sender_latitude]
@@ -247,7 +284,7 @@ const HomeMainScreen = () => {
   const fetchRoute = async (userCoord, senderCoord) => {
     if (!userCoord || !senderCoord) return;
     try {
-      const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${userCoord[0]},${userCoord[1]};${senderCoord[0]},${senderCoord[1]}?geometries=geojson&access_token=sk.eyJ1IjoiYnl0ZWJyaWRnZXIiLCJhIjoiY21kbTdlOTluMWI5cjJqc2NuZHV0dzl0byJ9.xNsl53GUUBLBDrMQrFe_rQ`;
+      const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${userCoord[0]},${userCoord[1]};${senderCoord[0]},${senderCoord[1]}?geometries=geojson&access_token=pk.eyJ1IjoiYnl0ZWJyaWRnZXIiLCJhIjoiY21kZzVoNnU2MGlhcDJpcGVuNGV1amYxdyJ9.YMqlR9OovVOp-pm9yGK7eA`;
       const res = await axios.get(url);
       if (res.data?.routes?.length) {
         setRoute({
@@ -266,6 +303,7 @@ const HomeMainScreen = () => {
     }
   }, [camera, senderCoordinate]);
 
+  // ── Poll new deliveries (paused when showing modal / accepted) ──────────────
   useEffect(() => {
     if (selectedOrder) return;
     const handler = async () => {
@@ -281,8 +319,41 @@ const HomeMainScreen = () => {
     return () => clearInterval(id);
   }, [selectedOrder, showAcceptOrder]);
 
+  // ── Periodic location update (only when a vehicle is selected) ──────────────
+  const postLocation = useCallback(async () => {
+    // 🚫 Skip if no vehicle chosen
+    if (!config?.selectVehicle?.id) return;
+
+    if (locationInFlightRef.current) return;
+    const cam = cameraRef.current;
+    if (!Array.isArray(cam) || cam.length < 2) return;
+
+    locationInFlightRef.current = true;
+    try {
+      await sendData(urls.UPDATELOCATION, {
+        longitude: cam[0],
+        latitude: cam[1],
+        vehicle_id: config?.selectVehicle?.id,
+      });
+    } catch (e) {
+      // optionally toast/log
+    } finally {
+      locationInFlightRef.current = false;
+    }
+  }, [config?.selectVehicle?.id]);
+
+  useEffect(() => {
+    const first = setTimeout(postLocation, 3000);
+    const id = setInterval(postLocation, LOCATION_UPDATE_MS);
+    return () => {
+      clearTimeout(first);
+      clearInterval(id);
+    };
+  }, [postLocation]);
+
   const userCoordMemo = useMemo(() => camera, [camera[0], camera[1]]);
 
+  // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <>
       <View style={styles.container}>
@@ -325,25 +396,37 @@ const HomeMainScreen = () => {
         </Mapbox.MapView>
         <CustomBottomTab />
       </View>
-
       {currentOrder?.status === 'created' && showAcceptOrder && !isAccepted && (
         <AcceptOrderModal
           key={currentOrder?.id ?? currentOrderIndex}
           isVisible={showAcceptOrder}
           order={currentOrder}
           onClose={handleNextOrder}
-          onAccept={handleAcceptOrder}
+          onAccept={handleAcceptOrder} // checks vehicle inside
           userCoord={userCoordMemo}
         />
       )}
-
       {selectedOrder && (
         <AcceptedOrderModal
-          changeOrder={status => changeStatusOrderAccept(selectedOrder, status)}
+          changeOrder={status => {
+            if (status === 'cancel' && selectedOrder?.status == 'pickup') {
+              setCancelModalVisible(!cancelModalVisible);
+            } else {
+              changeStatusOrderAccept(selectedOrder, status);
+            }
+          }}
           order={selectedOrder}
           loading={loadingChangeStatus}
         />
       )}
+      <CancelModal
+        isVisible={cancelModalVisible}
+        onSelectReason={reasonKey => {
+          changeStatusOrderAccept(selectedOrder, reasonKey);
+          setCancelModalVisible(false);
+        }}
+        onClose={() => setCancelModalVisible(false)}
+      />{' '}
     </>
   );
 };

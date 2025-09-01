@@ -20,8 +20,8 @@ import {openGoogleMaps} from '../utils/googleMapsNavigator';
 const AcceptedOrderModal = ({order, changeOrder, loading}) => {
   const phoneNumber = `tel:${
     order?.status !== 'pickup'
-      ? order?.sender_phone?.count
-      : order?.receiver_phone?.count
+      ? order?.sender_phone?.number
+      : order?.receiver_phone?.number
   }`;
   const makeCall = async () => {
     try {
@@ -38,8 +38,8 @@ const AcceptedOrderModal = ({order, changeOrder, loading}) => {
 
   const phoneNumberSms = `sms:${
     order?.status !== 'pickup'
-      ? order?.sender_phone?.count
-      : order?.receiver_phone?.count
+      ? order?.sender_phone?.number
+      : order?.receiver_phone?.number
   }?body=Hello, this is a test message!`;
 
   const sendSms = async () => {
@@ -66,7 +66,7 @@ const AcceptedOrderModal = ({order, changeOrder, loading}) => {
               : order?.receiver_full_name}
           </CustomText>
         </View>
-        <View style={[styles.userContainer, {marginTop: hp(-1)}]}>
+        <View style={[styles.userContainer, {marginTop: hp(1)}]}>
           <View style={styles.textContainer}>
             <CustomText style={styles.textInfo}>
               Number:{' '}
@@ -85,6 +85,12 @@ const AcceptedOrderModal = ({order, changeOrder, loading}) => {
               {order?.status !== 'pickup'
                 ? order?.sender_address_json?.floor
                 : order?.receiver_address_json?.floor}
+            </CustomText>
+            <CustomText numberOfLines={3} style={styles.textInfo}>
+              Extra details:{' '}
+              {order?.status !== 'pickup'
+                ? order?.sender_address_json?.address_extra_details
+                : order?.receiver_address_json?.address_extra_details}
             </CustomText>
           </View>
           <View style={styles.iconContainer}>
@@ -159,7 +165,7 @@ export default memo(AcceptedOrderModal);
 const styles = StyleSheet.create({
   container: {
     width: wp(95),
-    height: hp(41),
+    height: hp(44),
     backgroundColor: '#B3B7C9B2',
     borderRadius: wp(3),
     position: 'absolute',
@@ -215,7 +221,7 @@ const styles = StyleSheet.create({
     marginBottom: hp(1),
   },
   textContainer: {
-    flex: 1,
+    flex: 2,
   },
   textType: {
     color: colors.black,

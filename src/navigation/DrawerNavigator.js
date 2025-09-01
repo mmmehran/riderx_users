@@ -6,6 +6,7 @@ import routes from "./routes";
 import colors from '../config/colors';
 import HomeMainScreen from '../screens/App/HomeScreens/HomeMainScreen'
 import ChooseTheService from '../screens/App/ChooseService/ChooseTheService'
+import ChooseVehicle from '../screens/App/ChooseVehicle/ChooseVehicle'
 import DrawerScreen from '../screens/Drawer/Drawer'
 import Report from '../screens/Drawer/Report'
 import Wallet from '../screens/Drawer/Wallet'
@@ -38,6 +39,11 @@ const DrawerNavigator = () => {
             <Drawer.Screen
                 name={routes.CHOOSESERVICE}
                 component={ChooseTheService}
+                options={{ fullScreenGestureEnabled: false }}
+            />
+            <Drawer.Screen
+                name={routes.CHOOSEVEHICLE}
+                component={ChooseVehicle}
                 options={{ fullScreenGestureEnabled: false }}
             />
             <Drawer.Screen
