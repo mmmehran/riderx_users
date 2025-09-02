@@ -25,4 +25,5 @@ export { default as SupportIcon } from "./supportIcon.svg";
 export { default as LocationPin } from "./locationPin.svg";
 export { default as OpenMap } from "./openMap.svg";
 export { default as CarIcon } from "./carIcon.svg";
+export { default as RefreshIcon } from "./refreshIcon.svg";
 

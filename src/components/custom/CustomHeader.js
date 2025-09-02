@@ -4,9 +4,9 @@ import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-nat
 import { useNavigation } from "@react-navigation/native";
 
 import colors from '../../config/colors';
-import { Search,Menu } from '../../../assets/svg';
+import { RefreshIcon,Menu } from '../../../assets/svg';
 
-const CustomHeader = () => {
+const CustomHeader = ({onRefreshPress}) => {
    const navigation = useNavigation();
 
     return (
@@ -19,8 +19,10 @@ const CustomHeader = () => {
                 </TouchableOpacity>
             </View>
             <View style={styles.left}>
-                 <TouchableOpacity style={styles.button}>
-                  <Search width={wp(6)} height={wp(6)} fill={colors.primary} />
+                 <TouchableOpacity
+                 onPress={onRefreshPress}
+                 style={styles.button}>
+                  <RefreshIcon width={wp(6)} height={wp(6)} fill={colors.primary} />
                 </TouchableOpacity>
             </View>
         </View>

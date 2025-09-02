@@ -205,7 +205,7 @@ const AcceptOrderModal = ({
 
         <View style={styles.buttonWrapper}>
           <TouchableOpacity
-            onPress={handleAccept}
+            onLongPress={handleAccept}
             style={styles.button}
             activeOpacity={1}>
             <Animated.View

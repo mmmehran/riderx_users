@@ -9,12 +9,12 @@ import { ChooseService,CarIcon } from '../../../assets/svg';
 import CustomText from '../common/CustomText';
 import routes from '../../navigation/routes';
 
-const CustomBottomTab = () => {
+const CustomBottomTab = ({style}) => {
    const navigation = useNavigation();
   const {t} = useTranslation();
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container,style]}>
             <View style={styles.left}>
                 <TouchableOpacity 
                 onPress={() => navigation.navigate(routes.CHOOSESERVICE)}

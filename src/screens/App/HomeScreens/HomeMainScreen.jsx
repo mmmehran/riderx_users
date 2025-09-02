@@ -1,9 +1,14 @@
 import React, {useState, useEffect, useRef, useMemo, useCallback} from 'react';
 import {View, StyleSheet, PermissionsAndroid, Platform} from 'react-native';
-import {widthPercentageToDP as wp} from 'react-native-responsive-screen';
+import {
+  widthPercentageToDP as wp,
+  heightPercentageToDP as hp,
+} from 'react-native-responsive-screen';
 import Mapbox from '@rnmapbox/maps';
 import axios from 'axios';
 import {useDispatch, useSelector} from 'react-redux';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {useNavigation} from '@react-navigation/native';
 
 import AcceptOrderModal from '../../../modal/AcceptOrderModal';
 import AcceptedOrderModal from '../../../modal/AcceptedOrderModal';
@@ -22,20 +27,26 @@ import {
 } from '../../../redux/reducers/authenticationReducer';
 import {connectSocket, on} from '../../../services/socket';
 import {selectConfig} from '../../../redux/reducers/configReducer';
+import ConfirmModal from '../../../modal/ConfirmModal';
+import routes from '../../../navigation/routes';
 
 const LOCATION_UPDATE_MS = 30 * 1000;
-const POLL_MS = 60 * 1000;
+const POLL_MS = 2 * 60 * 1000;
 
 const HomeMainScreen = () => {
   const [camera, setCamera] = useState([-74.006, 40.7128]);
   const [data, setData] = useState([]);
   const [currentOrderIndex, setCurrentOrderIndex] = useState(null);
   const [showAcceptOrder, setShowAcceptOrder] = useState(false);
+  const [confirmModalVisible, setConfirmModalVisible] = useState(false);
   const [cancelModalVisible, setCancelModalVisible] = useState(false);
   const [loadingChangeStatus, setLoadingChangeStatus] = useState(false);
   const [isAccepted, setIsAccepted] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [route, setRoute] = useState(null);
+  const [currentStatus, setCurrentStatus] = useState(null);
+  const insets = useSafeAreaInsets();
+  const navigation = useNavigation();
 
   const dispatch = useDispatch();
   const user = useSelector(authenticated);
@@ -199,10 +210,8 @@ const HomeMainScreen = () => {
   // ── Guard: must select a vehicle first ───────────────────────────────────────
   const requireVehicleOrToast = useCallback(() => {
     if (!config?.selectVehicle?.id) {
-      showToast(
-        'Select a vehicle first (car icon below) to accept deliveries.',
-        'error',
-      );
+      showToast('Select a vehicle first to accept deliveries.', 'error');
+      navigation.navigate(routes.CHOOSEVEHICLE);
       return false;
     }
     return true;
@@ -357,7 +366,12 @@ const HomeMainScreen = () => {
   return (
     <>
       <View style={styles.container}>
-        <CustomHeader />
+        <CustomHeader
+          onRefreshPress={() => {
+            if (selectedOrder || showAcceptOrder) return;
+            getDeliveryLists();
+          }}
+        />
         <Mapbox.MapView
           zoomEnabled
           styleURL="mapbox://styles/mapbox/streets-v12"
@@ -409,10 +423,11 @@ const HomeMainScreen = () => {
       {selectedOrder && (
         <AcceptedOrderModal
           changeOrder={status => {
+            setCurrentStatus(status);
             if (status === 'cancel' && selectedOrder?.status == 'pickup') {
               setCancelModalVisible(!cancelModalVisible);
             } else {
-              changeStatusOrderAccept(selectedOrder, status);
+              setConfirmModalVisible(!confirmModalVisible);
             }
           }}
           order={selectedOrder}
@@ -423,10 +438,18 @@ const HomeMainScreen = () => {
         isVisible={cancelModalVisible}
         onSelectReason={reasonKey => {
           changeStatusOrderAccept(selectedOrder, reasonKey);
-          setCancelModalVisible(false);
+          setCancelModalVisible(!cancelModalVisible);
         }}
-        onClose={() => setCancelModalVisible(false)}
+        onClose={() => setCancelModalVisible(!cancelModalVisible)}
       />{' '}
+      <ConfirmModal
+        isVisible={confirmModalVisible}
+        onCancel={() => setConfirmModalVisible(!confirmModalVisible)}
+        onConfirm={() => {
+          changeStatusOrderAccept(selectedOrder, currentStatus);
+          setConfirmModalVisible(!confirmModalVisible);
+        }}
+      />
     </>
   );
 };
