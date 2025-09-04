@@ -88,13 +88,6 @@ const LoginEmail = props => {
             );
           })}
         </View>
-        <View style={styles.bottom}>
-          <TouchableOpacity style={[styles.buttonBottom]}>
-            <CustomText style={[styles.textButton, {fontSize: wp(7)}]}>
-              {t('help')}
-            </CustomText>
-          </TouchableOpacity>
-        </View>
       </View>
     </CustomScreen>
   );

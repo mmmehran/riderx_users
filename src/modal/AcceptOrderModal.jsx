@@ -11,7 +11,7 @@ import CustomModal from '../components/common/CustomModal';
 import colors from '../config/colors';
 import CustomText from '../components/common/CustomText';
 import {Line2, StarIcon} from '../../assets/svg/index';
-
+import {isAndroid15Plus} from '../utils/helpers';
 const MAPBOX_TOKEN =
   'pk.eyJ1IjoiYnl0ZWJyaWRnZXIiLCJhIjoiY21kZzVoNnU2MGlhcDJpcGVuNGV1amYxdyJ9.YMqlR9OovVOp-pm9yGK7eA';
 
@@ -141,9 +141,15 @@ const AcceptOrderModal = ({
   };
 
   return (
-    <CustomModal style={[styles.modal,{
-            bottom:hp(insets.bottom * 0.15)
-    }]} isVisible={isVisible} backdropOpacity={0}>
+    <CustomModal
+      style={[
+        styles.modal,
+        isAndroid15Plus && {
+          bottom: hp(insets.bottom * 0.15),
+        },
+      ]}
+      isVisible={isVisible}
+      backdropOpacity={0}>
       <View style={styles.container}>
         <View style={styles.headerContainer}>
           <View style={styles.deliveryContainer}>

@@ -20,7 +20,11 @@ import CustomBottomTab from '../../../components/custom/CustomBottomTab';
 import {getData, sendData} from '../../../services/common.service';
 import urls from '../../../services/urls.json';
 import errorHandler from '../../../utils/errorHandler';
-import {showToast, parseSocketUrl} from '../../../utils/helpers';
+import {
+  showToast,
+  parseSocketUrl,
+  isAndroid15Plus,
+} from '../../../utils/helpers';
 import {
   setUserProfile,
   authenticated,
@@ -365,9 +369,13 @@ const HomeMainScreen = () => {
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <>
-      <View style={[styles.container,{
-        marginBottom:hp(insets.bottom * 0.11)
-      }]}>
+      <View
+        style={[
+          styles.container,
+          isAndroid15Plus && {
+            marginBottom: hp(insets.bottom * 0.11),
+          },
+        ]}>
         <CustomHeader
           onRefreshPress={() => {
             if (selectedOrder || showAcceptOrder) return;
@@ -410,12 +418,11 @@ const HomeMainScreen = () => {
             <Marker />
           </Mapbox.MarkerView>
         </Mapbox.MapView>
-        <CustomBottomTab 
-        />
+        <CustomBottomTab />
       </View>
       {currentOrder?.status === 'created' && showAcceptOrder && !isAccepted && (
         <AcceptOrderModal
-                insets={insets}
+          insets={insets}
           key={currentOrder?.id ?? currentOrderIndex}
           isVisible={showAcceptOrder}
           order={currentOrder}
@@ -426,7 +433,7 @@ const HomeMainScreen = () => {
       )}
       {selectedOrder && (
         <AcceptedOrderModal
-        insets={insets}
+          insets={insets}
           changeOrder={status => {
             setCurrentStatus(status);
             if (status === 'cancel' && selectedOrder?.status == 'pickup') {
