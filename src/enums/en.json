@@ -26,5 +26,6 @@
   "initiated": "Initiated",
   "paymentMethod": "Payment Method",
   "logOut": "Log Out",
-  "cancel": "Cancel"
+  "cancel": "Cancel",
+  "start": "Start"
 }

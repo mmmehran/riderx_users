@@ -82,6 +82,12 @@ const AcceptedOrderModal = ({order, changeOrder, loading, insets}) => {
                 : order?.receiver_address_json?.entrance}
             </CustomText>
             <CustomText style={styles.textInfo}>
+              Apartment:{' '}
+              {order?.status !== 'pickup'
+                ? order?.sender_address_json?.apartment
+                : order?.receiver_address_json?.apartment}
+            </CustomText>
+            <CustomText style={styles.textInfo}>
               Door:{' '}
               {order?.status !== 'pickup'
                 ? order?.sender_address_json?.apartment_door
@@ -172,7 +178,7 @@ export default memo(AcceptedOrderModal);
 const styles = StyleSheet.create({
   container: {
     width: wp(95),
-    height: hp(44),
+    height: hp(47),
     backgroundColor: '#B3B7C9B2',
     borderRadius: wp(3),
     position: 'absolute',

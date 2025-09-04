@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {View, StyleSheet, TouchableOpacity} from 'react-native';
 import {
   widthPercentageToDP as wp,
@@ -16,11 +16,29 @@ import {
   logout,
   authenticated,
 } from '../../redux/reducers/authenticationReducer';
+import {sendData} from '../../services/common.service';
+import urls from '../../services/urls.json';
+import errorHandler from '../../utils/errorHandler';
+import {selectConfig} from '../../redux/reducers/configReducer';
 
 const LoginEmail = props => {
   const {t} = useTranslation();
   const dispatch = useDispatch();
   const user = useSelector(authenticated);
+  const [vehicleStatus, setVehicleStatus] = useState(false);
+  const config = useSelector(selectConfig);
+
+  const updateVehicleStatus = async () => {
+    const response = await sendData(urls.UPDATESTATUSVEHICLE, {
+      id: config?.selectVehicle?.id,
+      on_status: vehicleStatus ? 'on' : 'off',
+    });
+    if (response?.data?.status) {
+      setVehicleStatus(!vehicleStatus);
+    } else {
+      errorHandler(response);
+    }
+  };
 
   const data = [
     {
@@ -70,8 +88,14 @@ const LoginEmail = props => {
               </CustomText>
             </View>
           </View>
-          <TouchableOpacity style={styles.stopButton}>
-            <CustomText style={styles.textButton}>{t('stop')}</CustomText>
+          <TouchableOpacity
+            onPress={() => {
+              updateVehicleStatus();
+            }}
+            style={styles.stopButton}>
+            <CustomText style={styles.textButton}>
+              {vehicleStatus ? t('start') : t('stop')}
+            </CustomText>
           </TouchableOpacity>
         </View>
         <View style={styles.rowContainer}>
