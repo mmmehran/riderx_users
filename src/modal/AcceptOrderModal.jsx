@@ -24,6 +24,7 @@ const AcceptOrderModal = ({
   onClose,
   onAccept,
   order,
+  insets,
   userCoord, // <-- [lng, lat] from parent (Mapbox camera / user location)
 }) => {
   const progressAnim = useRef(new Animated.Value(0)).current;
@@ -140,7 +141,9 @@ const AcceptOrderModal = ({
   };
 
   return (
-    <CustomModal style={styles.modal} isVisible={isVisible} backdropOpacity={0}>
+    <CustomModal style={[styles.modal,{
+            bottom:hp(insets.bottom * 0.15)
+    }]} isVisible={isVisible} backdropOpacity={0}>
       <View style={styles.container}>
         <View style={styles.headerContainer}>
           <View style={styles.deliveryContainer}>

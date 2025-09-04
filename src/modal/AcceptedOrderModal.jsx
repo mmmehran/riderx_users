@@ -17,7 +17,7 @@ import CustomText from '../components/common/CustomText';
 import {MessageIcon, CallIcon, OpenMap} from '../../assets/svg/index';
 import {openGoogleMaps} from '../utils/googleMapsNavigator';
 
-const AcceptedOrderModal = ({order, changeOrder, loading}) => {
+const AcceptedOrderModal = ({order, changeOrder, loading,insets}) => {
   const phoneNumber = `tel:${
     order?.status !== 'pickup'
       ? order?.sender_phone?.number
@@ -57,7 +57,10 @@ const AcceptedOrderModal = ({order, changeOrder, loading}) => {
 
   return (
     <View style={styles.modal}>
-      <View style={styles.container}>
+      <View style={[styles.container,{
+            bottom:hp(insets.bottom * 0.18)
+
+      }]}>
         <View style={styles.userContainer}>
           <View style={styles.imageContainer}></View>
           <CustomText style={styles.text} numberOfLines={1}>
@@ -169,7 +172,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#B3B7C9B2',
     borderRadius: wp(3),
     position: 'absolute',
-    bottom: hp(3),
+    bottom:hp(3)
+    
   },
   rowButton: {
     flexDirection: 'row',

@@ -15,10 +15,8 @@ const CustomModal = ({
 			onBackButtonPress={onBackdropPress}
 			backdropOpacity={backdropOpacity}
 			style={style ? style : { alignItems: "center", justifyContent: "center" }}
-		  	animationIn="fadeInUp"
-			animationOut="fadeOutDown" 
-  			animationInTiming={700}
-			animationOutTiming={500}
+  			animationInTiming={300}
+			animationOutTiming={300}
 		>
 			{children}
 		</Modal>

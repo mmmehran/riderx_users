@@ -36,7 +36,7 @@ const ConfirmActionModal = ({
   return (
     <CustomModal
       isVisible={isVisible}
-      backdropOpacity={0.4}
+      backdropOpacity={0}
       onBackdropPress={onCancel}
       onBackButtonPress={onCancel}>
       <View style={styles.container}>

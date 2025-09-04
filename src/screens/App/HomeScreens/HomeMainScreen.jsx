@@ -365,7 +365,9 @@ const HomeMainScreen = () => {
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <>
-      <View style={styles.container}>
+      <View style={[styles.container,{
+        marginBottom:hp(insets.bottom * 0.11)
+      }]}>
         <CustomHeader
           onRefreshPress={() => {
             if (selectedOrder || showAcceptOrder) return;
@@ -408,10 +410,12 @@ const HomeMainScreen = () => {
             <Marker />
           </Mapbox.MarkerView>
         </Mapbox.MapView>
-        <CustomBottomTab />
+        <CustomBottomTab 
+        />
       </View>
       {currentOrder?.status === 'created' && showAcceptOrder && !isAccepted && (
         <AcceptOrderModal
+                insets={insets}
           key={currentOrder?.id ?? currentOrderIndex}
           isVisible={showAcceptOrder}
           order={currentOrder}
@@ -422,6 +426,7 @@ const HomeMainScreen = () => {
       )}
       {selectedOrder && (
         <AcceptedOrderModal
+        insets={insets}
           changeOrder={status => {
             setCurrentStatus(status);
             if (status === 'cancel' && selectedOrder?.status == 'pickup') {
