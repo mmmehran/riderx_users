@@ -9,6 +9,13 @@ import axios from 'axios';
 import {useDispatch, useSelector} from 'react-redux';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useNavigation} from '@react-navigation/native';
+import {
+  check,
+  request,
+  PERMISSIONS,
+  RESULTS,
+  openSettings,
+} from 'react-native-permissions';
 
 import AcceptOrderModal from '../../../modal/AcceptOrderModal';
 import AcceptedOrderModal from '../../../modal/AcceptedOrderModal';
@@ -132,18 +139,51 @@ const HomeMainScreen = () => {
           PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
           PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,
         ]);
-        if (
+        const ok =
           granted['android.permission.ACCESS_FINE_LOCATION'] ===
             PermissionsAndroid.RESULTS.GRANTED ||
           granted['android.permission.ACCESS_COARSE_LOCATION'] ===
-            PermissionsAndroid.RESULTS.GRANTED
-        ) {
-          console.log('Location permission granted');
+            PermissionsAndroid.RESULTS.GRANTED;
+        if (!ok) {
+          console.log('Android location permission denied');
         } else {
-          console.log('Location permission denied');
+          console.log('Android location permission granted');
         }
       } catch (err) {
         console.warn(err);
+      }
+      return;
+    }
+
+    if (Platform.OS === 'ios') {
+      try {
+        // Check current state to avoid unnecessary prompts
+        const status = await check(PERMISSIONS.IOS.LOCATION_WHEN_IN_USE);
+        if (status === RESULTS.GRANTED || status === RESULTS.LIMITED) {
+          console.log('iOS when-in-use already granted:', status);
+          return;
+        }
+        if (status === RESULTS.BLOCKED) {
+          console.log('iOS location permission blocked, opening settings...');
+          // Optionally nudge user to settings
+          // openSettings().catch(() => {});
+          return;
+        }
+
+        const res = await request(PERMISSIONS.IOS.LOCATION_WHEN_IN_USE);
+        if (res === RESULTS.GRANTED || res === RESULTS.LIMITED) {
+          console.log('iOS when-in-use granted:', res);
+          // If you *also* need background location, chain this next line
+          // const always = await request(PERMISSIONS.IOS.LOCATION_ALWAYS);
+          // console.log('iOS always result:', always);
+        } else if (res === RESULTS.BLOCKED) {
+          console.log('iOS location permission blocked after request');
+          // openSettings().catch(() => {});
+        } else {
+          console.log('iOS when-in-use denied:', res);
+        }
+      } catch (e) {
+        console.warn('iOS permission error:', e);
       }
     }
   };
