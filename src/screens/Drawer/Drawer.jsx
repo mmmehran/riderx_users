@@ -41,26 +41,26 @@ const LoginEmail = props => {
   };
 
   const data = [
-    {
-      id: 1,
-      name: t('inbox'),
-      onPress: () => console.log('ok'),
-    },
-    {
-      id: 2,
-      name: t('findRide'),
-      onPress: () => console.log('ok'),
-    },
+    // {
+    //   id: 1,
+    //   name: t('inbox'),
+    //   onPress: () => console.log('ok'),
+    // },
+    // {
+    //   id: 2,
+    //   name: t('findRide'),
+    //   onPress: () => console.log('ok'),
+    // },
     {
       id: 3,
       name: t('wallet'),
       onPress: () => props?.navigation.navigate(routes.WALLET),
     },
-    {
-      id: 4,
-      name: t('account'),
-      onPress: () => console.log('ok'),
-    },
+    // {
+    //   id: 4,
+    //   name: t('account'),
+    //   onPress: () => console.log('ok'),
+    // },
     {
       id: 5,
       name: t('report'),
@@ -92,7 +92,12 @@ const LoginEmail = props => {
             onPress={() => {
               updateVehicleStatus();
             }}
-            style={styles.stopButton}>
+            style={[
+              styles.stopButton,
+              vehicleStatus
+                ? {backgroundColor: colors.success}
+                : {backgroundColor: '#CD2C2C'},
+            ]}>
             <CustomText style={styles.textButton}>
               {vehicleStatus ? t('start') : t('stop')}
             </CustomText>
@@ -181,19 +186,19 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   stopButton: {
-    width: wp(12),
+    width: wp(25),
     height: wp(12),
-    borderRadius: wp(50),
-    backgroundColor: 'rgba(251, 188, 4, 0.4)',
+    borderRadius: wp(2),
+    backgroundColor: '#CD2C2C',
     alignItems: 'center',
     justifyContent: 'center',
   },
   textContainer: {
-    width: wp(30),
+    width: wp(22),
     alignItems: 'flex-start',
   },
   textButton: {
-    fontSize: wp(3.8),
+    fontSize: wp(4.5),
     color: colors.black,
     fontWeight: '900',
   },

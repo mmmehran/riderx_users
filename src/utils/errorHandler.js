@@ -6,7 +6,8 @@ import { logout } from "../redux/reducers/authenticationReducer";
 
 export const errorHandler = async (error) => {
 
-  // console.log(error)
+   console.log(error?.response?.data)
+ 
    if (error?.response?.status == 401) {
       showError("Please login or signup again");
       // store.dispatch(logout())
@@ -15,12 +16,8 @@ export const errorHandler = async (error) => {
       showError("Network connection error!");
 
    }
-   //  else if (error?.response?.status == 400) {
-   //    console.log(error?.response?.data);
-   //    showError(error?.response?.data?.title)
-   //  } 
    else {
-      showError(error?.data?.error?.error_description)
+      showError(error?.response?.data?.message)
    }
 };
 

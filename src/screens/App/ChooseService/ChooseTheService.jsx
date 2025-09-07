@@ -30,7 +30,7 @@ const ChooseTheService = props => {
       <View style={styles.top}>
         <CustomText style={styles.textTop}>{t('chooseService')}</CustomText>
       </View>
-      <CustomButtonService
+      {/* <CustomButtonService
         title={t('package')}
         service={servicePackage}
         setService={setServicePackage}></CustomButtonService>
@@ -41,7 +41,8 @@ const ChooseTheService = props => {
       <CustomButtonService
         title={t('heavyPackage')}
         service={serviceHeavyPackage}
-        setService={setServiceHeavyPackage}></CustomButtonService>
+        setService={setServiceHeavyPackage}></CustomButtonService> */}
+      <CustomText style={styles.noService}>No service available.</CustomText>
     </CustomScreen>
   );
 };
@@ -52,6 +53,10 @@ const styles = StyleSheet.create({
   iconContainer: {
     marginLeft: wp(10),
     marginTop: hp(4),
+  },
+  noService: {
+    textAlign: 'center',
+    marginTop: hp(3),
   },
   top: {
     width: wp(90),
