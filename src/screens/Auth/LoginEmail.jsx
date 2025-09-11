@@ -40,7 +40,6 @@ const LoginEmail = props => {
     if (response?.data?.status) {
       dispatch(login(response?.data?.data));
       showToast(response?.data?.message);
-      console.log(response?.data);
     } else {
       errorHandler(response);
     }

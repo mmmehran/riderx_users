@@ -1,5 +1,11 @@
 import React, {useState, useEffect, useRef, useMemo, useCallback} from 'react';
-import {View, StyleSheet, PermissionsAndroid, Platform} from 'react-native';
+import {
+  View,
+  StyleSheet,
+  PermissionsAndroid,
+  Platform,
+  AppState,
+} from 'react-native';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
@@ -9,13 +15,9 @@ import axios from 'axios';
 import {useDispatch, useSelector} from 'react-redux';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useNavigation} from '@react-navigation/native';
-import {
-  check,
-  request,
-  PERMISSIONS,
-  RESULTS,
-  openSettings,
-} from 'react-native-permissions';
+import {check, request, PERMISSIONS, RESULTS} from 'react-native-permissions';
+
+import notifee, {AndroidImportance} from '@notifee/react-native';
 
 import AcceptOrderModal from '../../../modal/AcceptOrderModal';
 import AcceptedOrderModal from '../../../modal/AcceptedOrderModal';
@@ -44,6 +46,45 @@ import routes from '../../../navigation/routes';
 const LOCATION_UPDATE_MS = 30 * 1000;
 const POLL_MS = 2 * 60 * 1000;
 
+// ── Notifications (PermissionsAndroid) ─────────────────────────────────────────
+const requestNotifPermission = async () => {
+  if (Platform.OS !== 'android') return true;
+  if (Platform.Version < 33) return true; // < Android 13
+  try {
+    const res = await PermissionsAndroid.request(
+      PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
+      {
+        title: 'Allow notifications',
+        message:
+          'We use notifications to alert you about new delivery requests.',
+        buttonPositive: 'Allow',
+        buttonNegative: 'Deny',
+      },
+    );
+    return res === PermissionsAndroid.RESULTS.GRANTED;
+  } catch (e) {
+    console.log('POST_NOTIFICATIONS request error:', e?.message);
+    return false;
+  }
+};
+
+const createNotifChannelOnce = async ref => {
+  if (ref.current) return ref.current;
+  try {
+    ref.current = await notifee.createChannel({
+      id: 'orders',
+      name: 'Orders & Alerts',
+      importance: AndroidImportance.HIGH,
+      sound: 'default',
+      vibration: true,
+    });
+  } catch {
+    ref.current = 'orders';
+  }
+  return ref.current;
+};
+// ───────────────────────────────────────────────────────────────────────────────
+
 const HomeMainScreen = () => {
   const [camera, setCamera] = useState([-74.006, 40.7128]);
   const [data, setData] = useState([]);
@@ -56,6 +97,7 @@ const HomeMainScreen = () => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [route, setRoute] = useState(null);
   const [currentStatus, setCurrentStatus] = useState(null);
+
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
 
@@ -66,17 +108,27 @@ const HomeMainScreen = () => {
   const selectedOrderRef = useRef(null);
   const pollInFlightRef = useRef(false);
   const lastCamRef = useRef(null);
-
   const cameraRef = useRef(camera);
   useEffect(() => {
     cameraRef.current = camera;
   }, [camera]);
 
   const locationInFlightRef = useRef(false);
-
   useEffect(() => {
     selectedOrderRef.current = selectedOrder;
   }, [selectedOrder]);
+
+  const channelIdRef = useRef(null);
+
+  // 👇 Track app state to suppress notifications while active
+  const appStateRef = useRef(AppState.currentState);
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', state => {
+      appStateRef.current = state; // 'active' | 'background' | 'inactive' (iOS)
+      // console.log('AppState:', state);
+    });
+    return () => sub.remove();
+  }, []);
 
   // ── Socket setup ──────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -95,17 +147,60 @@ const HomeMainScreen = () => {
       console.log('⚠️ socket connect_error:', err?.message);
     });
 
-    const anyLogger = (event, payload) => {
-      if (selectedOrderRef.current != null) return;
-      const orders = [payload?.message].filter(Boolean);
-      setData(orders);
-      if (orders.length > 0) {
-        setCurrentOrderIndex(0);
-        setShowAcceptOrder(true);
-        setIsAccepted(false);
-      } else {
-        setCurrentOrderIndex(null);
-        setShowAcceptOrder(false);
+    const anyLogger = async (event, payload) => {
+      if (event == 'delivery_create_by_sender') {
+        if (selectedOrderRef.current != null) return;
+        const orders = [payload?.message].filter(Boolean);
+        setData(orders);
+        if (orders.length > 0) {
+          setCurrentOrderIndex(0);
+          setShowAcceptOrder(true);
+          setIsAccepted(false);
+          const isActive = appStateRef.current === 'active';
+          if (Platform.OS === 'android' && !isActive) {
+            try {
+              const channelId = await createNotifChannelOnce(channelIdRef);
+              await notifee.displayNotification({
+                title: 'New delivery request',
+                body: 'You have a new delivery request',
+                android: {
+                  channelId,
+                  smallIcon: 'ic_launcher',
+                  pressAction: {id: 'default', launchActivity: 'default'},
+                },
+                data: {delivery_id: String(payload?.message?.id ?? '')},
+              });
+            } catch (e) {
+              console.log('displayNotification error:', e?.message);
+            }
+          }
+        } else {
+          setCurrentOrderIndex(null);
+          setShowAcceptOrder(false);
+        }
+      } else if (event == 'delivery_update_status_by_sender') {
+        if (selectedOrderRef.current?.id !== payload?.message?.id) return;
+        if (payload?.message?.status === 'cancel') {
+          setRoute(null);
+          setSelectedOrder(null);
+          if (Platform.OS === 'android') {
+            try {
+              const channelId = await createNotifChannelOnce(channelIdRef);
+              await notifee.displayNotification({
+                title: 'Your delivery canceled by sender',
+                body: 'delivery canceled by sender',
+                android: {
+                  channelId,
+                  smallIcon: 'ic_launcher',
+                  pressAction: {id: 'default', launchActivity: 'default'},
+                },
+                data: {delivery_id: String(payload?.message?.id ?? '')},
+              });
+            } catch (e) {
+              console.log('displayNotification error:', e?.message);
+            }
+          }
+        }
       }
     };
     s.onAny(anyLogger);
@@ -127,6 +222,7 @@ const HomeMainScreen = () => {
 
   // ── Bootstrap ────────────────────────────────────────────────────────────────
   useEffect(() => {
+    requestNotifPermission();
     getUserProfile();
     getLastDelivery();
     requestLocationPermission();
@@ -157,30 +253,12 @@ const HomeMainScreen = () => {
 
     if (Platform.OS === 'ios') {
       try {
-        // Check current state to avoid unnecessary prompts
         const status = await check(PERMISSIONS.IOS.LOCATION_WHEN_IN_USE);
         if (status === RESULTS.GRANTED || status === RESULTS.LIMITED) {
-          console.log('iOS when-in-use already granted:', status);
           return;
         }
-        if (status === RESULTS.BLOCKED) {
-          console.log('iOS location permission blocked, opening settings...');
-          // Optionally nudge user to settings
-          // openSettings().catch(() => {});
-          return;
-        }
-
-        const res = await request(PERMISSIONS.IOS.LOCATION_WHEN_IN_USE);
-        if (res === RESULTS.GRANTED || res === RESULTS.LIMITED) {
-          console.log('iOS when-in-use granted:', res);
-          // If you *also* need background location, chain this next line
-          // const always = await request(PERMISSIONS.IOS.LOCATION_ALWAYS);
-          // console.log('iOS always result:', always);
-        } else if (res === RESULTS.BLOCKED) {
-          console.log('iOS location permission blocked after request');
-          // openSettings().catch(() => {});
-        } else {
-          console.log('iOS when-in-use denied:', res);
+        if (status !== RESULTS.BLOCKED) {
+          await request(PERMISSIONS.IOS.LOCATION_WHEN_IN_USE);
         }
       } catch (e) {
         console.warn('iOS permission error:', e);
@@ -458,6 +536,7 @@ const HomeMainScreen = () => {
             <Marker />
           </Mapbox.MarkerView>
         </Mapbox.MapView>
+
         <CustomBottomTab />
       </View>
       {currentOrder?.status === 'created' && showAcceptOrder && !isAccepted && (
@@ -518,4 +597,15 @@ const styles = StyleSheet.create({
     flex: 1,
     width: wp(100),
   },
+  permBtn: {
+    position: 'absolute',
+    right: 12,
+    bottom: 120,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 8,
+    backgroundColor: '#222',
+    opacity: 0.85,
+  },
+  permBtnTxt: {color: '#fff', fontSize: 12, fontWeight: '600'},
 });

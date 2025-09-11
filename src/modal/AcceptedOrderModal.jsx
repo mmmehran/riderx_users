@@ -73,7 +73,8 @@ const AcceptedOrderModal = ({order, changeOrder, loading, insets}) => {
               : order?.receiver_full_name}
           </CustomText>
         </View>
-        <View style={[styles.userContainer, {marginTop: hp(1)}]}>
+        <View
+          style={[styles.userContainer, {marginTop: hp(1), height: hp(20.5)}]}>
           <View style={styles.textContainer}>
             <CustomText style={styles.textInfo}>
               Number:{' '}

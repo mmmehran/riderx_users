@@ -24,7 +24,7 @@ export const authenticationSlice = createSlice({
             token: action.payload?.token,
             user_id: action.payload?.user_id,
             email: action.payload?.email,
-            phone: action.payload?.phone,
+            phone: `${action.payload?.phone?.country_code}${action.payload?.phone?.number}`,
             socketio: action.payload?.socketio,
          };
       },

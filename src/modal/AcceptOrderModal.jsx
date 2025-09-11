@@ -274,6 +274,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginTop: hp(1),
     marginLeft: wp(7),
+    height: hp(22),
   },
   modal: {
     alignItems: 'center',
