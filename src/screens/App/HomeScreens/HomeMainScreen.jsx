@@ -17,7 +17,10 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useNavigation} from '@react-navigation/native';
 import {check, request, PERMISSIONS, RESULTS} from 'react-native-permissions';
 
-import notifee, {AndroidImportance} from '@notifee/react-native';
+import notifee, {
+  AndroidImportance,
+  AuthorizationStatus,
+} from '@notifee/react-native';
 
 import AcceptOrderModal from '../../../modal/AcceptOrderModal';
 import AcceptedOrderModal from '../../../modal/AcceptedOrderModal';
@@ -47,29 +50,55 @@ import colors from '../../../config/colors';
 const LOCATION_UPDATE_MS = 30 * 1000;
 const POLL_MS = 2 * 60 * 1000;
 
-// ── Notifications (PermissionsAndroid) ─────────────────────────────────────────
+/* ──────────────────────────────────────────────────────────────────────────
+   Notifications Permission (Android + iOS)
+   ────────────────────────────────────────────────────────────────────────── */
 const requestNotifPermission = async () => {
-  if (Platform.OS !== 'android') return true;
-  if (Platform.Version < 33) return true; // < Android 13
-  try {
-    const res = await PermissionsAndroid.request(
-      PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
-      {
-        title: 'Allow notifications',
-        message:
-          'We use notifications to alert you about new delivery requests.',
-        buttonPositive: 'Allow',
-        buttonNegative: 'Deny',
-      },
-    );
-    return res === PermissionsAndroid.RESULTS.GRANTED;
-  } catch (e) {
-    console.log('POST_NOTIFICATIONS request error:', e?.message);
-    return false;
+  if (Platform.OS === 'android') {
+    if (Platform.Version < 33) return true; // < Android 13: no runtime prompt
+    try {
+      const res = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
+        {
+          title: 'Allow notifications',
+          message:
+            'We use notifications to alert you about new delivery requests.',
+          buttonPositive: 'Allow',
+          buttonNegative: 'Deny',
+        },
+      );
+      return res === PermissionsAndroid.RESULTS.GRANTED;
+    } catch (e) {
+      console.log('POST_NOTIFICATIONS request error:', e?.message);
+      return false;
+    }
   }
+
+  // iOS: ask via Notifee
+  if (Platform.OS === 'ios') {
+    try {
+      const settings = await notifee.requestPermission({
+        alert: true,
+        badge: true,
+        sound: true,
+        // announcement / criticalAlert need extra entitlements; leave off by default
+      });
+      const status = settings.authorizationStatus;
+      return (
+        status === AuthorizationStatus.AUTHORIZED ||
+        status === AuthorizationStatus.PROVISIONAL
+      );
+    } catch (e) {
+      console.log('iOS notifications permission error:', e?.message);
+      return false;
+    }
+  }
+
+  return true;
 };
 
 const createNotifChannelOnce = async ref => {
+  if (Platform.OS !== 'android') return null; // channels are Android-only
   if (ref.current) return ref.current;
   try {
     ref.current = await notifee.createChannel({
@@ -125,12 +154,14 @@ const HomeMainScreen = () => {
   const appStateRef = useRef(AppState.currentState);
   useEffect(() => {
     const sub = AppState.addEventListener('change', state => {
-      appStateRef.current = state; // 'active' | 'background' | 'inactive' (iOS)
+      appStateRef.current = state; // 'active' | 'background' | 'inactive'
     });
     return () => sub.remove();
   }, []);
 
-  // ── Socket setup ──────────────────────────────────────────────────────────────
+  /* ──────────────────────────────────────────────────────────────────────────
+     Socket setup
+     ────────────────────────────────────────────────────────────────────────── */
   useEffect(() => {
     const rawUrl = user?.socketio;
     const {baseUrl, roomId} = parseSocketUrl(rawUrl);
@@ -161,14 +192,14 @@ const HomeMainScreen = () => {
           setShowAcceptOrder(true);
           setIsAccepted(false);
           const isActive = appStateRef.current === 'active';
-          if (Platform.OS === 'android' && !isActive) {
+          if (!isActive) {
             try {
               const channelId = await createNotifChannelOnce(channelIdRef);
               await notifee.displayNotification({
                 title: 'New delivery request',
                 body: 'You have a new delivery request',
                 android: {
-                  channelId,
+                  channelId: channelId || 'orders',
                   smallIcon: 'ic_launcher',
                   pressAction: {id: 'default', launchActivity: 'default'},
                 },
@@ -187,22 +218,20 @@ const HomeMainScreen = () => {
         if (payload?.message?.status === 'cancel') {
           setRoute(null);
           setSelectedOrder(null);
-          if (Platform.OS === 'android') {
-            try {
-              const channelId = await createNotifChannelOnce(channelIdRef);
-              await notifee.displayNotification({
-                title: 'Delivery canceled by sender',
-                body: 'An delivery was cancelled',
-                android: {
-                  channelId,
-                  smallIcon: 'ic_launcher',
-                  pressAction: {id: 'default', launchActivity: 'default'},
-                },
-                data: {delivery_id: String(payload?.message?.id ?? '')},
-              });
-            } catch (e) {
-              console.log('displayNotification error:', e?.message);
-            }
+          try {
+            const channelId = await createNotifChannelOnce(channelIdRef);
+            await notifee.displayNotification({
+              title: 'Delivery canceled by sender',
+              body: 'A delivery was cancelled',
+              android: {
+                channelId: channelId || 'orders',
+                smallIcon: 'ic_launcher',
+                pressAction: {id: 'default', launchActivity: 'default'},
+              },
+              data: {delivery_id: String(payload?.message?.id ?? '')},
+            });
+          } catch (e) {
+            console.log('displayNotification error:', e?.message);
           }
         }
       }
@@ -220,31 +249,32 @@ const HomeMainScreen = () => {
     };
   }, [user?.socketio]);
 
-  // ── Mapbox key ────────────────────────────────────────────────────────────────
+  /* ──────────────────────────────────────────────────────────────────────────
+     Mapbox
+     ────────────────────────────────────────────────────────────────────────── */
   Mapbox.setAccessToken(
     'pk.eyJ1IjoiYnl0ZWJyaWRnZXIiLCJhIjoiY21kZzVoNnU2MGlhcDJpcGVuNGV1amYxdyJ9.YMqlR9OovVOp-pm9yGK7eA',
   );
 
-  // ── Permissions + Bootstrap (SEQUENTIAL) ─────────────────────────────────────
+  /* ──────────────────────────────────────────────────────────────────────────
+     Permissions + Bootstrap (SEQUENTIAL)
+     ────────────────────────────────────────────────────────────────────────── */
   useEffect(() => {
     let mounted = true;
     (async () => {
-      // 1) Ask LOCATION first
+      // 1) LOCATION first
       await requestLocationPermission();
 
-      // 2) Then NOTIFICATIONS (Android 13+), short delay to avoid OS dialog overlap
-      if (Platform.OS === 'android' && Platform.Version >= 33) {
-        await new Promise(r => setTimeout(r, 250));
-        const notifOk = await requestNotifPermission();
-        if (notifOk) {
-          await createNotifChannelOnce(channelIdRef);
-        }
-      } else {
-        // Pre-13 Android or iOS: safe to create channel anytime
+      // 2) Then NOTIFICATIONS (Android & iOS), small delay to avoid dialog overlap
+      await new Promise(r => setTimeout(r, 200));
+      const notifOk = await requestNotifPermission();
+
+      // 3) Create Android channel (iOS doesn't use channels)
+      if (Platform.OS === 'android' && notifOk) {
         await createNotifChannelOnce(channelIdRef);
       }
 
-      // 3) Finally bootstrap data
+      // 4) Bootstrap data
       if (!mounted) return;
       getUserProfile();
       getLastDelivery();
@@ -255,7 +285,9 @@ const HomeMainScreen = () => {
     };
   }, []);
 
-  // ── Location permission helper (returns boolean) ─────────────────────────────
+  /* ──────────────────────────────────────────────────────────────────────────
+     Location permission helper (returns boolean)
+     ────────────────────────────────────────────────────────────────────────── */
   const requestLocationPermission = async () => {
     if (Platform.OS === 'android') {
       try {
@@ -299,7 +331,9 @@ const HomeMainScreen = () => {
     return false;
   };
 
-  // Smooth camera updates (debounce ~50m)
+  /* ──────────────────────────────────────────────────────────────────────────
+     Map / route / polling / location update (unchanged)
+     ────────────────────────────────────────────────────────────────────────── */
   const centerToUserLocation = location => {
     if (!location?.coords) return;
     const {latitude, longitude} = location.coords;
@@ -316,7 +350,6 @@ const HomeMainScreen = () => {
     }
   };
 
-  // ── API: deliveries & user ───────────────────────────────────────────────────
   const getLastDelivery = async () => {
     const response = await getData(urls.GETLASTDELIVERY);
     if (response?.data?.status) {
@@ -362,7 +395,6 @@ const HomeMainScreen = () => {
     }
   };
 
-  // ── Guard: must select a vehicle first ───────────────────────────────────────
   const requireVehicleOrToast = useCallback(() => {
     if (!config?.selectVehicle?.id) {
       showToast('Select a vehicle first to accept deliveries.', 'error');
@@ -372,7 +404,6 @@ const HomeMainScreen = () => {
     return true;
   }, [config?.selectVehicle?.id]);
 
-  // ── Order actions ────────────────────────────────────────────────────────────
   const handleNextOrder = useCallback(() => {
     if (isAccepted) {
       setShowAcceptOrder(false);
@@ -392,8 +423,7 @@ const HomeMainScreen = () => {
   }, [isAccepted, currentOrderIndex, data.length]);
 
   const handleAcceptOrder = useCallback(() => {
-    if (!requireVehicleOrToast()) return; // 🔒 block without vehicle
-
+    if (!requireVehicleOrToast()) return;
     const order = data[currentOrderIndex];
     if (!order) return;
     setSelectedOrder(order);
@@ -438,7 +468,6 @@ const HomeMainScreen = () => {
   const currentOrder =
     currentOrderIndex !== null ? data[currentOrderIndex] : null;
 
-  // ── Map route for active order ───────────────────────────────────────────────
   const senderCoordinate = selectedOrder
     ? selectedOrder?.status !== 'pickup'
       ? [selectedOrder.sender_longitude, selectedOrder.sender_latitude]
@@ -467,7 +496,6 @@ const HomeMainScreen = () => {
     }
   }, [camera, senderCoordinate]);
 
-  // ── Poll new deliveries (paused when showing modal / accepted) ──────────────
   useEffect(() => {
     if (selectedOrder) return;
     const handler = async () => {
@@ -483,10 +511,8 @@ const HomeMainScreen = () => {
     return () => clearInterval(id);
   }, [selectedOrder, showAcceptOrder]);
 
-  // ── Periodic location update (only when a vehicle is selected) ──────────────
   const postLocation = useCallback(async () => {
     if (!config?.selectVehicle?.id) return;
-
     if (locationInFlightRef.current) return;
     const cam = cameraRef.current;
     if (!Array.isArray(cam) || cam.length < 2) return;
@@ -499,7 +525,7 @@ const HomeMainScreen = () => {
         vehicle_id: config?.selectVehicle?.id,
       });
     } catch (e) {
-      // optionally toast/log
+      // optionally log
     } finally {
       locationInFlightRef.current = false;
     }
@@ -516,7 +542,6 @@ const HomeMainScreen = () => {
 
   const userCoordMemo = useMemo(() => camera, [camera[0], camera[1]]);
 
-  // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <>
       {socketConnected && <View style={styles.socketStatusContainer} />}
@@ -579,7 +604,7 @@ const HomeMainScreen = () => {
           isVisible={showAcceptOrder}
           order={currentOrder}
           onClose={handleNextOrder}
-          onAccept={handleAcceptOrder} // checks vehicle inside
+          onAccept={handleAcceptOrder}
           userCoord={userCoordMemo}
         />
       )}
@@ -629,11 +654,7 @@ const HomeMainScreen = () => {
 export default HomeMainScreen;
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+  container: {flex: 1, justifyContent: 'center', alignItems: 'center'},
   socketStatusContainer: {
     position: 'absolute',
     top: hp(3),
@@ -644,10 +665,7 @@ const styles = StyleSheet.create({
     zIndex: 9999,
     borderRadius: wp(20),
   },
-  map: {
-    flex: 1,
-    width: wp(100),
-  },
+  map: {flex: 1, width: wp(100)},
   permBtn: {
     position: 'absolute',
     right: 12,
