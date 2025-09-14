@@ -72,7 +72,7 @@ const ConfirmActionModal = ({
             style={[
               styles.btn,
               styles.btnSolid,
-              pin?.length !== 5 && styles.btnDisabled,
+              securePinShow && pin?.length !== 5 && styles.btnDisabled,
             ]}
             onPress={() => {
               if (securePinShow) {
@@ -81,7 +81,7 @@ const ConfirmActionModal = ({
                 onConfirm();
               }
             }}
-            disabled={pin?.length !== 5}
+            disabled={securePinShow && pin?.length !== 5}
             activeOpacity={0.8}>
             {loading ? (
               <ActivityIndicator color={WHITE} />
