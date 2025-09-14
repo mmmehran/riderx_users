@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useCallback, useState} from 'react';
 import {
   View,
   StyleSheet,
@@ -11,6 +11,7 @@ import {
 } from 'react-native-responsive-screen';
 import {useTranslation} from 'react-i18next';
 import {KeyboardAwareScrollView} from 'react-native-keyboard-aware-scroll-view';
+import {useFocusEffect} from '@react-navigation/core';
 
 import CustomScreen from '../../components/common/CustomScreen';
 import colors from '../../config/colors';
@@ -45,9 +46,11 @@ const Report = props => {
     setLoading(false);
   };
 
-  useEffect(() => {
-    getWallet();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      getWallet();
+    }, []),
+  );
 
   return (
     <CustomScreen>
