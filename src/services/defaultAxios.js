@@ -69,7 +69,6 @@ export const axiosSetup = (axiosInstance) => {
 };
 
 
-setConfig();
 addAuthorization();
 axiosSetup(instance);
 axiosSetup(instanceWithAuthorization);

@@ -8,26 +8,35 @@ import { useNavigation } from "@react-navigation/native";
 import SplashScreen from '../screens/Splash/Splash';
 import MainNavigator from './MainNavigator';
 import useDidMountEffect from '../utils/customHooks/UseDidMountEffect';
-import { selectAuthenticated } from '../redux/reducers/authenticationReducer';
-
+import {  authenticated} from '../redux/reducers/authenticationReducer';
+import {setConfig,setConfigTest} from '../services/defaultAxios'
 import routes from "./routes";
 
 const Stack = createNativeStackNavigator();
 
 const BaseNavigator = () => {
-  const authenticated = useSelector(selectAuthenticated);
+  const user = useSelector(authenticated);
   const navigation = useNavigation();
 
+
+
+
   useDidMountEffect(() => {
-    authenticated
+    user?.authenticated
       ? navigation.navigate(routes.DRAWERNAVIGATOR)
       : navigation.navigate(routes.AUTHNAVIGATOR);
-  }, [authenticated]);
+  }, [user?.authenticated]);
 
   useEffect(() => {
+    if( user?.authenticated && /^[^@\s]+@bb\.com$/i.test(user?.email)){
+        setConfigTest()
+    }else{
+        setConfig()
+    }
+
     const apply = (state) => {
       const isActive = state === "active";
-      IdleTimerManager.setIdleTimerDisabled(Boolean(authenticated) && isActive);
+      IdleTimerManager.setIdleTimerDisabled(Boolean(user?.authenticated) && isActive);
     };
 
     apply(AppState.currentState);
@@ -37,7 +46,7 @@ const BaseNavigator = () => {
       sub.remove();
       IdleTimerManager.setIdleTimerDisabled(false);
     };
-  }, [authenticated]);
+  }, [user?.authenticated]);
 
   return (
     <Stack.Navigator
