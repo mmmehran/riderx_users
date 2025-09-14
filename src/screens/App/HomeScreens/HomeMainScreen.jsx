@@ -55,7 +55,7 @@ const POLL_MS = 2 * 60 * 1000;
    ────────────────────────────────────────────────────────────────────────── */
 const requestNotifPermission = async () => {
   if (Platform.OS === 'android') {
-    if (Platform.Version < 33) return true; // < Android 13: no runtime prompt
+    if (Platform.Version < 33) return true; // < Android 13
     try {
       const res = await PermissionsAndroid.request(
         PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
@@ -74,27 +74,22 @@ const requestNotifPermission = async () => {
     }
   }
 
-  // iOS: ask via Notifee
-  if (Platform.OS === 'ios') {
-    try {
-      const settings = await notifee.requestPermission({
-        alert: true,
-        badge: true,
-        sound: true,
-        // announcement / criticalAlert need extra entitlements; leave off by default
-      });
-      const status = settings.authorizationStatus;
-      return (
-        status === AuthorizationStatus.AUTHORIZED ||
-        status === AuthorizationStatus.PROVISIONAL
-      );
-    } catch (e) {
-      console.log('iOS notifications permission error:', e?.message);
-      return false;
-    }
+  // iOS via Notifee
+  try {
+    const settings = await notifee.requestPermission({
+      alert: true,
+      badge: true,
+      sound: true,
+    });
+    const status = settings.authorizationStatus;
+    return (
+      status === AuthorizationStatus.AUTHORIZED ||
+      status === AuthorizationStatus.PROVISIONAL
+    );
+  } catch (e) {
+    console.log('iOS notifications permission error:', e?.message);
+    return false;
   }
-
-  return true;
 };
 
 const createNotifChannelOnce = async ref => {
@@ -160,6 +155,44 @@ const HomeMainScreen = () => {
   }, []);
 
   /* ──────────────────────────────────────────────────────────────────────────
+     Cross-platform notification helper
+     ────────────────────────────────────────────────────────────────────────── */
+  const showLocalNotification = async ({title, body, data}) => {
+    try {
+      if (Platform.OS === 'android') {
+        const channelId = await createNotifChannelOnce(channelIdRef);
+        await notifee.displayNotification({
+          title,
+          body,
+          data,
+          android: {
+            channelId: channelId || 'orders',
+            smallIcon: 'ic_launcher',
+            pressAction: {id: 'default', launchActivity: 'default'},
+          },
+        });
+      } else {
+        await notifee.displayNotification({
+          title,
+          body,
+          data,
+          ios: {
+            sound: 'default',
+            foregroundPresentationOptions: {
+              alert: true,
+              sound: true,
+              badge: true,
+            },
+          },
+          pressAction: {id: 'default'},
+        });
+      }
+    } catch (e) {
+      console.log('showLocalNotification error:', e?.message);
+    }
+  };
+
+  /* ──────────────────────────────────────────────────────────────────────────
      Socket setup
      ────────────────────────────────────────────────────────────────────────── */
   useEffect(() => {
@@ -191,23 +224,14 @@ const HomeMainScreen = () => {
           setCurrentOrderIndex(0);
           setShowAcceptOrder(true);
           setIsAccepted(false);
+
           const isActive = appStateRef.current === 'active';
           if (!isActive) {
-            try {
-              const channelId = await createNotifChannelOnce(channelIdRef);
-              await notifee.displayNotification({
-                title: 'New delivery request',
-                body: 'You have a new delivery request',
-                android: {
-                  channelId: channelId || 'orders',
-                  smallIcon: 'ic_launcher',
-                  pressAction: {id: 'default', launchActivity: 'default'},
-                },
-                data: {delivery_id: String(payload?.message?.id ?? '')},
-              });
-            } catch (e) {
-              console.log('displayNotification error:', e?.message);
-            }
+            await showLocalNotification({
+              title: 'New delivery request',
+              body: 'You have a new delivery request',
+              data: {delivery_id: String(payload?.message?.id ?? '')},
+            });
           }
         } else {
           setCurrentOrderIndex(null);
@@ -218,21 +242,11 @@ const HomeMainScreen = () => {
         if (payload?.message?.status === 'cancel') {
           setRoute(null);
           setSelectedOrder(null);
-          try {
-            const channelId = await createNotifChannelOnce(channelIdRef);
-            await notifee.displayNotification({
-              title: 'Delivery canceled by sender',
-              body: 'A delivery was cancelled',
-              android: {
-                channelId: channelId || 'orders',
-                smallIcon: 'ic_launcher',
-                pressAction: {id: 'default', launchActivity: 'default'},
-              },
-              data: {delivery_id: String(payload?.message?.id ?? '')},
-            });
-          } catch (e) {
-            console.log('displayNotification error:', e?.message);
-          }
+          await showLocalNotification({
+            title: 'Delivery canceled by sender',
+            body: 'A delivery was cancelled',
+            data: {delivery_id: String(payload?.message?.id ?? '')},
+          });
         }
       }
     };
@@ -286,7 +300,7 @@ const HomeMainScreen = () => {
   }, []);
 
   /* ──────────────────────────────────────────────────────────────────────────
-     Location permission helper (returns boolean)
+     Location permission helper
      ────────────────────────────────────────────────────────────────────────── */
   const requestLocationPermission = async () => {
     if (Platform.OS === 'android') {
