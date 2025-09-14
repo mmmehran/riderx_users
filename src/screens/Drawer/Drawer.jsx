@@ -19,7 +19,7 @@ import {
 import {sendData} from '../../services/common.service';
 import urls from '../../services/urls.json';
 import errorHandler from '../../utils/errorHandler';
-import {selectConfig} from '../../redux/reducers/configReducer';
+import {selectConfig, logouConfig} from '../../redux/reducers/configReducer';
 
 const LoginEmail = props => {
   const {t} = useTranslation();
@@ -69,7 +69,10 @@ const LoginEmail = props => {
     {
       id: 6,
       name: t('logOut'),
-      onPress: () => dispatch(logout()),
+      onPress: () => {
+        dispatch(logout());
+        dispatch(logouConfig());
+      },
     },
   ];
 

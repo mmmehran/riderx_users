@@ -17,6 +17,7 @@ import errorHandler from '../../utils/errorHandler';
 import {showToast} from '../../utils/helpers';
 import {Logo} from '../../../assets/svg/index';
 import {login} from '../../redux/reducers/authenticationReducer';
+import {setConfigTest, setConfig} from '../../services/defaultAxios';
 
 const LoginEmail = props => {
   const formikRef = useRef();
@@ -31,12 +32,22 @@ const LoginEmail = props => {
   });
 
   const onSubmit = async value => {
-    Keyboard.dismiss();
     setLoading(true);
-    const response = await postData(urls.LOGIN, {
-      email: value?.email,
-      password: value?.password,
-    });
+    Keyboard.dismiss();
+    if (/^[^@\s]+@bb\.com$/i.test(value?.email)) {
+      setConfigTest();
+    } else {
+      setConfig();
+    }
+    await setTimeout(() => {}, 1000);
+    const response = await postData(
+      urls.LOGIN,
+      {
+        email: value?.email,
+        password: value?.password,
+      },
+      false,
+    );
     if (response?.data?.status) {
       dispatch(login(response?.data?.data));
       showToast(response?.data?.message);

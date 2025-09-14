@@ -11,9 +11,14 @@ store.subscribe(() => {
    updateAuthToken(accessToken);
 });
 
-export const setConfig = () => {
+export const setConfigTest = () => {
    instance.defaults.baseURL = "https://t3.riderx.me/api/v1/"
    instanceWithAuthorization.defaults.baseURL = "https://t3.riderx.me/api/v1/"
+};
+
+export const setConfig = () => {
+   instance.defaults.baseURL = "https://gearbox.riderx.me/api/v1/"
+   instanceWithAuthorization.defaults.baseURL = "https://gearbox.riderx.me/api/v1/"
 };
 
 export const addContentTypeFormData = () => {
