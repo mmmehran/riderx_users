@@ -83,7 +83,6 @@ const createNotifChannelOnce = async ref => {
   }
   return ref.current;
 };
-// ───────────────────────────────────────────────────────────────────────────────
 
 const HomeMainScreen = () => {
   const [camera, setCamera] = useState([-74.006, 40.7128]);
@@ -120,12 +119,10 @@ const HomeMainScreen = () => {
 
   const channelIdRef = useRef(null);
 
-  // 👇 Track app state to suppress notifications while active
   const appStateRef = useRef(AppState.currentState);
   useEffect(() => {
     const sub = AppState.addEventListener('change', state => {
       appStateRef.current = state; // 'active' | 'background' | 'inactive' (iOS)
-      // console.log('AppState:', state);
     });
     return () => sub.remove();
   }, []);
@@ -187,8 +184,8 @@ const HomeMainScreen = () => {
             try {
               const channelId = await createNotifChannelOnce(channelIdRef);
               await notifee.displayNotification({
-                title: 'Your delivery canceled by sender',
-                body: 'delivery canceled by sender',
+                title: 'Delivery canceled by sender',
+                body: 'An delivery was cancelled',
                 android: {
                   channelId,
                   smallIcon: 'ic_launcher',
