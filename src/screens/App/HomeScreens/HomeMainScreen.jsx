@@ -225,14 +225,37 @@ const HomeMainScreen = () => {
     'pk.eyJ1IjoiYnl0ZWJyaWRnZXIiLCJhIjoiY21kZzVoNnU2MGlhcDJpcGVuNGV1amYxdyJ9.YMqlR9OovVOp-pm9yGK7eA',
   );
 
-  // ── Bootstrap ────────────────────────────────────────────────────────────────
+  // ── Permissions + Bootstrap (SEQUENTIAL) ─────────────────────────────────────
   useEffect(() => {
-    requestNotifPermission();
-    getUserProfile();
-    getLastDelivery();
-    requestLocationPermission();
+    let mounted = true;
+    (async () => {
+      // 1) Ask LOCATION first
+      await requestLocationPermission();
+
+      // 2) Then NOTIFICATIONS (Android 13+), short delay to avoid OS dialog overlap
+      if (Platform.OS === 'android' && Platform.Version >= 33) {
+        await new Promise(r => setTimeout(r, 250));
+        const notifOk = await requestNotifPermission();
+        if (notifOk) {
+          await createNotifChannelOnce(channelIdRef);
+        }
+      } else {
+        // Pre-13 Android or iOS: safe to create channel anytime
+        await createNotifChannelOnce(channelIdRef);
+      }
+
+      // 3) Finally bootstrap data
+      if (!mounted) return;
+      getUserProfile();
+      getLastDelivery();
+    })();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
+  // ── Location permission helper (returns boolean) ─────────────────────────────
   const requestLocationPermission = async () => {
     if (Platform.OS === 'android') {
       try {
@@ -245,30 +268,35 @@ const HomeMainScreen = () => {
             PermissionsAndroid.RESULTS.GRANTED ||
           granted['android.permission.ACCESS_COARSE_LOCATION'] ===
             PermissionsAndroid.RESULTS.GRANTED;
-        if (!ok) {
-          console.log('Android location permission denied');
-        } else {
-          console.log('Android location permission granted');
-        }
+        console.log(
+          ok
+            ? 'Android location permission granted'
+            : 'Android location permission denied',
+        );
+        return ok;
       } catch (err) {
         console.warn(err);
+        return false;
       }
-      return;
     }
 
     if (Platform.OS === 'ios') {
       try {
         const status = await check(PERMISSIONS.IOS.LOCATION_WHEN_IN_USE);
-        if (status === RESULTS.GRANTED || status === RESULTS.LIMITED) {
-          return;
-        }
+        if (status === RESULTS.GRANTED || status === RESULTS.LIMITED)
+          return true;
         if (status !== RESULTS.BLOCKED) {
-          await request(PERMISSIONS.IOS.LOCATION_WHEN_IN_USE);
+          const res = await request(PERMISSIONS.IOS.LOCATION_WHEN_IN_USE);
+          return res === RESULTS.GRANTED || res === RESULTS.LIMITED;
         }
+        return false;
       } catch (e) {
         console.warn('iOS permission error:', e);
+        return false;
       }
     }
+
+    return false;
   };
 
   // Smooth camera updates (debounce ~50m)
@@ -457,7 +485,6 @@ const HomeMainScreen = () => {
 
   // ── Periodic location update (only when a vehicle is selected) ──────────────
   const postLocation = useCallback(async () => {
-    // 🚫 Skip if no vehicle chosen
     if (!config?.selectVehicle?.id) return;
 
     if (locationInFlightRef.current) return;
@@ -492,7 +519,7 @@ const HomeMainScreen = () => {
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <>
-      {socketConnected && <View style={styles.socketStatusContainer}></View>}
+      {socketConnected && <View style={styles.socketStatusContainer} />}
       <View
         style={[
           styles.container,
@@ -581,7 +608,7 @@ const HomeMainScreen = () => {
           setCancelModalVisible(!cancelModalVisible);
         }}
         onClose={() => setCancelModalVisible(!cancelModalVisible)}
-      />{' '}
+      />
       <ConfirmModal
         securePinShow={securePinShow}
         isVisible={confirmModalVisible}
