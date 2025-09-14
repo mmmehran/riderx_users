@@ -10,7 +10,7 @@ export const errorHandler = async (error) => {
  
    if (error?.response?.status == 401) {
       showError("Please login or signup again");
-      // store.dispatch(logout())
+       store.dispatch(logout())
    }
    if (error.message === "Network Error") {
       showError("Network connection error!");
