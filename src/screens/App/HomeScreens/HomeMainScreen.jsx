@@ -42,6 +42,7 @@ import {connectSocket, on} from '../../../services/socket';
 import {selectConfig} from '../../../redux/reducers/configReducer';
 import ConfirmModal from '../../../modal/ConfirmModal';
 import routes from '../../../navigation/routes';
+import colors from '../../../config/colors';
 
 const LOCATION_UPDATE_MS = 30 * 1000;
 const POLL_MS = 2 * 60 * 1000;
@@ -96,6 +97,7 @@ const HomeMainScreen = () => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [route, setRoute] = useState(null);
   const [currentStatus, setCurrentStatus] = useState(null);
+  const [socketConnected, setSocketConnected] = useState(false);
 
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
@@ -131,16 +133,20 @@ const HomeMainScreen = () => {
   useEffect(() => {
     const rawUrl = user?.socketio;
     const {baseUrl, roomId} = parseSocketUrl(rawUrl);
+    setSocketConnected(false);
 
     const s = connectSocket({baseUrl, roomId});
 
     const offConnect = on('connect', () => {
+      setSocketConnected(true);
       console.log('✅ socket connected:', s.id, 'roomId=', roomId);
     });
     const offDisconnect = on('disconnect', reason => {
+      setSocketConnected(false);
       console.log('❌ socket disconnected:', reason);
     });
     const offError = on('connect_error', err => {
+      setSocketConnected(false);
       console.log('⚠️ socket connect_error:', err?.message);
     });
 
@@ -203,6 +209,7 @@ const HomeMainScreen = () => {
     s.onAny(anyLogger);
 
     return () => {
+      setSocketConnected(false);
       offConnect && offConnect();
       offDisconnect && offDisconnect();
       offError && offError();
@@ -484,6 +491,7 @@ const HomeMainScreen = () => {
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <>
+      {socketConnected && <View style={styles.socketStatusContainer}></View>}
       <View
         style={[
           styles.container,
@@ -589,6 +597,16 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  socketStatusContainer: {
+    position: 'absolute',
+    top: hp(3),
+    left: wp(7),
+    width: wp(3),
+    height: wp(3),
+    backgroundColor: colors.success,
+    zIndex: 9999,
+    borderRadius: wp(20),
   },
   map: {
     flex: 1,

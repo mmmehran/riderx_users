@@ -8,7 +8,8 @@ const initialStateObject = {
    email:null,
    phone:null,
    socketio:null,
-   userProfile:null
+   userProfile:null,
+   profile_image:null,
 };
 
 export const selectAuthenticated = (state) => state.auth.authenticated;
@@ -26,6 +27,7 @@ export const authenticationSlice = createSlice({
             email: action.payload?.email,
             phone: `${action.payload?.phone?.country_code}${action.payload?.phone?.number}`,
             socketio: action.payload?.socketio,
+            profile_image: action.payload?.profile_image,
          };
       },
       setUserProfile: (state, action) => {

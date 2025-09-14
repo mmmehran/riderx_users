@@ -166,7 +166,7 @@ const AcceptOrderModal = ({
 
         <View style={styles.starContainer}>
           <StarIcon />
-          <CustomText style={styles.textStar}>-</CustomText>
+          <CustomText style={styles.textStar}>{order?.id}</CustomText>
         </View>
 
         <View style={styles.line} />

@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import {View, StyleSheet, TouchableOpacity} from 'react-native';
+import {View, StyleSheet, TouchableOpacity, Image} from 'react-native';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
@@ -77,7 +77,15 @@ const LoginEmail = props => {
     <CustomScreen>
       <View style={styles.container}>
         <View style={styles.profileContainer}>
-          <View style={styles.imageContainer}></View>
+          <View style={styles.imageContainer}>
+            <Image
+              source={{uri: user?.profile_image}}
+              style={{
+                width: wp(20),
+                height: wp(20),
+              }}
+            />
+          </View>
           <View style={styles.textContainer}>
             <CustomText numberOfLines={1} style={[styles.text]}>
               {user?.userProfile?.first_name} {user?.userProfile?.last_name}{' '}
@@ -164,6 +172,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.grayLight,
     borderRadius: wp(50),
     marginRight: wp(4),
+    overflow: 'hidden',
   },
   container: {
     overflow: 'hidden',
