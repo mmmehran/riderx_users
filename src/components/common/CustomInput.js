@@ -11,6 +11,7 @@ const CustomInput = ({
     placeholder,
     stylesInput,
     openKeyboard,
+    inputMainStyle,
     disable,
     icon,
     password = false,
@@ -25,7 +26,7 @@ const CustomInput = ({
                 {icon}
                 <TextInput
                     ref={inputRef}
-                    style={[styles.input]}
+                    style={[styles.input,inputMainStyle]}
                     {...otherprops}
                     onChangeText={onChangeText}
                     placeholderTextColor={colors.textLight}

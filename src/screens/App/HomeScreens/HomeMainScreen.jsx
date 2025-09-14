@@ -98,6 +98,7 @@ const HomeMainScreen = () => {
   const [route, setRoute] = useState(null);
   const [currentStatus, setCurrentStatus] = useState(null);
   const [socketConnected, setSocketConnected] = useState(false);
+  const [securePinShow, setSecurePinShow] = useState(false);
 
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
@@ -374,13 +375,13 @@ const HomeMainScreen = () => {
     setCurrentOrderIndex(null);
   }, [data, currentOrderIndex, requireVehicleOrToast]);
 
-  const changeStatusOrderAccept = async (order, status) => {
+  const changeStatusOrderAccept = async (order, status, pin) => {
     status !== 'cancel' && setLoadingChangeStatus(true);
     const response = await sendData(urls.CHANGESTATUSORDER, {
       vehicle_id: config?.selectVehicle?.id,
       delivery_id: order?.id,
       status: status,
-      secure_pin: null,
+      secure_pin: pin ? pin : null,
     });
 
     if (response?.data?.status) {
@@ -558,11 +559,14 @@ const HomeMainScreen = () => {
       {selectedOrder && (
         <AcceptedOrderModal
           insets={insets}
-          changeOrder={status => {
+          changeOrder={(status, pin) => {
             setCurrentStatus(status);
             if (status === 'cancel' && selectedOrder?.status == 'pickup') {
               setCancelModalVisible(!cancelModalVisible);
             } else {
+              if (pin) {
+                setSecurePinShow(true);
+              }
               setConfirmModalVisible(!confirmModalVisible);
             }
           }}
@@ -579,11 +583,16 @@ const HomeMainScreen = () => {
         onClose={() => setCancelModalVisible(!cancelModalVisible)}
       />{' '}
       <ConfirmModal
+        securePinShow={securePinShow}
         isVisible={confirmModalVisible}
-        onCancel={() => setConfirmModalVisible(!confirmModalVisible)}
-        onConfirm={() => {
-          changeStatusOrderAccept(selectedOrder, currentStatus);
+        onCancel={() => {
           setConfirmModalVisible(!confirmModalVisible);
+          setSecurePinShow(false);
+        }}
+        onConfirm={pin => {
+          changeStatusOrderAccept(selectedOrder, currentStatus, pin);
+          setConfirmModalVisible(!confirmModalVisible);
+          setSecurePinShow(false);
         }}
       />
     </>

@@ -1,5 +1,5 @@
 /* eslint-disable prettier/prettier */
-import React, {memo} from 'react';
+import React, {memo, useState} from 'react';
 import {
   StyleSheet,
   View,
@@ -14,6 +14,7 @@ import {
 import CustomModal from '../components/common/CustomModal'; // same wrapper you already use
 import CustomText from '../components/common/CustomText';
 import colors from '../config/colors';
+import CustomInput from '../components/common/CustomInput';
 
 const PRIMARY = colors?.primary || '#0B5FFF';
 const DANGER = colors?.danger || '#D32F2F';
@@ -32,7 +33,9 @@ const ConfirmActionModal = ({
   onCancel,
   danger = false,
   loading = false,
+  securePinShow,
 }) => {
+  const [pin, setPin] = useState(null);
   return (
     <CustomModal
       isVisible={isVisible}
@@ -42,7 +45,20 @@ const ConfirmActionModal = ({
       <View style={styles.container}>
         <CustomText style={styles.title}>{title}</CustomText>
         {!!message && <CustomText style={styles.message}>{message}</CustomText>}
-
+        {securePinShow && (
+          <View>
+            <CustomText style={[styles.title, {marginTop: hp(2)}]}>
+              Enter secure pin :
+            </CustomText>
+            <CustomInput
+              onChangeText={text => setPin(text)}
+              stylesInput={styles.input}
+              inputMainStyle={{
+                width: wp(50),
+                textAlign: 'center',
+              }}></CustomInput>
+          </View>
+        )}
         <View style={styles.row}>
           <TouchableOpacity
             style={[styles.btn, styles.btnGhost]}
@@ -53,9 +69,19 @@ const ConfirmActionModal = ({
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.btn, styles.btnSolid, loading && styles.btnDisabled]}
-            onPress={onConfirm}
-            disabled={loading}
+            style={[
+              styles.btn,
+              styles.btnSolid,
+              pin?.length !== 5 && styles.btnDisabled,
+            ]}
+            onPress={() => {
+              if (securePinShow) {
+                onConfirm(pin);
+              } else {
+                onConfirm();
+              }
+            }}
+            disabled={pin?.length !== 5}
             activeOpacity={0.8}>
             {loading ? (
               <ActivityIndicator color={WHITE} />
@@ -79,6 +105,12 @@ const styles = StyleSheet.create({
     paddingVertical: hp(2.2),
     paddingHorizontal: wp(5),
     alignItems: 'center',
+  },
+  input: {
+    width: wp(60),
+    height: hp(4),
+    marginTop: hp(1),
+    marginBottom: hp(2),
   },
   title: {
     fontSize: wp(4),

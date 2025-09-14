@@ -146,7 +146,7 @@ const AcceptedOrderModal = ({order, changeOrder, loading, insets}) => {
         <View style={styles.rowButton}>
           {order?.status == 'accepted' && (
             <TouchableOpacity
-              onPress={() => changeOrder('pickup')}
+              onPress={() => changeOrder('pickup', false)}
               style={styles.buttonPick}>
               <CustomText style={styles.textPick}>Picked Up</CustomText>
               {loading && <ActivityIndicator color={'#000'} />}
@@ -154,14 +154,20 @@ const AcceptedOrderModal = ({order, changeOrder, loading, insets}) => {
           )}
           {order?.status == 'pickup' && (
             <TouchableOpacity
-              onPress={() => changeOrder('completed')}
+              onPress={() => {
+                if (order?.is_secure) {
+                  changeOrder('completed', true);
+                } else {
+                  changeOrder('completed', false);
+                }
+              }}
               style={styles.buttonPick}>
               <CustomText style={styles.textPick}>Drop Off</CustomText>
               {loading && <ActivityIndicator color={'#000'} />}
             </TouchableOpacity>
           )}
           <TouchableOpacity
-            onPress={() => changeOrder('cancel')}
+            onPress={() => changeOrder('cancel', false)}
             style={[styles.buttonPick, styles.cancelButton]}>
             <CustomText
               style={[styles.textPick, {color: colors.white, marginLeft: 0}]}>
