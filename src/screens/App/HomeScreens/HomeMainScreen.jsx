@@ -47,6 +47,7 @@ import {
 import {connectSocket, on} from '../../../services/socket';
 import {selectConfig} from '../../../redux/reducers/configReducer';
 import ConfirmModal from '../../../modal/ConfirmModal';
+import ConfirmCancelDeliveryModal from '../../../modal/ConfirmCancelDeliveryModal';
 import routes from '../../../navigation/routes';
 import colors from '../../../config/colors';
 
@@ -118,6 +119,8 @@ const HomeMainScreen = () => {
   const [currentOrderIndex, setCurrentOrderIndex] = useState(null);
   const [showAcceptOrder, setShowAcceptOrder] = useState(false);
   const [confirmModalVisible, setConfirmModalVisible] = useState(false);
+  const [confirmCancelModalVisible, setConfirmCancelModalVisible] =
+    useState(false);
   const [cancelModalVisible, setCancelModalVisible] = useState(false);
   const [loadingChangeStatus, setLoadingChangeStatus] = useState(false);
   const [isAccepted, setIsAccepted] = useState(false);
@@ -249,6 +252,7 @@ const HomeMainScreen = () => {
         if (payload?.message?.status === 'cancel') {
           setRoute(null);
           setSelectedOrder(null);
+          setConfirmCancelModalVisible(!confirmCancelModalVisible);
           await showLocalNotification({
             title: 'Delivery canceled by sender',
             body: 'A delivery was cancelled',
@@ -711,6 +715,15 @@ const HomeMainScreen = () => {
           changeStatusOrderAccept(selectedOrder, currentStatus, pin);
           setConfirmModalVisible(!confirmModalVisible);
           setSecurePinShow(false);
+        }}
+      />
+      <ConfirmCancelDeliveryModal
+        isVisible={confirmCancelModalVisible}
+        onCancel={() => {
+          setConfirmCancelModalVisible(!confirmCancelModalVisible);
+        }}
+        onConfirm={() => {
+          setConfirmCancelModalVisible(!confirmCancelModalVisible);
         }}
       />
     </>
