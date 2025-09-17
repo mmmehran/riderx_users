@@ -50,6 +50,7 @@ import ConfirmModal from '../../../modal/ConfirmModal';
 import ConfirmCancelDeliveryModal from '../../../modal/ConfirmCancelDeliveryModal';
 import routes from '../../../navigation/routes';
 import colors from '../../../config/colors';
+import {playDing} from '../../../utils/sounds';
 
 const LOCATION_UPDATE_MS = 30 * 1000;
 const POLL_MS = 2 * 60 * 1000;
@@ -231,11 +232,14 @@ const HomeMainScreen = () => {
         const orders = [payload?.message].filter(Boolean);
         setData(orders);
         if (orders.length > 0) {
+          const isActive = appStateRef.current === 'active';
           setCurrentOrderIndex(0);
           setShowAcceptOrder(true);
           setIsAccepted(false);
+          if (isActive) {
+            playDing();
+          }
 
-          const isActive = appStateRef.current === 'active';
           if (!isActive) {
             await showLocalNotification({
               title: 'New delivery request',

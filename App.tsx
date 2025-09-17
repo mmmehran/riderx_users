@@ -1,4 +1,4 @@
-import React, {useState, useMemo} from 'react';
+import React, {useState, useMemo,useEffect} from 'react';
 import {NavigationContainer} from '@react-navigation/native';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
 import Toast from 'react-native-toast-message';
@@ -13,9 +13,12 @@ import toastConfig from './src/config/toastConfig';
 import AppContext from './src/components/common/AppContext';
 import store, {persistor} from './src/redux/store';
 import i18n from './src/utils/i18n';
+import { initDing } from './src/utils/sounds';
 
 const App = () => {
   const [userDevice, setUserDevice] = useState([]);
+
+    useEffect(() => { initDing(); }, []);
 
   Sentry.init({
     dsn: 'https://803479b298ab176f5d18e98120497989@o4504479126192128.ingest.us.sentry.io/4509932668518400',
