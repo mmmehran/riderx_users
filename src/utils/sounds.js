@@ -7,26 +7,19 @@ let isLoaded = false;
 
 // Keep audio mixed with other apps and audible in silent switch (iOS)
 export function initDing() {
-  // iOS categories: Ambient keeps other audio; Playback ignores silent switch
   if (Platform.OS === 'ios') {
-    Sound.setCategory('Playback', true); // true = mixWithOthers
-  } else {
-    // Android categories: 'Ambient' avoids ducking other audio
-    Sound.setCategory('Ambient', true);
-  }
-
-  ding = new Sound(
-    // On Android use the "res/raw" name without extension; on iOS use file name in bundle
-    Platform.OS === 'android' ? 'ding' : 'ding.mp3',
-    Platform.OS === 'android' ? Sound.MAIN_BUNDLE : undefined,
-    (err) => {
-      if (err) {
-        console.warn('ding load error', err);
-        return;
-      }
+    Sound.setCategory('Playback', true); // play even with mute switch; mix with others
+    ding = new Sound('ding.mp3', Sound.MAIN_BUNDLE, (err) => {
+      if (err) { console.warn('ding load error (iOS)', err); return; }
       isLoaded = true;
-    }
-  );
+    });
+  } else {
+    Sound.setCategory('Ambient', true);
+    ding = new Sound('ding', Sound.MAIN_BUNDLE, (err) => {
+      if (err) { console.warn('ding load error (Android)', err); return; }
+      isLoaded = true;
+    });
+  }
 }
 
 // Replay from start even if still playing
