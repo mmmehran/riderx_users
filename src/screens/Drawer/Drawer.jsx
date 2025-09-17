@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useCallback, useState} from 'react';
 import {View, StyleSheet, TouchableOpacity, Image} from 'react-native';
 import {
   widthPercentageToDP as wp,
@@ -6,27 +6,52 @@ import {
 } from 'react-native-responsive-screen';
 import {useTranslation} from 'react-i18next';
 import {useDispatch, useSelector} from 'react-redux';
+import {useFocusEffect} from '@react-navigation/core';
 
 import CustomScreen from '../../components/common/CustomScreen';
 import routes from '../../navigation/routes';
 import colors from '../../config/colors';
 import CustomText from '../../components/common/CustomText';
-import {Star} from '../../../assets/svg/index';
 import {
   logout,
   authenticated,
 } from '../../redux/reducers/authenticationReducer';
-import {sendData} from '../../services/common.service';
+import {sendData, getData} from '../../services/common.service';
 import urls from '../../services/urls.json';
 import errorHandler from '../../utils/errorHandler';
-import {selectConfig, logouConfig} from '../../redux/reducers/configReducer';
+import {
+  selectConfig,
+  logouConfig,
+  setSelectVehicle,
+} from '../../redux/reducers/configReducer';
 
 const LoginEmail = props => {
   const {t} = useTranslation();
   const dispatch = useDispatch();
   const user = useSelector(authenticated);
   const [vehicleStatus, setVehicleStatus] = useState(false);
+
   const config = useSelector(selectConfig);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (config?.selectVehicle) {
+        getVehicleStatus();
+      }
+    }, []),
+  );
+
+  const getVehicleStatus = async () => {
+    const response = await getData(
+      `${urls.GETVEHICLEDETAIL}?id=${config?.selectVehicle?.id}`,
+    );
+    if (response?.data?.status) {
+      dispatch(setSelectVehicle(response?.data?.data));
+      setVehicleStatus(response?.data?.data?.on_status == 'on' ? false : true);
+    } else {
+      errorHandler(response);
+    }
+  };
 
   const updateVehicleStatus = async () => {
     const response = await sendData(urls.UPDATESTATUSVEHICLE, {
@@ -34,7 +59,13 @@ const LoginEmail = props => {
       on_status: vehicleStatus ? 'on' : 'off',
     });
     if (response?.data?.status) {
-      setVehicleStatus(!vehicleStatus);
+      const responseVehicle = await getData(
+        `${urls.GETVEHICLEDETAIL}?id=${config?.selectVehicle?.id}`,
+      );
+      dispatch(setSelectVehicle(responseVehicle?.data?.data));
+      setVehicleStatus(
+        responseVehicle?.data?.data?.on_status == 'on' ? false : true,
+      );
     } else {
       errorHandler(response);
     }

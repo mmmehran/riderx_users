@@ -1,3 +1,4 @@
+/* HomeMainScreen.js */
 import React, {useState, useEffect, useRef, useMemo, useCallback} from 'react';
 import {
   View,
@@ -21,6 +22,8 @@ import notifee, {
   AndroidImportance,
   AuthorizationStatus,
 } from '@notifee/react-native';
+
+import Geolocation from '@react-native-community/geolocation';
 
 import AcceptOrderModal from '../../../modal/AcceptOrderModal';
 import AcceptedOrderModal from '../../../modal/AcceptedOrderModal';
@@ -123,6 +126,10 @@ const HomeMainScreen = () => {
   const [currentStatus, setCurrentStatus] = useState(null);
   const [socketConnected, setSocketConnected] = useState(false);
   const [securePinShow, setSecurePinShow] = useState(false);
+
+  // ➕ NEW: track location permission + map remount key
+  const [hasLocPerm, setHasLocPerm] = useState(false);
+  const [mapMountKey, setMapMountKey] = useState('map-0');
 
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
@@ -271,15 +278,15 @@ const HomeMainScreen = () => {
   );
 
   /* ──────────────────────────────────────────────────────────────────────────
-     Permissions + Bootstrap (SEQUENTIAL)
+     Permissions + Bootstrap (SEQUENTIAL, fixes first-launch NYC)
      ────────────────────────────────────────────────────────────────────────── */
   useEffect(() => {
     let mounted = true;
     (async () => {
-      // 1) LOCATION first
+      // 1) LOCATION first (sets hasLocPerm and recenters immediately)
       await requestLocationPermission();
 
-      // 2) Then NOTIFICATIONS (Android & iOS), small delay to avoid dialog overlap
+      // 2) Then NOTIFICATIONS (small delay to avoid dialog overlap)
       await new Promise(r => setTimeout(r, 200));
       const notifOk = await requestNotifPermission();
 
@@ -300,7 +307,7 @@ const HomeMainScreen = () => {
   }, []);
 
   /* ──────────────────────────────────────────────────────────────────────────
-     Location permission helper
+     Location permission helper (now sets hasLocPerm + remounts map)
      ────────────────────────────────────────────────────────────────────────── */
   const requestLocationPermission = async () => {
     if (Platform.OS === 'android') {
@@ -314,35 +321,69 @@ const HomeMainScreen = () => {
             PermissionsAndroid.RESULTS.GRANTED ||
           granted['android.permission.ACCESS_COARSE_LOCATION'] ===
             PermissionsAndroid.RESULTS.GRANTED;
-        console.log(
-          ok
-            ? 'Android location permission granted'
-            : 'Android location permission denied',
-        );
+
+        setHasLocPerm(ok);
+
+        if (ok) {
+          // Force an initial camera recenter right away
+          Geolocation.getCurrentPosition(
+            pos => {
+              const {latitude, longitude} = pos.coords;
+              setCamera([
+                Number(longitude.toFixed(5)),
+                Number(latitude.toFixed(5)),
+              ]);
+            },
+            err => {
+              console.log('getCurrentPosition error:', err?.message);
+            },
+            {enableHighAccuracy: true, timeout: 15000, maximumAge: 5000},
+          );
+          // Ensure Mapbox re-initializes its location engine after permission
+          setMapMountKey(prev => prev + '-granted');
+        } else {
+          console.log('Android location permission denied');
+        }
         return ok;
       } catch (err) {
         console.warn(err);
+        setHasLocPerm(false);
         return false;
       }
     }
 
-    if (Platform.OS === 'ios') {
-      try {
-        const status = await check(PERMISSIONS.IOS.LOCATION_WHEN_IN_USE);
-        if (status === RESULTS.GRANTED || status === RESULTS.LIMITED)
-          return true;
-        if (status !== RESULTS.BLOCKED) {
-          const res = await request(PERMISSIONS.IOS.LOCATION_WHEN_IN_USE);
-          return res === RESULTS.GRANTED || res === RESULTS.LIMITED;
-        }
-        return false;
-      } catch (e) {
-        console.warn('iOS permission error:', e);
-        return false;
+    // iOS
+    try {
+      const status = await check(PERMISSIONS.IOS.LOCATION_WHEN_IN_USE);
+      let ok = status === RESULTS.GRANTED || status === RESULTS.LIMITED;
+      if (!ok && status !== RESULTS.BLOCKED) {
+        const res = await request(PERMISSIONS.IOS.LOCATION_WHEN_IN_USE);
+        ok = res === RESULTS.GRANTED || res === RESULTS.LIMITED;
       }
-    }
+      setHasLocPerm(ok);
 
-    return false;
+      if (ok) {
+        Geolocation.getCurrentPosition(
+          pos => {
+            const {latitude, longitude} = pos.coords;
+            setCamera([
+              Number(longitude.toFixed(5)),
+              Number(latitude.toFixed(5)),
+            ]);
+          },
+          err => {
+            console.log('getCurrentPosition error:', err?.message);
+          },
+          {enableHighAccuracy: true, timeout: 15000, maximumAge: 5000},
+        );
+        setMapMountKey(prev => prev + '-granted');
+      }
+      return ok;
+    } catch (e) {
+      console.warn('iOS permission error:', e);
+      setHasLocPerm(false);
+      return false;
+    }
   };
 
   /* ──────────────────────────────────────────────────────────────────────────
@@ -572,45 +613,53 @@ const HomeMainScreen = () => {
             getDeliveryLists();
           }}
         />
-        <Mapbox.MapView
-          zoomEnabled
-          styleURL="mapbox://styles/mapbox/streets-v12"
-          rotateEnabled
-          style={styles.map}>
-          {route && selectedOrder && (
-            <Mapbox.ShapeSource id="routeSource" shape={route}>
-              <Mapbox.LineLayer
-                id="routeLine"
-                style={{
-                  lineColor: '#ff0000',
-                  lineWidth: 4,
-                  lineJoin: 'round',
-                  lineCap: 'round',
-                }}
-              />
-            </Mapbox.ShapeSource>
-          )}
 
-          {senderCoordinate && (
-            <Mapbox.MarkerView coordinate={senderCoordinate}>
-              <LocationPin width={wp(8)} height={wp(8)} />
+        {/* Gate & remount MapView after location permission is granted */}
+        {hasLocPerm ? (
+          <Mapbox.MapView
+            key={mapMountKey}
+            zoomEnabled
+            styleURL="mapbox://styles/mapbox/streets-v12"
+            rotateEnabled
+            style={styles.map}>
+            {route && selectedOrder && (
+              <Mapbox.ShapeSource id="routeSource" shape={route}>
+                <Mapbox.LineLayer
+                  id="routeLine"
+                  style={{
+                    lineColor: '#ff0000',
+                    lineWidth: 4,
+                    lineJoin: 'round',
+                    lineCap: 'round',
+                  }}
+                />
+              </Mapbox.ShapeSource>
+            )}
+
+            {senderCoordinate && (
+              <Mapbox.MarkerView coordinate={senderCoordinate}>
+                <LocationPin width={wp(8)} height={wp(8)} />
+              </Mapbox.MarkerView>
+            )}
+
+            <Mapbox.UserLocation visible onUpdate={centerToUserLocation} />
+            <Mapbox.Camera
+              centerCoordinate={camera}
+              zoomLevel={13}
+              animationMode="flyTo"
+              animationDuration={2000}
+            />
+            <Mapbox.MarkerView coordinate={camera}>
+              <Marker />
             </Mapbox.MarkerView>
-          )}
-
-          <Mapbox.UserLocation visible onUpdate={centerToUserLocation} />
-          <Mapbox.Camera
-            centerCoordinate={camera}
-            zoomLevel={13}
-            animationMode="flyTo"
-            animationDuration={2000}
-          />
-          <Mapbox.MarkerView coordinate={camera}>
-            <Marker />
-          </Mapbox.MarkerView>
-        </Mapbox.MapView>
+          </Mapbox.MapView>
+        ) : (
+          <View style={styles.map} />
+        )}
 
         <CustomBottomTab />
       </View>
+
       {currentOrder?.status === 'created' && showAcceptOrder && !isAccepted && (
         <AcceptOrderModal
           insets={insets}
@@ -622,6 +671,7 @@ const HomeMainScreen = () => {
           userCoord={userCoordMemo}
         />
       )}
+
       {selectedOrder && (
         <AcceptedOrderModal
           insets={insets}
@@ -640,6 +690,7 @@ const HomeMainScreen = () => {
           loading={loadingChangeStatus}
         />
       )}
+
       <CancelModal
         isVisible={cancelModalVisible}
         onSelectReason={reasonKey => {
@@ -648,6 +699,7 @@ const HomeMainScreen = () => {
         }}
         onClose={() => setCancelModalVisible(!cancelModalVisible)}
       />
+
       <ConfirmModal
         securePinShow={securePinShow}
         isVisible={confirmModalVisible}

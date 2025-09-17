@@ -69,7 +69,11 @@ const ChooseVehicle = props => {
             return (
               <CustomButtonService
                 data={item}
-                title={`${item?.brand} ${item?.model}`}
+                title={
+                  item?.vehicle_brand
+                    ? `${item?.vehicle_type} ${item?.vehicle_brand?.title} ${item?.vehicle_model?.title}`
+                    : `${item?.vehicle_type}`
+                }
                 service={config?.selectVehicle}
                 setService={value =>
                   dispatch(setSelectVehicle(value))

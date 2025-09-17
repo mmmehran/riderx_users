@@ -1,6 +1,7 @@
 import React from 'react';
 import { createDrawerNavigator } from "@react-navigation/drawer";
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
+import { useSelector} from 'react-redux';
 
 import routes from "./routes";
 import colors from '../config/colors';
@@ -10,16 +11,16 @@ import ChooseVehicle from '../screens/App/ChooseVehicle/ChooseVehicle'
 import DrawerScreen from '../screens/Drawer/Drawer'
 import Report from '../screens/Drawer/Report'
 import Wallet from '../screens/Drawer/Wallet'
-
+import {selectConfig} from '../redux/reducers/configReducer'
 
 const Drawer = createDrawerNavigator();
 
 const DrawerNavigator = () => {
-  
+    const config = useSelector(selectConfig);
 
     return (
         <Drawer.Navigator
-            initialRouteName={routes.HOMEMAIN}
+            initialRouteName={config?.selectVehicle == null ?   routes.CHOOSEVEHICLE  :  routes.HOMEMAIN}
             screenOptions={{
                 headerShown: false,
                 drawerStyle: {
