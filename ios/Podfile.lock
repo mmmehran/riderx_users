@@ -2076,6 +2076,30 @@ PODS:
     - ReactCommon/turbomodule/core
     - Sentry/HybridSDK (= 8.53.2)
     - Yoga
+  - RNSound (0.12.0):
+    - DoubleConversion
+    - glog
+    - hermes-engine
+    - RCT-Folly (= 2024.11.18.00)
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-hermes
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - Yoga
   - RNSVG (15.12.0):
     - DoubleConversion
     - glog
@@ -2289,6 +2313,7 @@ DEPENDENCIES:
   - RNReanimated (from `../node_modules/react-native-reanimated`)
   - RNScreens (from `../node_modules/react-native-screens`)
   - "RNSentry (from `../node_modules/@sentry/react-native`)"
+  - RNSound (from `../node_modules/react-native-sound`)
   - RNSVG (from `../node_modules/react-native-svg`)
   - RNWorklets (from `../node_modules/react-native-worklets`)
   - Yoga (from `../node_modules/react-native/ReactCommon/yoga`)
@@ -2470,6 +2495,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-screens"
   RNSentry:
     :path: "../node_modules/@sentry/react-native"
+  RNSound:
+    :path: "../node_modules/react-native-sound"
   RNSVG:
     :path: "../node_modules/react-native-svg"
   RNWorklets:
@@ -2565,6 +2592,7 @@ SPEC CHECKSUMS:
   RNReanimated: ca2ef359a7bc3dfe28daec341a980cf0b7a86f29
   RNScreens: 7e56b051227a1a11c3068849d1a9a5dd457537df
   RNSentry: 42ac50889891871c8eb5694b4101fa5c311f0a1f
+  RNSound: 72c4886fb80b8a0e8c40131099223e09422aa8b4
   RNSVG: 8a1054afe490b5d63b9792d7ae3c1fde8c05cdd0
   RNWorklets: b6ab2d5d0cd8f7d373d037de6bf8862e4726cf45
   Sentry: 59993bffde4a1ac297ba6d268dc4bbce068d7c1b
