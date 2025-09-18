@@ -18,6 +18,12 @@ export const showToast = (message, type = "success") => {
         text2: message,
     });
 }
+export const showToastWarning = (message, type = "warning") => {
+    Toast.show({
+        type: type,
+        text2: message,
+    });
+}
 
 export const convertDate = (isoString) => {
 

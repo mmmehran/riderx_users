@@ -37,6 +37,7 @@ import urls from '../../../services/urls.json';
 import errorHandler from '../../../utils/errorHandler';
 import {
   showToast,
+  showToastWarning,
   parseSocketUrl,
   isAndroid15Plus,
 } from '../../../utils/helpers';
@@ -53,7 +54,7 @@ import colors from '../../../config/colors';
 import {playDing} from '../../../utils/sounds';
 
 const LOCATION_UPDATE_MS = 30 * 1000;
-const POLL_MS = 0.1 * 60 * 1000;
+const POLL_MS = 2 * 60 * 1000;
 
 /* ──────────────────────────────────────────────────────────────────────────
    Notifications Permission (Android + iOS)
@@ -203,6 +204,10 @@ const HomeMainScreen = () => {
     }
   };
 
+  const removeOrderById = useCallback(id => {
+    if (id == null) return;
+    setData(prev => prev.filter(o => o?.id !== id));
+  }, []);
   /* ──────────────────────────────────────────────────────────────────────────
      Socket setup
      ────────────────────────────────────────────────────────────────────────── */
@@ -263,6 +268,13 @@ const HomeMainScreen = () => {
             data: {delivery_id: String(payload?.message?.id ?? '')},
           });
         }
+      } else if (event == 'delivery_accepted_by_rider') {
+        if (selectedOrderRef.current != null) return;
+        const removedId = payload?.message?.id;
+        removeOrderById(removedId);
+        showToastWarning(
+          `Delivery id: ${payload?.message?.id} accepted by another rider`,
+        );
       }
     };
     s.onAny(anyLogger);
@@ -694,11 +706,16 @@ const HomeMainScreen = () => {
             setCurrentStatus(status);
             if (status === 'cancel' && selectedOrder?.status == 'pickup') {
               setCancelModalVisible(!cancelModalVisible);
-            } else {
-              if (pin) {
-                setSecurePinShow(true);
-              }
+            } else if (
+              status === 'cancel' &&
+              selectedOrder?.status == 'accepted'
+            ) {
               setConfirmModalVisible(!confirmModalVisible);
+            } else if (pin) {
+              setSecurePinShow(true);
+              setConfirmModalVisible(!confirmModalVisible);
+            } else {
+              changeStatusOrderAccept(selectedOrder, status, pin);
             }
           }}
           order={selectedOrder}

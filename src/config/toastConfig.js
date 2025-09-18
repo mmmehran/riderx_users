@@ -76,6 +76,41 @@ const toastConfig = {
          </Text>
       </View>
    ),
+   warning: ({ text2 }) => (
+      <View
+         style={{
+            width: wp(89),
+            backgroundColor: "#ff8800ff",
+            borderRadius: wp(1.5),
+            justifyContent: "center",
+            alignItems: "left",
+            marginTop: hp(2),
+            elevation: wp(0.2),
+            paddingHorizontal: wp(6),
+            borderColor: "#ff8800ff",
+            borderWidth: wp(0),
+            borderRightWidth: wp(2),
+            paddingVertical: hp(0.8),
+            flexDirection: "row",
+            alignItems: "center",
+         }}
+      >
+         <ErrorIcon width={wp(6)} height={wp(6)}></ErrorIcon>
+         <Text
+            style={{
+               fontSize: wp(3.5),
+               color: colors.white,
+               textAlign: "left",
+               fontWeight: "bold",
+               lineHeight: hp(2.3),
+               fontFamily: "Poppins-Regular",
+               marginLeft: wp(2)
+            }}
+         >
+            {text2}
+         </Text>
+      </View>
+   ),
 };
 
 export default toastConfig;
