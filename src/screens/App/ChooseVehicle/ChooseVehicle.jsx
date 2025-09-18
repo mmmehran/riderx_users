@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useCallback} from 'react';
 import {
   View,
   StyleSheet,
@@ -12,6 +12,7 @@ import {
 import {useNavigation} from '@react-navigation/native';
 import {useTranslation} from 'react-i18next';
 import {useDispatch, useSelector} from 'react-redux';
+import {useFocusEffect} from '@react-navigation/core';
 
 import CustomScreen from '../../../components/common/CustomScreen';
 import CustomText from '../../../components/common/CustomText';
@@ -45,9 +46,11 @@ const ChooseVehicle = props => {
     setLoading(false);
   };
 
-  useEffect(() => {
-    getVehicle();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      getVehicle();
+    }, []),
+  );
 
   return (
     <CustomScreen>
@@ -71,8 +74,11 @@ const ChooseVehicle = props => {
                 data={item}
                 title={
                   item?.vehicle_brand
-                    ? `${item?.vehicle_type} ${item?.vehicle_brand?.title} ${item?.vehicle_model?.title}`
-                    : `${item?.vehicle_type}`
+                    ? ` ${item?.vehicle_brand?.title} ${item?.vehicle_model?.title} ${item?.vehicle_model?.model_type}`
+                    : `${
+                        (item?.vehicle_type ?? '').charAt(0).toUpperCase() +
+                        (item?.vehicle_type ?? '').slice(1)
+                      }`
                 }
                 service={config?.selectVehicle}
                 setService={value =>

@@ -44,7 +44,7 @@ import {
   setUserProfile,
   authenticated,
 } from '../../../redux/reducers/authenticationReducer';
-import {connectSocket, on} from '../../../services/socket';
+import {connectSocket, on, disconnectSocket} from '../../../services/socket';
 import {selectConfig} from '../../../redux/reducers/configReducer';
 import ConfirmModal from '../../../modal/ConfirmModal';
 import ConfirmCancelDeliveryModal from '../../../modal/ConfirmCancelDeliveryModal';
@@ -53,7 +53,7 @@ import colors from '../../../config/colors';
 import {playDing} from '../../../utils/sounds';
 
 const LOCATION_UPDATE_MS = 30 * 1000;
-const POLL_MS = 2 * 60 * 1000;
+const POLL_MS = 0.1 * 60 * 1000;
 
 /* ──────────────────────────────────────────────────────────────────────────
    Notifications Permission (Android + iOS)
@@ -267,6 +267,10 @@ const HomeMainScreen = () => {
     };
     s.onAny(anyLogger);
 
+    if (!user?.authenticated) {
+      disconnectSocket();
+    }
+
     return () => {
       setSocketConnected(false);
       offConnect && offConnect();
@@ -276,7 +280,7 @@ const HomeMainScreen = () => {
         s.offAny(anyLogger);
       } catch (e) {}
     };
-  }, [user?.socketio]);
+  }, [user?.socketio, user?.authenticated]);
 
   /* ──────────────────────────────────────────────────────────────────────────
      Mapbox
@@ -571,8 +575,11 @@ const HomeMainScreen = () => {
       }
     };
     const id = setInterval(handler, POLL_MS);
+    if (!user?.authenticated) {
+      clearInterval(id);
+    }
     return () => clearInterval(id);
-  }, [selectedOrder, showAcceptOrder]);
+  }, [selectedOrder, showAcceptOrder, !user?.authenticated]);
 
   const postLocation = useCallback(async () => {
     if (!config?.selectVehicle?.id) return;

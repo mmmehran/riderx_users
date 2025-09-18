@@ -57,7 +57,7 @@ export function disconnectSocket() {
 export function on(event, handler) {
   if (!socket) return;
   socket.on(event, handler);
-  return () => socket.off(event, handler);
+  return () => socket?.off(event, handler);
 }
 
 export function emit(event, payload, ack) {
