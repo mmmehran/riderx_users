@@ -6,6 +6,7 @@ import {
 } from 'react-native-responsive-screen';
 import {useTranslation} from 'react-i18next';
 import axios from 'axios';
+import SwipeButton from 'rn-swipe-button';
 
 import CustomModal from '../components/common/CustomModal';
 import colors from '../config/colors';
@@ -213,27 +214,20 @@ const AcceptOrderModal = ({
         </View>
 
         <View style={styles.buttonWrapper}>
-          <TouchableOpacity
-            onLongPress={handleAccept}
-            style={styles.button}
-            activeOpacity={1}>
-            <Animated.View
-              pointerEvents="none"
-              style={[
-                StyleSheet.absoluteFill,
-                {
-                  backgroundColor: '#E8B003',
-                  width: progressAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: ['0%', '100%'],
-                  }),
-                },
-              ]}
-            />
-            <CustomText style={styles.textButton}>
-              {t('accept') || 'Accept'}
-            </CustomText>
-          </TouchableOpacity>
+          <SwipeButton
+            title={'Slide to Accept'}
+            titleColor="#fff"
+            height={hp(5.5)}
+            titleFontSize={wp(4)}
+            onSwipeSuccess={handleAccept}
+            width={wp(75)}
+            railBackgroundColor="#303030ff"
+            railBorderColor="#303030ff"
+            railFillBackgroundColor="#ffe71046"
+            railFillBorderColor="#303030ff"
+            thumbIconBackgroundColor="#FFE710"
+            thumbIconBorderColor="#303030ff"
+          />
         </View>
       </View>
     </CustomModal>
@@ -245,11 +239,11 @@ export default memo(AcceptOrderModal);
 const styles = StyleSheet.create({
   container: {
     width: wp(84),
-    height: hp(53),
+    height: hp(54),
     backgroundColor: colors.white,
     borderRadius: wp(3),
     borderWidth: wp(1),
-    borderColor: '#FDE293',
+    borderColor: '#FFE710',
   },
   textTop: {
     fontSize: wp(3.8),
@@ -289,19 +283,15 @@ const styles = StyleSheet.create({
   deliveryContainer: {
     width: wp(26),
     height: hp(3.8),
-    backgroundColor: 'rgba(251, 188, 4, 0.66)',
+    backgroundColor: '#FFE710',
     justifyContent: 'center',
     borderRadius: wp(1),
     marginLeft: wp(3),
     paddingLeft: wp(2),
   },
   buttonWrapper: {
-    overflow: 'hidden',
-    borderRadius: wp(0.5),
-    width: wp(75),
-    height: hp(5.3),
-    marginHorizontal: wp(3.5),
-    marginTop: hp(2.5),
+    marginHorizontal: wp(2),
+    marginTop: hp(2),
   },
   button: {
     flex: 1,

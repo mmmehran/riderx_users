@@ -1,16 +1,10 @@
 import React, {memo} from 'react';
-import {
-  StyleSheet,
-  View,
-  TouchableOpacity,
-  Linking,
-  Alert,
-  ActivityIndicator,
-} from 'react-native';
+import {StyleSheet, View, TouchableOpacity, Linking, Alert} from 'react-native';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
+import SwipeButton from 'rn-swipe-button';
 
 import colors from '../config/colors';
 import CustomText from '../components/common/CustomText';
@@ -66,7 +60,6 @@ const AcceptedOrderModal = ({order, changeOrder, loading, insets}) => {
           },
         ]}>
         <View style={styles.userContainer}>
-          <View style={styles.imageContainer}></View>
           <CustomText style={styles.text} numberOfLines={1}>
             {order?.status !== 'pickup'
               ? order?.sender_full_name
@@ -74,7 +67,7 @@ const AcceptedOrderModal = ({order, changeOrder, loading, insets}) => {
           </CustomText>
         </View>
         <View
-          style={[styles.userContainer, {marginTop: hp(1), height: hp(20.5)}]}>
+          style={[styles.userContainer, {marginTop: hp(-2), height: hp(20.5)}]}>
           <View style={styles.textContainer}>
             <CustomText style={styles.textInfo}>
               Number:{' '}
@@ -145,26 +138,43 @@ const AcceptedOrderModal = ({order, changeOrder, loading, insets}) => {
         </View>
         <View style={styles.rowButton}>
           {order?.status == 'accepted' && (
-            <TouchableOpacity
-              onPress={() => changeOrder('pickup', false)}
-              style={styles.buttonPick}>
-              <CustomText style={styles.textPick}>Picked Up</CustomText>
-              {loading && <ActivityIndicator color={'#000'} />}
-            </TouchableOpacity>
+            <SwipeButton
+              title="Picked Up"
+              titleColor="#fff"
+              height={hp(5.5)}
+              titleFontSize={wp(4.3)}
+              onSwipeSuccess={() => changeOrder('pickup', false)}
+              width={wp(60)}
+              railBackgroundColor="#303030ff"
+              railBorderColor="#303030ff"
+              railFillBackgroundColor="#ffe71046"
+              railFillBorderColor="#303030ff"
+              thumbIconBackgroundColor="#FFE710"
+              thumbIconBorderColor="#303030ff"
+            />
           )}
           {order?.status == 'pickup' && (
-            <TouchableOpacity
-              onPress={() => {
+            <SwipeButton
+              title="Drop Off"
+              titleColor="#fff"
+              height={hp(5.5)}
+              titleFontSize={wp(4)}
+              onSwipeSuccess={() => {
                 if (order?.is_secure) {
                   changeOrder('completed', true);
                 } else {
                   changeOrder('completed', false);
                 }
               }}
-              style={styles.buttonPick}>
-              <CustomText style={styles.textPick}>Drop Off</CustomText>
-              {loading && <ActivityIndicator color={'#000'} />}
-            </TouchableOpacity>
+              width={wp(60)}
+              shouldResetAfterSuccess
+              railBackgroundColor="#303030ff"
+              railBorderColor="#303030ff"
+              railFillBackgroundColor="#ffe71046"
+              railFillBorderColor="#303030ff"
+              thumbIconBackgroundColor="#FFE710"
+              thumbIconBorderColor="#303030ff"
+            />
           )}
           <TouchableOpacity
             onPress={() => changeOrder('cancel', false)}
@@ -185,7 +195,7 @@ export default memo(AcceptedOrderModal);
 const styles = StyleSheet.create({
   container: {
     width: wp(95),
-    height: hp(47),
+    height: hp(40),
     backgroundColor: '#B3B7C9B2',
     borderRadius: wp(3),
     position: 'absolute',
@@ -194,11 +204,13 @@ const styles = StyleSheet.create({
   rowButton: {
     flexDirection: 'row',
     justifyContent: 'center',
+    alignItems: 'center',
   },
   cancelButton: {
     width: wp(25),
-    marginLeft: wp(3),
-    backgroundColor: colors.red,
+    marginLeft: wp(1),
+    backgroundColor: '#ff8800ff',
+    borderRadius: wp(20),
   },
   modal: {
     alignItems: 'center',
@@ -221,7 +233,6 @@ const styles = StyleSheet.create({
     color: colors.black,
     fontWeight: '900',
     fontSize: wp(5),
-    marginLeft: wp(5),
     width: wp(55),
   },
   textInfo: {
@@ -250,18 +261,17 @@ const styles = StyleSheet.create({
   },
   buttonPick: {
     width: wp(60),
-    height: hp(5),
+    height: hp(5.8),
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: wp(4.5),
     backgroundColor: '#EFF65C',
-    marginTop: hp(1),
     flexDirection: 'row-reverse',
   },
   textPick: {
     color: colors.black,
     fontWeight: '900',
-    fontSize: wp(4.5),
+    fontSize: wp(4.3),
     marginLeft: wp(3),
   },
 });

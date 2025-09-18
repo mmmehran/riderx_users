@@ -71,14 +71,16 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     marginTop: hp(2),
-    paddingVertical: hp(1.5),
-    paddingHorizontal: wp(5),
-    borderRadius: wp(1),
-    backgroundColor: '#f2f2f2',
+    borderRadius: wp(20),
+    backgroundColor: '#ff8800ff',
+    width: wp(25),
+    height: hp(5.8),
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   closeText: {
     fontSize: wp(4),
-    color: colors.black,
+    color: colors.white,
     fontWeight: 'bold',
   },
 });
