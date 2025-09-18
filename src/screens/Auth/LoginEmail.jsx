@@ -85,6 +85,7 @@ const LoginEmail = props => {
                   name="password"
                   inputName={t('password')}
                   input={{textAlign: 'left'}}
+                  password={true}
                   autoCapitalize="none"></Input>
                 <View style={styles.buttonContainer}>
                   <Button loading={loading}>{t('login')}</Button>

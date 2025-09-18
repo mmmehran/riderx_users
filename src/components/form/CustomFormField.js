@@ -57,6 +57,7 @@ const CustomFormField = ({
                     }}
                     style={[styles.input, input,
                     noIcon && { width: wp(85) },
+                    password && { width: wp(75) },
                     eye && { width: wp(63) }]}
                     secureTextEntry={password ? !showPassword : false}
                 ></TextInput>
