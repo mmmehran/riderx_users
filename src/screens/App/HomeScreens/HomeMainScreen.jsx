@@ -12,17 +12,14 @@ import {
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
 import Mapbox from '@rnmapbox/maps';
-import axios from 'axios';
 import {useDispatch, useSelector} from 'react-redux';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useNavigation} from '@react-navigation/native';
 import {check, request, PERMISSIONS, RESULTS} from 'react-native-permissions';
-
 import notifee, {
   AndroidImportance,
   AuthorizationStatus,
 } from '@notifee/react-native';
-
 import Geolocation from '@react-native-community/geolocation';
 
 import AcceptOrderModal from '../../../modal/AcceptOrderModal';
@@ -56,12 +53,73 @@ import {playDing} from '../../../utils/sounds';
 const LOCATION_UPDATE_MS = 30 * 1000;
 const POLL_MS = 2 * 60 * 1000;
 
+const MAPBOX_TOKEN =
+  'pk.eyJ1IjoiYnl0ZWJyaWRnZXIiLCJhIjoiY21kZzVoNnU2MGlhcDJpcGVuNGV1amYxdyJ9.YMqlR9OovVOp-pm9yGK7eA';
+
+// Set once at module scope
+Mapbox.setAccessToken(MAPBOX_TOKEN);
+
 /* ──────────────────────────────────────────────────────────────────────────
-   Notifications Permission (Android + iOS)
+   Utilities (safe rounding, normalization, debounce, tiny cache)
+   ────────────────────────────────────────────────────────────────────────── */
+const toNum = v => {
+  if (typeof v === 'number' && Number.isFinite(v)) return v;
+  if (typeof v === 'string') {
+    const x = parseFloat(v);
+    return Number.isFinite(x) ? x : null;
+  }
+  return null;
+};
+
+const round5 = v => {
+  const x = toNum(v);
+  if (x === null) return null;
+  return Math.round(x * 1e5) / 1e5; // avoid .toFixed on undefined
+};
+
+const normalizeCoord = coord => {
+  if (!Array.isArray(coord) || coord.length < 2) return null;
+  const lng = round5(coord[0]);
+  const lat = round5(coord[1]);
+  if (lng === null || lat === null) return null;
+  return [lng, lat];
+};
+
+const coordKey = (lng, lat) => {
+  const L = round5(lng);
+  const A = round5(lat);
+  return L === null || A === null ? '' : `${L},${A}`;
+};
+
+const legKey = (from, to) =>
+  `${coordKey(from[0], from[1])}->${coordKey(to[0], to[1])}`;
+
+const useDebounced = (value, delay = 400) => {
+  const [deb, setDeb] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setDeb(value), delay);
+    return () => clearTimeout(t);
+  }, [value, delay]);
+  return deb;
+};
+
+// tiny route cache
+const routeCache = new Map(); // key: legKey, value: geometry
+const MAX_CACHE = 30;
+const cacheSet = (k, v) => {
+  if (!routeCache.has(k) && routeCache.size >= MAX_CACHE) {
+    const first = routeCache.keys().next().value;
+    routeCache.delete(first);
+  }
+  routeCache.set(k, v);
+};
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Notifications permission helpers
    ────────────────────────────────────────────────────────────────────────── */
 const requestNotifPermission = async () => {
   if (Platform.OS === 'android') {
-    if (Platform.Version < 33) return true; // < Android 13
+    if (Platform.Version < 33) return true;
     try {
       const res = await PermissionsAndroid.request(
         PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
@@ -74,13 +132,10 @@ const requestNotifPermission = async () => {
         },
       );
       return res === PermissionsAndroid.RESULTS.GRANTED;
-    } catch (e) {
-      console.log('POST_NOTIFICATIONS request error:', e?.message);
+    } catch {
       return false;
     }
   }
-
-  // iOS via Notifee
   try {
     const settings = await notifee.requestPermission({
       alert: true,
@@ -92,14 +147,13 @@ const requestNotifPermission = async () => {
       status === AuthorizationStatus.AUTHORIZED ||
       status === AuthorizationStatus.PROVISIONAL
     );
-  } catch (e) {
-    console.log('iOS notifications permission error:', e?.message);
+  } catch {
     return false;
   }
 };
 
 const createNotifChannelOnce = async ref => {
-  if (Platform.OS !== 'android') return null; // channels are Android-only
+  if (Platform.OS !== 'android') return null;
   if (ref.current) return ref.current;
   try {
     ref.current = await notifee.createChannel({
@@ -115,6 +169,9 @@ const createNotifChannelOnce = async ref => {
   return ref.current;
 };
 
+/* ──────────────────────────────────────────────────────────────────────────
+   Screen
+   ────────────────────────────────────────────────────────────────────────── */
 const HomeMainScreen = () => {
   const [camera, setCamera] = useState([-74.006, 40.7128]);
   const [data, setData] = useState([]);
@@ -127,18 +184,19 @@ const HomeMainScreen = () => {
   const [loadingChangeStatus, setLoadingChangeStatus] = useState(false);
   const [isAccepted, setIsAccepted] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
-  const [route, setRoute] = useState(null);
+
+  // Route feature (GeoJSON Feature)
+  const [routeFeature, setRouteFeature] = useState(null);
+
   const [currentStatus, setCurrentStatus] = useState(null);
   const [socketConnected, setSocketConnected] = useState(false);
   const [securePinShow, setSecurePinShow] = useState(false);
 
-  // ➕ NEW: track location permission + map remount key
   const [hasLocPerm, setHasLocPerm] = useState(false);
   const [mapMountKey, setMapMountKey] = useState('map-0');
 
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
-
   const dispatch = useDispatch();
   const user = useSelector(authenticated);
   const config = useSelector(selectConfig);
@@ -157,19 +215,24 @@ const HomeMainScreen = () => {
   }, [selectedOrder]);
 
   const channelIdRef = useRef(null);
-
   const appStateRef = useRef(AppState.currentState);
   useEffect(() => {
     const sub = AppState.addEventListener('change', state => {
-      appStateRef.current = state; // 'active' | 'background' | 'inactive'
+      appStateRef.current = state;
     });
     return () => sub.remove();
   }, []);
 
-  /* ──────────────────────────────────────────────────────────────────────────
-     Cross-platform notification helper
-     ────────────────────────────────────────────────────────────────────────── */
-  const showLocalNotification = async ({title, body, data}) => {
+  // prevent state updates after unmount
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  const showLocalNotification = useCallback(async ({title, body, data}) => {
     try {
       if (Platform.OS === 'android') {
         const channelId = await createNotifChannelOnce(channelIdRef);
@@ -199,18 +262,17 @@ const HomeMainScreen = () => {
           pressAction: {id: 'default'},
         });
       }
-    } catch (e) {
-      console.log('showLocalNotification error:', e?.message);
-    }
-  };
+    } catch {}
+  }, []);
 
   const removeOrderById = useCallback(id => {
     if (id == null) return;
     setData(prev => prev.filter(o => o?.id !== id));
   }, []);
-  /* ──────────────────────────────────────────────────────────────────────────
-     Socket setup
-     ────────────────────────────────────────────────────────────────────────── */
+
+  /* ────────────────────────────────────────────────────────────────────────
+     Socket
+     ──────────────────────────────────────────────────────────────────────── */
   useEffect(() => {
     const rawUrl = user?.socketio;
     const {baseUrl, roomId} = parseSocketUrl(rawUrl);
@@ -218,21 +280,12 @@ const HomeMainScreen = () => {
 
     const s = connectSocket({baseUrl, roomId});
 
-    const offConnect = on('connect', () => {
-      setSocketConnected(true);
-      console.log('✅ socket connected:', s.id, 'roomId=', roomId);
-    });
-    const offDisconnect = on('disconnect', reason => {
-      setSocketConnected(false);
-      console.log('❌ socket disconnected:', reason);
-    });
-    const offError = on('connect_error', err => {
-      setSocketConnected(false);
-      console.log('⚠️ socket connect_error:', err?.message);
-    });
+    const offConnect = on('connect', () => setSocketConnected(true));
+    const offDisconnect = on('disconnect', () => setSocketConnected(false));
+    const offError = on('connect_error', () => setSocketConnected(false));
 
     const anyLogger = async (event, payload) => {
-      if (event == 'delivery_create_by_sender') {
+      if (event === 'delivery_create_by_sender') {
         if (selectedOrderRef.current != null) return;
         const orders = [payload?.message].filter(Boolean);
         setData(orders);
@@ -241,10 +294,7 @@ const HomeMainScreen = () => {
           setCurrentOrderIndex(0);
           setShowAcceptOrder(true);
           setIsAccepted(false);
-          if (isActive) {
-            playDing();
-          }
-
+          if (isActive) playDing();
           if (!isActive) {
             await showLocalNotification({
               title: 'New delivery request',
@@ -256,19 +306,19 @@ const HomeMainScreen = () => {
           setCurrentOrderIndex(null);
           setShowAcceptOrder(false);
         }
-      } else if (event == 'delivery_update_status_by_sender') {
+      } else if (event === 'delivery_update_status_by_sender') {
         if (selectedOrderRef.current?.id !== payload?.message?.id) return;
         if (payload?.message?.status === 'cancel') {
-          setRoute(null);
+          setRouteFeature(null);
           setSelectedOrder(null);
-          setConfirmCancelModalVisible(!confirmCancelModalVisible);
+          setConfirmCancelModalVisible(true);
           await showLocalNotification({
             title: 'Delivery canceled by sender',
             body: 'A delivery was cancelled',
             data: {delivery_id: String(payload?.message?.id ?? '')},
           });
         }
-      } else if (event == 'delivery_accepted_by_rider') {
+      } else if (event === 'delivery_accepted_by_rider') {
         if (selectedOrderRef.current != null) return;
         const removedId = payload?.message?.id;
         removeOrderById(removedId);
@@ -279,9 +329,7 @@ const HomeMainScreen = () => {
     };
     s.onAny(anyLogger);
 
-    if (!user?.authenticated) {
-      disconnectSocket();
-    }
+    if (!user?.authenticated) disconnectSocket();
 
     return () => {
       setSocketConnected(false);
@@ -290,49 +338,36 @@ const HomeMainScreen = () => {
       offError && offError();
       try {
         s.offAny(anyLogger);
-      } catch (e) {}
+      } catch {}
     };
-  }, [user?.socketio, user?.authenticated]);
+  }, [
+    user?.socketio,
+    user?.authenticated,
+    removeOrderById,
+    showLocalNotification,
+  ]);
 
-  /* ──────────────────────────────────────────────────────────────────────────
-     Mapbox
-     ────────────────────────────────────────────────────────────────────────── */
-  Mapbox.setAccessToken(
-    'pk.eyJ1IjoiYnl0ZWJyaWRnZXIiLCJhIjoiY21kZzVoNnU2MGlhcDJpcGVuNGV1amYxdyJ9.YMqlR9OovVOp-pm9yGK7eA',
-  );
-
-  /* ──────────────────────────────────────────────────────────────────────────
-     Permissions + Bootstrap (SEQUENTIAL, fixes first-launch NYC)
-     ────────────────────────────────────────────────────────────────────────── */
+  /* ────────────────────────────────────────────────────────────────────────
+     Bootstrap: location perm → notif perm → channel → data
+     ──────────────────────────────────────────────────────────────────────── */
   useEffect(() => {
-    let mounted = true;
+    let live = true;
     (async () => {
-      // 1) LOCATION first (sets hasLocPerm and recenters immediately)
       await requestLocationPermission();
-
-      // 2) Then NOTIFICATIONS (small delay to avoid dialog overlap)
       await new Promise(r => setTimeout(r, 200));
       const notifOk = await requestNotifPermission();
-
-      // 3) Create Android channel (iOS doesn't use channels)
       if (Platform.OS === 'android' && notifOk) {
         await createNotifChannelOnce(channelIdRef);
       }
-
-      // 4) Bootstrap data
-      if (!mounted) return;
+      if (!live) return;
       getUserProfile();
       getLastDelivery();
     })();
-
     return () => {
-      mounted = false;
+      live = false;
     };
   }, []);
 
-  /* ──────────────────────────────────────────────────────────────────────────
-     Location permission helper (now sets hasLocPerm + remounts map)
-     ────────────────────────────────────────────────────────────────────────── */
   const requestLocationPermission = async () => {
     if (Platform.OS === 'android') {
       try {
@@ -345,38 +380,26 @@ const HomeMainScreen = () => {
             PermissionsAndroid.RESULTS.GRANTED ||
           granted['android.permission.ACCESS_COARSE_LOCATION'] ===
             PermissionsAndroid.RESULTS.GRANTED;
-
         setHasLocPerm(ok);
-
         if (ok) {
-          // Force an initial camera recenter right away
           Geolocation.getCurrentPosition(
             pos => {
               const {latitude, longitude} = pos.coords;
-              setCamera([
-                Number(longitude.toFixed(5)),
-                Number(latitude.toFixed(5)),
-              ]);
+              const lng = round5(longitude);
+              const lat = round5(latitude);
+              if (lng !== null && lat !== null) setCamera([lng, lat]);
             },
-            err => {
-              console.log('getCurrentPosition error:', err?.message);
-            },
+            () => {},
             {enableHighAccuracy: true, timeout: 15000, maximumAge: 5000},
           );
-          // Ensure Mapbox re-initializes its location engine after permission
           setMapMountKey(prev => prev + '-granted');
-        } else {
-          console.log('Android location permission denied');
         }
         return ok;
-      } catch (err) {
-        console.warn(err);
+      } catch {
         setHasLocPerm(false);
         return false;
       }
     }
-
-    // iOS
     try {
       const status = await check(PERMISSIONS.IOS.LOCATION_WHEN_IN_USE);
       let ok = status === RESULTS.GRANTED || status === RESULTS.LIMITED;
@@ -385,38 +408,37 @@ const HomeMainScreen = () => {
         ok = res === RESULTS.GRANTED || res === RESULTS.LIMITED;
       }
       setHasLocPerm(ok);
-
       if (ok) {
         Geolocation.getCurrentPosition(
           pos => {
             const {latitude, longitude} = pos.coords;
-            setCamera([
-              Number(longitude.toFixed(5)),
-              Number(latitude.toFixed(5)),
-            ]);
+            const lng = round5(longitude);
+            const lat = round5(latitude);
+            if (lng !== null && lat !== null) setCamera([lng, lat]);
           },
-          err => {
-            console.log('getCurrentPosition error:', err?.message);
-          },
+          () => {},
           {enableHighAccuracy: true, timeout: 15000, maximumAge: 5000},
         );
         setMapMountKey(prev => prev + '-granted');
       }
       return ok;
-    } catch (e) {
-      console.warn('iOS permission error:', e);
+    } catch {
       setHasLocPerm(false);
       return false;
     }
   };
 
-  /* ──────────────────────────────────────────────────────────────────────────
-     Map / route / polling / location update (unchanged)
-     ────────────────────────────────────────────────────────────────────────── */
+  /* ────────────────────────────────────────────────────────────────────────
+     Data helpers
+     ──────────────────────────────────────────────────────────────────────── */
   const centerToUserLocation = location => {
     if (!location?.coords) return;
     const {latitude, longitude} = location.coords;
-    const rounded = [Number(longitude.toFixed(5)), Number(latitude.toFixed(5))];
+    const lng = round5(longitude);
+    const lat = round5(latitude);
+    if (lng === null || lat === null) return;
+
+    const rounded = [lng, lat];
     const last = lastCamRef.current;
     const movedEnough =
       !last ||
@@ -474,6 +496,9 @@ const HomeMainScreen = () => {
     }
   };
 
+  /* ────────────────────────────────────────────────────────────────────────
+     Accept / advance handlers (memoized)
+     ──────────────────────────────────────────────────────────────────────── */
   const requireVehicleOrToast = useCallback(() => {
     if (!config?.selectVehicle?.id) {
       showToast('Select a vehicle first to accept deliveries.', 'error');
@@ -481,7 +506,7 @@ const HomeMainScreen = () => {
       return false;
     }
     return true;
-  }, [config?.selectVehicle?.id]);
+  }, [config?.selectVehicle?.id, navigation]);
 
   const handleNextOrder = useCallback(() => {
     if (isAccepted) {
@@ -501,17 +526,6 @@ const HomeMainScreen = () => {
     }
   }, [isAccepted, currentOrderIndex, data.length]);
 
-  const handleAcceptOrder = useCallback(() => {
-    if (!requireVehicleOrToast()) return;
-    const order = data[currentOrderIndex];
-    if (!order) return;
-    setSelectedOrder(order);
-    changeStatusOrderAccept(order, 'accepted');
-    setIsAccepted(true);
-    setShowAcceptOrder(false);
-    setCurrentOrderIndex(null);
-  }, [data, currentOrderIndex, requireVehicleOrToast]);
-
   const changeStatusOrderAccept = async (order, status, pin) => {
     status !== 'cancel' && setLoadingChangeStatus(true);
     const response = await sendData(urls.CHANGESTATUSORDER, {
@@ -530,7 +544,7 @@ const HomeMainScreen = () => {
         status === 'shipment_destroyed' ||
         status === 'address_not_found'
       ) {
-        setRoute(null);
+        setRouteFeature(null);
         setSelectedOrder(null);
         showToast(
           status === 'completed'
@@ -544,37 +558,123 @@ const HomeMainScreen = () => {
     status !== 'cancel' && setLoadingChangeStatus(false);
   };
 
+  const handleAcceptOrder = useCallback(() => {
+    if (!requireVehicleOrToast()) return;
+    const order = data[currentOrderIndex];
+    if (!order) return;
+    setSelectedOrder(order);
+    changeStatusOrderAccept(order, 'accepted');
+    setIsAccepted(true);
+    setShowAcceptOrder(false);
+    setCurrentOrderIndex(null);
+  }, [data, currentOrderIndex, requireVehicleOrToast]);
+
   const currentOrder =
     currentOrderIndex !== null ? data[currentOrderIndex] : null;
 
-  const senderCoordinate = selectedOrder
-    ? selectedOrder?.status !== 'pickup'
-      ? [selectedOrder.sender_longitude, selectedOrder.sender_latitude]
-      : [selectedOrder.receiver_longitude, selectedOrder.receiver_latitude]
-    : null;
+  const senderCoordinate = useMemo(() => {
+    if (!selectedOrder) return null;
+    const lng =
+      selectedOrder?.status !== 'pickup'
+        ? selectedOrder?.sender_longitude
+        : selectedOrder?.receiver_longitude;
+    const lat =
+      selectedOrder?.status !== 'pickup'
+        ? selectedOrder?.sender_latitude
+        : selectedOrder?.receiver_latitude;
+    return normalizeCoord([lng, lat]); // [lng, lat] or null
+  }, [
+    selectedOrder?.id,
+    selectedOrder?.status,
+    selectedOrder?.sender_longitude,
+    selectedOrder?.sender_latitude,
+    selectedOrder?.receiver_longitude,
+    selectedOrder?.receiver_latitude,
+  ]);
 
-  const fetchRoute = async (userCoord, senderCoord) => {
-    if (!userCoord || !senderCoord) return;
-    try {
-      const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${userCoord[0]},${userCoord[1]};${senderCoord[0]},${senderCoord[1]}?geometries=geojson&access_token=pk.eyJ1IjoiYnl0ZWJyaWRnZXIiLCJhIjoiY21kZzVoNnU2MGlhcDJpcGVuNGV1amYxdyJ9.YMqlR9OovVOp-pm9yGK7eA`;
-      const res = await axios.get(url);
-      if (res.data?.routes?.length) {
-        setRoute({
-          type: 'Feature',
-          geometry: res.data.routes[0].geometry,
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching route:', error);
+  /* ────────────────────────────────────────────────────────────────────────
+     Optimized, cancellable, debounced route fetch
+     ──────────────────────────────────────────────────────────────────────── */
+  const abortRef = useRef(null);
+  const debouncedUserCoord = useDebounced(camera, 600);
+
+  const fromKey = useMemo(() => {
+    const n = normalizeCoord(debouncedUserCoord);
+    return n ? coordKey(n[0], n[1]) : '';
+  }, [debouncedUserCoord]);
+
+  const toKey = useMemo(() => {
+    const n = normalizeCoord(senderCoordinate);
+    return n ? coordKey(n[0], n[1]) : '';
+  }, [senderCoordinate]);
+
+  const fetchRoute = useCallback(async (from, to, legK) => {
+    const cached = routeCache.get(legK);
+    if (cached) {
+      if (mountedRef.current)
+        setRouteFeature({type: 'Feature', geometry: cached});
+      return;
     }
-  };
+
+    if (abortRef.current) abortRef.current.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    try {
+      const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${from[0]},${from[1]};${to[0]},${to[1]}?geometries=geojson&access_token=${MAPBOX_TOKEN}`;
+      const res = await fetch(url, {signal: controller.signal});
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      const geom = json?.routes?.[0]?.geometry;
+      if (geom && mountedRef.current && !controller.signal.aborted) {
+        cacheSet(legK, geom);
+        setRouteFeature({type: 'Feature', geometry: geom});
+      }
+    } catch (e) {
+      if (e?.name !== 'AbortError') {
+        // console.log('route fetch error:', e?.message);
+      }
+    } finally {
+      if (abortRef.current === controller) abortRef.current = null;
+    }
+  }, []);
 
   useEffect(() => {
-    if (camera && senderCoordinate) {
-      fetchRoute(camera, senderCoordinate);
-    }
-  }, [camera, senderCoordinate]);
+    if (!hasLocPerm) return;
 
+    // Keep route fetch idle while Accept modal is open / until accepted
+    if (!selectedOrder || !isAccepted) {
+      setRouteFeature(null);
+      if (abortRef.current) abortRef.current.abort();
+      return;
+    }
+
+    const from = normalizeCoord(debouncedUserCoord);
+    const to = normalizeCoord(senderCoordinate);
+    if (!from || !to) return;
+
+    const legK = legKey(from, to);
+    fetchRoute(from, to, legK);
+  }, [
+    hasLocPerm,
+    isAccepted,
+    selectedOrder?.id,
+    fromKey,
+    toKey,
+    fetchRoute,
+    debouncedUserCoord,
+    senderCoordinate,
+  ]);
+
+  useEffect(() => {
+    return () => {
+      if (abortRef.current) abortRef.current.abort();
+    };
+  }, []);
+
+  /* ────────────────────────────────────────────────────────────────────────
+     Polling deliveries when idle
+     ──────────────────────────────────────────────────────────────────────── */
   useEffect(() => {
     if (selectedOrder) return;
     const handler = async () => {
@@ -587,27 +687,28 @@ const HomeMainScreen = () => {
       }
     };
     const id = setInterval(handler, POLL_MS);
-    if (!user?.authenticated) {
-      clearInterval(id);
-    }
+    if (!user?.authenticated) clearInterval(id);
     return () => clearInterval(id);
-  }, [selectedOrder, showAcceptOrder, !user?.authenticated]);
+  }, [selectedOrder, showAcceptOrder, user?.authenticated]);
 
+  /* ────────────────────────────────────────────────────────────────────────
+     Background location post
+     ──────────────────────────────────────────────────────────────────────── */
   const postLocation = useCallback(async () => {
     if (!config?.selectVehicle?.id) return;
     if (locationInFlightRef.current) return;
     const cam = cameraRef.current;
-    if (!Array.isArray(cam) || cam.length < 2) return;
+    const norm = normalizeCoord(cam);
+    if (!norm) return;
 
     locationInFlightRef.current = true;
     try {
       await sendData(urls.UPDATELOCATION, {
-        longitude: cam[0],
-        latitude: cam[1],
+        longitude: norm[0],
+        latitude: norm[1],
         vehicle_id: config?.selectVehicle?.id,
       });
-    } catch (e) {
-      // optionally log
+    } catch {
     } finally {
       locationInFlightRef.current = false;
     }
@@ -622,17 +723,21 @@ const HomeMainScreen = () => {
     };
   }, [postLocation]);
 
-  const userCoordMemo = useMemo(() => camera, [camera[0], camera[1]]);
+  const userCoordMemo = useMemo(
+    () => normalizeCoord(camera) ?? camera,
+    [camera],
+  );
 
+  /* ────────────────────────────────────────────────────────────────────────
+     Render
+     ──────────────────────────────────────────────────────────────────────── */
   return (
     <>
       {socketConnected && <View style={styles.socketStatusContainer} />}
       <View
         style={[
           styles.container,
-          isAndroid15Plus && {
-            marginBottom: hp(insets.bottom * 0.11),
-          },
+          isAndroid15Plus && {marginBottom: hp(insets.bottom * 0.11)},
         ]}>
         <CustomHeader
           onRefreshPress={() => {
@@ -641,7 +746,6 @@ const HomeMainScreen = () => {
           }}
         />
 
-        {/* Gate & remount MapView after location permission is granted */}
         {hasLocPerm ? (
           <Mapbox.MapView
             key={mapMountKey}
@@ -649,8 +753,8 @@ const HomeMainScreen = () => {
             styleURL="mapbox://styles/mapbox/streets-v12"
             rotateEnabled
             style={styles.map}>
-            {route && selectedOrder && (
-              <Mapbox.ShapeSource id="routeSource" shape={route}>
+            {routeFeature && selectedOrder && (
+              <Mapbox.ShapeSource id="routeSource" shape={routeFeature}>
                 <Mapbox.LineLayer
                   id="routeLine"
                   style={{
@@ -704,16 +808,16 @@ const HomeMainScreen = () => {
           insets={insets}
           changeOrder={(status, pin) => {
             setCurrentStatus(status);
-            if (status === 'cancel' && selectedOrder?.status == 'pickup') {
-              setCancelModalVisible(!cancelModalVisible);
+            if (status === 'cancel' && selectedOrder?.status === 'pickup') {
+              setCancelModalVisible(true);
             } else if (
               status === 'cancel' &&
-              selectedOrder?.status == 'accepted'
+              selectedOrder?.status === 'accepted'
             ) {
-              setConfirmModalVisible(!confirmModalVisible);
+              setConfirmModalVisible(true);
             } else if (pin) {
               setSecurePinShow(true);
-              setConfirmModalVisible(!confirmModalVisible);
+              setConfirmModalVisible(true);
             } else {
               changeStatusOrderAccept(selectedOrder, status, pin);
             }
@@ -727,32 +831,29 @@ const HomeMainScreen = () => {
         isVisible={cancelModalVisible}
         onSelectReason={reasonKey => {
           changeStatusOrderAccept(selectedOrder, reasonKey);
-          setCancelModalVisible(!cancelModalVisible);
+          setCancelModalVisible(false);
         }}
-        onClose={() => setCancelModalVisible(!cancelModalVisible)}
+        onClose={() => setCancelModalVisible(false)}
       />
 
       <ConfirmModal
         securePinShow={securePinShow}
         isVisible={confirmModalVisible}
         onCancel={() => {
-          setConfirmModalVisible(!confirmModalVisible);
+          setConfirmModalVisible(false);
           setSecurePinShow(false);
         }}
         onConfirm={pin => {
           changeStatusOrderAccept(selectedOrder, currentStatus, pin);
-          setConfirmModalVisible(!confirmModalVisible);
+          setConfirmModalVisible(false);
           setSecurePinShow(false);
         }}
       />
+
       <ConfirmCancelDeliveryModal
         isVisible={confirmCancelModalVisible}
-        onCancel={() => {
-          setConfirmCancelModalVisible(!confirmCancelModalVisible);
-        }}
-        onConfirm={() => {
-          setConfirmCancelModalVisible(!confirmCancelModalVisible);
-        }}
+        onCancel={() => setConfirmCancelModalVisible(false)}
+        onConfirm={() => setConfirmCancelModalVisible(false)}
       />
     </>
   );
@@ -773,15 +874,4 @@ const styles = StyleSheet.create({
     borderRadius: wp(20),
   },
   map: {flex: 1, width: wp(100)},
-  permBtn: {
-    position: 'absolute',
-    right: 12,
-    bottom: 120,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 8,
-    backgroundColor: '#222',
-    opacity: 0.85,
-  },
-  permBtnTxt: {color: '#fff', fontSize: 12, fontWeight: '600'},
 });

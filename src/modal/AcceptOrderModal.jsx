@@ -129,8 +129,6 @@ const AcceptOrderModal = ({
   }, [isVisible]);
 
   const handleAccept = () => {
-    animationRef.current?.stop();
-    progressAnim.setValue(1);
     onAccept?.();
   };
 
@@ -212,7 +210,6 @@ const AcceptOrderModal = ({
             </CustomText>
           </View>
         </View>
-
         <View style={styles.buttonWrapper}>
           <SwipeButton
             title={'Slide to Accept'}
