@@ -10,6 +10,8 @@
   "GETVEHICLEDETAIL": "vehicle/details",
   "UPDATESTATUSVEHICLE": "vehicle/update_on_status",
   "UPDATELOCATION": "rider/locations/update_location",
+  "RIDERDETAIL": "rider/details",
+  "UPDATEPACKAGESTATUS": "rider/status/update_delivery_to_person_status",
 
   "SIGNUP": "Account/Add",
   "PROFILE": "Account/Get",

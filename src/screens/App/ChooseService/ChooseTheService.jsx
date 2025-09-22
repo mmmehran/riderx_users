@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useCallback} from 'react';
 import {View, StyleSheet, TouchableOpacity} from 'react-native';
 import {
   widthPercentageToDP as wp,
@@ -6,19 +6,67 @@ import {
 } from 'react-native-responsive-screen';
 import {useNavigation} from '@react-navigation/native';
 import {useTranslation} from 'react-i18next';
+import {useFocusEffect} from '@react-navigation/core';
 
 import CustomScreen from '../../../components/common/CustomScreen';
 import CustomText from '../../../components/common/CustomText';
 import colors from '../../../config/colors';
 import {ArrowLeft} from '../../../../assets/svg/index';
 import CustomButtonService from '../../../components/custom/CustomButtonService';
+import {getData, sendData} from '../../../services/common.service';
+import urls from '../../../services/urls.json';
+import errorHandler from '../../../utils/errorHandler';
 
 const ChooseTheService = props => {
   const navigation = useNavigation();
   const {t} = useTranslation();
-  const [servicePackage, setServicePackage] = useState(false);
-  const [serviceDelivery, setServiceDelivery] = useState(false);
-  const [serviceHeavyPackage, setServiceHeavyPackage] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [lastPackageData, setLastPackageData] = useState(null);
+  const [servicePackage, setServicePackage] = useState(null);
+
+  const data = [
+    {
+      id: 1,
+      name: t('package'),
+    },
+    {
+      id: 2,
+      name: t('delivery'),
+    },
+  ];
+
+  const getPackageStatus = async () => {
+    const response = await getData(urls.RIDERDETAIL);
+    if (response?.data?.status) {
+      setLastPackageData(response?.data?.data[0]);
+      response?.data?.data[0]?.delivery_to_person
+        ? setServicePackage(data[1])
+        : setServicePackage(data[0]);
+    } else {
+      errorHandler(response);
+    }
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      getPackageStatus();
+    }, []),
+  );
+
+  const changeStatus = async value => {
+    const response = await sendData(urls.UPDATEPACKAGESTATUS, {
+      id: lastPackageData?.id,
+      delivery_to_person: value?.name == t('delivery') ? true : false,
+    });
+    if (response?.data?.status) {
+      setLastPackageData(response?.data?.data);
+      response?.data?.data?.delivery_to_person
+        ? setServicePackage(data[1])
+        : setServicePackage(data[0]);
+    } else {
+      errorHandler(response);
+    }
+  };
 
   return (
     <CustomScreen>
@@ -30,19 +78,15 @@ const ChooseTheService = props => {
       <View style={styles.top}>
         <CustomText style={styles.textTop}>{t('chooseService')}</CustomText>
       </View>
-      {/* <CustomButtonService
-        title={t('package')}
-        service={servicePackage}
-        setService={setServicePackage}></CustomButtonService>
-      <CustomButtonService
-        title={t('delivery')}
-        service={serviceDelivery}
-        setService={setServiceDelivery}></CustomButtonService>
-      <CustomButtonService
-        title={t('heavyPackage')}
-        service={serviceHeavyPackage}
-        setService={setServiceHeavyPackage}></CustomButtonService> */}
-      <CustomText style={styles.noService}>No service available.</CustomText>
+
+      {data?.map(item => {
+        return (
+          <CustomButtonService
+            data={item}
+            service={servicePackage}
+            setService={value => changeStatus(value)}></CustomButtonService>
+        );
+      })}
     </CustomScreen>
   );
 };
