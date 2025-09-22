@@ -5,16 +5,13 @@ import {
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
 import {useNavigation} from '@react-navigation/native';
-import {useSelector} from 'react-redux';
 
 import CustomScreen from '../../components/common/CustomScreen';
 import routes from '../../navigation/routes';
 import {Logo} from '../../../assets/svg/index';
-import {selectAuthenticated} from '../../redux/reducers/authenticationReducer';
 
 const Splash = props => {
   const navigation = useNavigation();
-  const authenticated = useSelector(selectAuthenticated);
 
   useEffect(() => {
     setTimeout(() => {

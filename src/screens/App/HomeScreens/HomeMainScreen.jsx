@@ -48,6 +48,7 @@ import ConfirmCancelDeliveryModal from '../../../modal/ConfirmCancelDeliveryModa
 import routes from '../../../navigation/routes';
 import colors from '../../../config/colors';
 import {playDing} from '../../../utils/sounds';
+import CustomText from '../../../components/common/CustomText';
 
 const LOCATION_UPDATE_MS = 30 * 1000;
 const POLL_MS = 2 * 60 * 1000;
@@ -820,7 +821,11 @@ const HomeMainScreen = ({route}) => {
         ) : (
           <View style={styles.map} />
         )}
-
+        {config?.selectVehicle?.on_status == 'off' && (
+          <View style={styles.vehicleStatus}>
+            <CustomText style={styles.text}>Vehicle is off !</CustomText>
+          </View>
+        )}
         <CustomBottomTab />
       </View>
 
@@ -905,6 +910,20 @@ const styles = StyleSheet.create({
     backgroundColor: colors.success,
     zIndex: 9999,
     borderRadius: wp(20),
+  },
+  vehicleStatus: {
+    backgroundColor: colors.red,
+    borderRadius: wp(4),
+    width: wp(60),
+    height: hp(10),
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'absolute',
+  },
+  text: {
+    fontWeight: 'bold',
+    color: colors.white,
+    fontSize: wp(7),
   },
   map: {flex: 1, width: wp(100)},
 });
