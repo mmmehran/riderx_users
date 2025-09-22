@@ -1,4 +1,3 @@
-/* HomeMainScreen.js */
 import React, {useState, useEffect, useRef, useMemo, useCallback} from 'react';
 import {
   View,
@@ -6,7 +5,6 @@ import {
   PermissionsAndroid,
   Platform,
   AppState,
-  DeviceEventEmitter,
 } from 'react-native';
 import {
   widthPercentageToDP as wp,
@@ -173,7 +171,7 @@ const createNotifChannelOnce = async ref => {
 /* ──────────────────────────────────────────────────────────────────────────
    Screen
    ────────────────────────────────────────────────────────────────────────── */
-const HomeMainScreen = () => {
+const HomeMainScreen = ({route}) => {
   const [camera, setCamera] = useState([-74.006, 40.7128]);
   const [data, setData] = useState([]);
   const [currentOrderIndex, setCurrentOrderIndex] = useState(null);
@@ -210,34 +208,35 @@ const HomeMainScreen = () => {
     cameraRef.current = camera;
   }, [camera]);
 
-  useEffect(() => {
-    const sub = DeviceEventEmitter.addListener(
-      'OPEN_ACCEPT_FROM_NOTIF',
-      async data => {
-        try {
-          // Prefer full object for instant UX
-          let item = null;
-          if (data?.delivery_json) {
-            item = JSON.parse(data.delivery_json);
-          } else if (data?.delivery_id) {
-            // fallback: fetch one item by id from your API (pseudo)
-            // const res = await getData(`${urls.GETDELIVERY}/${data.delivery_id}`);
-            // item = res?.data?.data ?? null;
-          }
-          if (!item) return;
+  // Helper: open Accept modal from navigation payload
+  const openAcceptFromNotifPayload = useCallback(async payload => {
+    if (!payload) return;
+    if (selectedOrderRef.current) return;
+    let item = null;
+    if (payload?.delivery_json) {
+      try {
+        item = JSON.parse(payload.delivery_json);
+      } catch {}
+    }
 
-          // Prevent conflict if you already accepted another order
-          if (selectedOrderRef.current) return;
+    if (!item) return;
+    setCurrentOrderIndex(null);
+    setShowAcceptOrder(false);
 
-          setData([item]);
-          setCurrentOrderIndex(0);
-          setIsAccepted(false);
-          setShowAcceptOrder(true);
-        } catch {}
-      },
-    );
-    return () => sub.remove();
+    setData([item]);
+    setTimeout(() => {
+      setCurrentOrderIndex(0);
+      setShowAcceptOrder(true);
+      setIsAccepted(false);
+    }, 1000);
   }, []);
+
+  useEffect(() => {
+    const payload = route?.params;
+    if (payload) {
+      openAcceptFromNotifPayload(payload);
+    }
+  }, [route?.params, openAcceptFromNotifPayload, navigation]);
 
   const locationInFlightRef = useRef(false);
   useEffect(() => {

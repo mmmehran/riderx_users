@@ -8,8 +8,7 @@ import {SafeAreaProvider} from 'react-native-safe-area-context';
 import {I18nextProvider} from 'react-i18next';
 import * as Sentry from '@sentry/react-native';
 import notifee, { EventType } from '@notifee/react-native';
-import { DeviceEventEmitter } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { navigationRef, navigate } from './src/navigation/navigationRef';
 
 
 import BaseNavigator from './src/navigation/BaseNavigator';
@@ -18,6 +17,7 @@ import AppContext from './src/components/common/AppContext';
 import store, {persistor} from './src/redux/store';
 import i18n from './src/utils/i18n';
 import { initDing } from './src/utils/sounds';
+import routes from './src/navigation/routes';
 
 const App = () => {
   const [userDevice, setUserDevice] = useState([]);
@@ -51,32 +51,15 @@ const App = () => {
     [],
   );
 
-
-const PENDING_ACCEPT_KEY = 'notif:pending_accept';
-
-    useEffect(() => {
-    // Foreground presses
-    const unsub = notifee.onForegroundEvent(async ({ type, detail }) => {
-      if (type === EventType.PRESS && detail?.pressAction?.id === 'open_accept') {
-        DeviceEventEmitter.emit('OPEN_ACCEPT_FROM_NOTIF', detail?.notification?.data || {});
-      }
-    });
-
-    // Cold start / resume: consume any pending
-    (async () => {
-      const raw = await AsyncStorage.getItem(PENDING_ACCEPT_KEY);
-      if (raw) {
-        await AsyncStorage.removeItem(PENDING_ACCEPT_KEY);
-        try {
-          const data = JSON.parse(raw);
-          DeviceEventEmitter.emit('OPEN_ACCEPT_FROM_NOTIF', data);
-        } catch {}
-      }
-    })();
-
-    return () => unsub();
-  }, []);
-
+notifee.onBackgroundEvent(async ({ type, detail }) => {
+  if (type === EventType.PRESS && detail?.pressAction?.id === 'open_accept') {
+    const data = detail?.notification?.data || {};
+      navigate(routes.DRAWERNAVIGATOR,{
+        screen: routes.HOMEMAIN,
+        params: data
+      })
+  }
+});
 
   return (
     <SafeAreaProvider>
@@ -85,7 +68,7 @@ const PENDING_ACCEPT_KEY = 'notif:pending_accept';
           <Provider store={store}>
             <PersistGate loading={null} persistor={persistor}>
               <GestureHandlerRootView style={{flex: 1}}>
-                <NavigationContainer>
+                <NavigationContainer  ref={navigationRef} >
                   <BaseNavigator />
                 </NavigationContainer>
               </GestureHandlerRootView>
