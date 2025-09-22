@@ -6,6 +6,7 @@ import {
   PermissionsAndroid,
   Platform,
   AppState,
+  DeviceEventEmitter,
 } from 'react-native';
 import {
   widthPercentageToDP as wp,
@@ -209,6 +210,35 @@ const HomeMainScreen = () => {
     cameraRef.current = camera;
   }, [camera]);
 
+  useEffect(() => {
+    const sub = DeviceEventEmitter.addListener(
+      'OPEN_ACCEPT_FROM_NOTIF',
+      async data => {
+        try {
+          // Prefer full object for instant UX
+          let item = null;
+          if (data?.delivery_json) {
+            item = JSON.parse(data.delivery_json);
+          } else if (data?.delivery_id) {
+            // fallback: fetch one item by id from your API (pseudo)
+            // const res = await getData(`${urls.GETDELIVERY}/${data.delivery_id}`);
+            // item = res?.data?.data ?? null;
+          }
+          if (!item) return;
+
+          // Prevent conflict if you already accepted another order
+          if (selectedOrderRef.current) return;
+
+          setData([item]);
+          setCurrentOrderIndex(0);
+          setIsAccepted(false);
+          setShowAcceptOrder(true);
+        } catch {}
+      },
+    );
+    return () => sub.remove();
+  }, []);
+
   const locationInFlightRef = useRef(false);
   useEffect(() => {
     selectedOrderRef.current = selectedOrder;
@@ -243,7 +273,7 @@ const HomeMainScreen = () => {
           android: {
             channelId: channelId || 'orders',
             smallIcon: 'ic_launcher',
-            pressAction: {id: 'default', launchActivity: 'default'},
+            pressAction: {id: 'open_accept', launchActivity: 'default'},
           },
         });
       } else {
@@ -259,7 +289,7 @@ const HomeMainScreen = () => {
               badge: true,
             },
           },
-          pressAction: {id: 'default'},
+          pressAction: {id: 'open_accept'},
         });
       }
     } catch {}
@@ -299,7 +329,10 @@ const HomeMainScreen = () => {
             await showLocalNotification({
               title: 'New delivery request',
               body: 'You have a new delivery request',
-              data: {delivery_id: String(payload?.message?.id ?? '')},
+              data: {
+                delivery_id: String(payload?.message?.id ?? ''),
+                delivery_json: JSON.stringify(payload?.message || {}),
+              },
             });
           }
         } else {
