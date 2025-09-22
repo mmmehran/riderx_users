@@ -6,14 +6,14 @@ import colors from '../../config/colors';
 import CustomText from '../common/CustomText';
 import { Info, Tick} from '../../../assets/svg/index';
 
-const CustomButtonService = ({setService,service,data}) => {
+const CustomButtonService = ({setService,service,data,title}) => {
 
     return (
         <TouchableOpacity
         onPress={() => setService(data)}
         style={styles.serviceButton}>
         <View style={styles.left}>
-          <CustomText style={styles.textTop}>{data?.name}</CustomText>
+          <CustomText style={styles.textTop}>{title ? title : data?.name}</CustomText>
           <Info />
         </View>
         <View style={styles.right}>

@@ -29,7 +29,6 @@ const LoginEmail = props => {
   const {t} = useTranslation();
   const dispatch = useDispatch();
   const user = useSelector(authenticated);
-  const [vehicleStatus, setVehicleStatus] = useState(false);
 
   const config = useSelector(selectConfig);
 
@@ -47,7 +46,6 @@ const LoginEmail = props => {
     );
     if (response?.data?.status) {
       dispatch(setSelectVehicle(response?.data?.data));
-      setVehicleStatus(response?.data?.data?.on_status == 'on' ? false : true);
     } else {
       errorHandler(response);
     }
@@ -56,16 +54,10 @@ const LoginEmail = props => {
   const updateVehicleStatus = async () => {
     const response = await sendData(urls.UPDATESTATUSVEHICLE, {
       id: config?.selectVehicle?.id,
-      on_status: vehicleStatus ? 'on' : 'off',
+      on_status: config?.selectVehicle?.on_status == 'on' ? 'off' : 'on',
     });
     if (response?.data?.status) {
-      const responseVehicle = await getData(
-        `${urls.GETVEHICLEDETAIL}?id=${config?.selectVehicle?.id}`,
-      );
-      dispatch(setSelectVehicle(responseVehicle?.data?.data));
-      setVehicleStatus(
-        responseVehicle?.data?.data?.on_status == 'on' ? false : true,
-      );
+      getVehicleStatus();
     } else {
       errorHandler(response);
     }
@@ -136,12 +128,14 @@ const LoginEmail = props => {
             }}
             style={[
               styles.stopButton,
-              vehicleStatus
+              config?.selectVehicle?.on_status !== 'on'
                 ? {backgroundColor: colors.success}
                 : {backgroundColor: '#CD2C2C'},
             ]}>
             <CustomText style={styles.textButton}>
-              {vehicleStatus ? t('start') : t('stop')}
+              {config?.selectVehicle?.on_status == 'on'
+                ? t('stop')
+                : t('start')}
             </CustomText>
           </TouchableOpacity>
         </View>
