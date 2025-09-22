@@ -507,6 +507,7 @@ const HomeMainScreen = ({route}) => {
       const orders = response?.data?.data?.items || [];
       setData(orders);
       if (orders.length > 0) {
+        playDing();
         setCurrentOrderIndex(0);
         setShowAcceptOrder(true);
         setIsAccepted(false);
