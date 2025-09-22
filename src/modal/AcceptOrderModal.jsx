@@ -44,6 +44,7 @@ const AcceptOrderModal = ({
     return Number.isFinite(lat) && Number.isFinite(lon) ? [lon, lat] : null;
   }, [order]);
 
+  console.log(order);
   const dropCoord = useMemo(() => {
     const lat = Number(order?.receiver_latitude);
     const lon = Number(order?.receiver_longitude);
@@ -51,15 +52,11 @@ const AcceptOrderModal = ({
   }, [order]);
 
   const pickupLabel = useMemo(
-    () =>
-      `${order?.sender_address_json?.address} , ${order?.sender_address_json?.street}` ||
-      '-',
+    () => `${order?.sender_address_json?.full_address}` || '-',
     [order],
   );
   const dropLabel = useMemo(
-    () =>
-      `${order?.receiver_address_json?.address} , ${order?.receiver_address_json?.street}` ||
-      '-',
+    () => `${order?.receiver_address_json?.full_address}` || '-',
     [order],
   );
 
