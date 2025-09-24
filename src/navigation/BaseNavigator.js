@@ -12,7 +12,7 @@ import {  authenticated} from '../redux/reducers/authenticationReducer';
 import {setConfig,setConfigTest} from '../services/defaultAxios'
 import routes from "./routes";
 import {setSelectVehicle} from '../redux/reducers/configReducer';
-import { getData} from '../services/common.service';
+import { getData, putData} from '../services/common.service';
 import urls from '../services/urls.json';
 import errorHandler from '../utils/errorHandler';
 
@@ -23,7 +23,7 @@ const BaseNavigator = () => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
 
-    const getVehicle = async () => {
+  const getVehicle = async () => {
     const response = await getData(`${urls.GETVEHICLE}?page=1`);
     if (response?.data?.status) {
       if (response?.data?.data?.items?.length == 1) {
@@ -34,9 +34,21 @@ const BaseNavigator = () => {
     }
   };
 
+  const registerDeviceOnFCM = async () => {
+    // const token = await messaging().getToken();
+    // console.log("FCM TOKEN:",token)
+
+    const response = await putData(`${urls.SETFCMTOKEN}`,{
+      // "fcm_token": token
+    });
+
+
+  };
+
   const fetchRoute = async()=>{
     if(user?.authenticated == true){
      await  getVehicle()
+
       navigation.navigate(routes.DRAWERNAVIGATOR)
     }else{
        navigation.navigate(routes.AUTHNAVIGATOR);

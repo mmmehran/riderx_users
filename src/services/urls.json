@@ -1,5 +1,6 @@
 {
   "LOGIN": "user/login/",
+  "SETFCMTOKEN": "user/set_fcm_token/",
   "GETLISTDELIVERY": "delivery/list",
   "GETWALLET": "user/wallet/",
   "GETWALLETTRANSACTION": "user/wallet_transaction_list/",
