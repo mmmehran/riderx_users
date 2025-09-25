@@ -20,6 +20,7 @@ import notifee, {
   AuthorizationStatus,
 } from '@notifee/react-native';
 import Geolocation from '@react-native-community/geolocation';
+import messaging from '@react-native-firebase/messaging'; // ⬅️ NEW
 
 import AcceptOrderModal from '../../../modal/AcceptOrderModal';
 import AcceptedOrderModal from '../../../modal/AcceptedOrderModal';
@@ -167,6 +168,44 @@ const createNotifChannelOnce = async ref => {
     ref.current = 'orders';
   }
   return ref.current;
+};
+
+const ensureFcmPermissionAndToken = async () => {
+  console.log('enter');
+  try {
+    // iOS will prompt; Android no-op (POST_NOTIFICATIONS handled above)
+    const authStatus = await messaging().requestPermission({
+      alert: true,
+      badge: true,
+      sound: true,
+      provisional: true,
+    });
+
+    console.log(authStatus);
+    const enabled =
+      authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+      authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+
+    if (!enabled) return null;
+
+    const token = await messaging().getToken();
+
+    console.log(token);
+    // Optional: send token to backend if you have an endpoint
+    // try { await sendData(urls.UPDATE_FCM_TOKEN, { token }); } catch {}
+
+    // Keep backend synced on token rotation
+    messaging().onTokenRefresh(async newToken => {
+      try {
+        console.log(newToken);
+        // await sendData(urls.UPDATE_FCM_TOKEN, { token: newToken });
+      } catch {}
+    });
+
+    return token;
+  } catch (e) {
+    return null;
+  }
 };
 
 /* ──────────────────────────────────────────────────────────────────────────
@@ -392,6 +431,7 @@ const HomeMainScreen = ({route}) => {
       if (Platform.OS === 'android' && notifOk) {
         await createNotifChannelOnce(channelIdRef);
       }
+      await ensureFcmPermissionAndToken();
       if (!live) return;
       getUserProfile();
       getLastDelivery();
