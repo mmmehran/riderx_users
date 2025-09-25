@@ -21,6 +21,7 @@ import notifee, {
 } from '@notifee/react-native';
 import Geolocation from '@react-native-community/geolocation';
 import messaging from '@react-native-firebase/messaging'; // ⬅️ NEW
+import {firebase} from '@react-native-firebase/app';
 
 import AcceptOrderModal from '../../../modal/AcceptOrderModal';
 import AcceptedOrderModal from '../../../modal/AcceptedOrderModal';
@@ -187,10 +188,10 @@ const ensureFcmPermissionAndToken = async () => {
       sound: true,
       provisional: true,
     });
-    console.log("authStatus");
-    console.log("authStatus");
-    console.log("authStatus");
-    console.log("authStatus");
+    console.log('authStatus');
+    console.log('authStatus');
+    console.log('authStatus');
+    console.log('authStatus');
 
     console.log(authStatus);
     const enabled =
@@ -201,10 +202,10 @@ const ensureFcmPermissionAndToken = async () => {
 
     const token = await messaging().getToken();
 
-    console.log("token");
-    console.log("token");
-    console.log("token");
-    console.log("token");
+    console.log('token');
+    console.log('token');
+    console.log('token');
+    console.log('token');
     console.log(token);
     // Optional: send token to backend if you have an endpoint
     // try { await sendData(urls.UPDATE_FCM_TOKEN, { token }); } catch {}
@@ -219,7 +220,7 @@ const ensureFcmPermissionAndToken = async () => {
 
     return token;
   } catch (e) {
-    console.log(e)
+    console.log(e);
     return null;
   }
 };
@@ -264,6 +265,15 @@ const HomeMainScreen = ({route}) => {
     cameraRef.current = camera;
   }, [camera]);
 
+  useEffect(() => {
+    try {
+      const app = firebase.app(); // throws if not configured
+      console.log('[FIR] default app name:', app?.name); // should be "[DEFAULT]"
+      console.log('[FIR] options:', app?.options); // optional: confirms plist values
+    } catch (e) {
+      console.log('[FIR] error:', e?.message);
+    }
+  }, []);
   // Helper: open Accept modal from navigation payload
   const openAcceptFromNotifPayload = useCallback(async payload => {
     if (!payload) return;
