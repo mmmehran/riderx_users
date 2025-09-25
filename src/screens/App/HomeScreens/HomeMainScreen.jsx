@@ -171,7 +171,14 @@ const createNotifChannelOnce = async ref => {
 };
 
 const ensureFcmPermissionAndToken = async () => {
-  console.log('enter');
+  console.log('entertofirebase');
+  console.log('entertofirebase');
+  console.log('entertofirebase');
+  console.log('entertofirebase');
+  console.log('entertofirebase');
+  console.log('entertofirebase');
+  console.log('entertofirebase');
+
   try {
     // iOS will prompt; Android no-op (POST_NOTIFICATIONS handled above)
     const authStatus = await messaging().requestPermission({
@@ -180,6 +187,10 @@ const ensureFcmPermissionAndToken = async () => {
       sound: true,
       provisional: true,
     });
+    console.log("authStatus");
+    console.log("authStatus");
+    console.log("authStatus");
+    console.log("authStatus");
 
     console.log(authStatus);
     const enabled =
@@ -190,6 +201,10 @@ const ensureFcmPermissionAndToken = async () => {
 
     const token = await messaging().getToken();
 
+    console.log("token");
+    console.log("token");
+    console.log("token");
+    console.log("token");
     console.log(token);
     // Optional: send token to backend if you have an endpoint
     // try { await sendData(urls.UPDATE_FCM_TOKEN, { token }); } catch {}
@@ -204,6 +219,7 @@ const ensureFcmPermissionAndToken = async () => {
 
     return token;
   } catch (e) {
+    console.log(e)
     return null;
   }
 };
