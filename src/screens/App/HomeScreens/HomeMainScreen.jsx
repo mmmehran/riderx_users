@@ -172,13 +172,7 @@ const createNotifChannelOnce = async ref => {
 };
 
 const ensureFcmPermissionAndToken = async () => {
-  console.log('entertofirebase');
-  console.log('entertofirebase');
-  console.log('entertofirebase');
-  console.log('entertofirebase');
-  console.log('entertofirebase');
-  console.log('entertofirebase');
-  console.log('entertofirebase');
+
 
   try {
     // iOS will prompt; Android no-op (POST_NOTIFICATIONS handled above)
@@ -188,12 +182,8 @@ const ensureFcmPermissionAndToken = async () => {
       sound: true,
       provisional: true,
     });
-    console.log('authStatus');
-    console.log('authStatus');
-    console.log('authStatus');
-    console.log('authStatus');
-
-    console.log(authStatus);
+ 
+    
     const enabled =
       authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
       authStatus === messaging.AuthorizationStatus.PROVISIONAL;
@@ -202,24 +192,27 @@ const ensureFcmPermissionAndToken = async () => {
 
     const token = await messaging().getToken();
 
-    console.log('token');
-    console.log('token');
-    console.log('token');
-    console.log('token');
+    console.log('fcm token');
     console.log(token);
-    // Optional: send token to backend if you have an endpoint
-    // try { await sendData(urls.UPDATE_FCM_TOKEN, { token }); } catch {}
+
+    try {
+      await sendData(urls.SETFCMTOKEN, { fcm_token: token });
+    } catch (e){
+      console.log(e);
+    }
 
     // Keep backend synced on token rotation
     messaging().onTokenRefresh(async newToken => {
-      try {
-        console.log(newToken);
-        // await sendData(urls.UPDATE_FCM_TOKEN, { token: newToken });
-      } catch {}
+      try {        
+        await sendData(urls.SETFCMTOKEN, { fcm_token: newToken });
+      } catch (e){
+        console.log(e);
+      }
     });
 
     return token;
   } catch (e) {
+    console.log("error exception in firebase configuration");
     console.log(e);
     return null;
   }
@@ -274,6 +267,45 @@ const HomeMainScreen = ({route}) => {
       console.log('[FIR] error:', e?.message);
     }
   }, []);
+  // In a dedicated file, or your main component's useEffect:
+useEffect(() => {
+  const unsubscribe = messaging().onMessage(async remoteMessage => {
+    // 1. Extract the notification details
+    const {notification, data} = remoteMessage;
+
+    // 2. Use notifee to display the notification
+    if (notification) {
+      // NOTE: You're using a custom 'orders' channel, ensure it's created.
+      // Your code already calls createNotifChannelOnce, but make sure it runs successfully.
+      const channelId = channelIdRef.current || 'orders';
+      console.log("get notification from firebase");
+      await notifee.displayNotification({
+        title: notification.title,
+        body: notification.body,
+        data: data,
+        android: {
+          channelId: channelId,
+          smallIcon: 'ic_launcher', // Ensure this resource exists
+          pressAction: {id: 'open_accept', launchActivity: 'default'},
+        },
+        // For iOS, your showLocalNotification function already has the needed config
+        ios: {
+          sound: 'default',
+          foregroundPresentationOptions: {
+            alert: true,
+            sound: true,
+            badge: true,
+          },
+        },
+      });
+      // Handle your custom payload logic here if needed,
+      // e.g., showing the AcceptOrderModal, like you do in your socket handler:
+      // openAcceptFromNotifPayload(data);
+    }
+  });
+
+  return unsubscribe;
+}, []);
   // Helper: open Accept modal from navigation payload
   const openAcceptFromNotifPayload = useCallback(async payload => {
     if (!payload) return;

@@ -19,14 +19,6 @@ export const postData = async (url, data, setAuthorization = true) => {
    }
 };
 
-export const putData = async (url, data, setAuthorization = true) => {
-   try {
-      const response = await http.put(url, data, setAuthorization);
-      return response
-   } catch (error) {
-      return false;
-   }
-};
 
 
 export const externalRequest = async (url, method) => {
@@ -61,7 +53,6 @@ export const sendData = async (url, data, setAuthorization = true) => {
 export default {
    getData,
    postData,
-   putData,
    externalRequest,
    sendData,
    deleteData
