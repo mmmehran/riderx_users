@@ -5,6 +5,7 @@ import {
   PermissionsAndroid,
   Platform,
   AppState,
+  Alert,
 } from 'react-native';
 import {
   widthPercentageToDP as wp,
@@ -210,6 +211,20 @@ const ensureFcmPermissionAndToken = async () => {
       }
     });
 
+    messaging().onMessage(async remoteMessage => {
+      console.log("get notification from firebase");
+
+      // 1. Extract the notification details
+      const {notification, data} = remoteMessage;
+
+      // 2. Use notifee to display the notification
+      if (notification) {
+          Alert.alert('New FCM Message',JSON.stringify(remoteMessage))
+        showLocalNotification(notification.title,notification.body,data)
+      
+      }
+    });
+
     return token;
   } catch (e) {
     console.log("error exception in firebase configuration");
@@ -268,44 +283,7 @@ const HomeMainScreen = ({route}) => {
     }
   }, []);
   // In a dedicated file, or your main component's useEffect:
-useEffect(() => {
-  const unsubscribe = messaging().onMessage(async remoteMessage => {
-    // 1. Extract the notification details
-    const {notification, data} = remoteMessage;
 
-    // 2. Use notifee to display the notification
-    if (notification) {
-      // NOTE: You're using a custom 'orders' channel, ensure it's created.
-      // Your code already calls createNotifChannelOnce, but make sure it runs successfully.
-      const channelId = channelIdRef.current || 'orders';
-      console.log("get notification from firebase");
-      await notifee.displayNotification({
-        title: notification.title,
-        body: notification.body,
-        data: data,
-        android: {
-          channelId: channelId,
-          smallIcon: 'ic_launcher', // Ensure this resource exists
-          pressAction: {id: 'open_accept', launchActivity: 'default'},
-        },
-        // For iOS, your showLocalNotification function already has the needed config
-        ios: {
-          sound: 'default',
-          foregroundPresentationOptions: {
-            alert: true,
-            sound: true,
-            badge: true,
-          },
-        },
-      });
-      // Handle your custom payload logic here if needed,
-      // e.g., showing the AcceptOrderModal, like you do in your socket handler:
-      // openAcceptFromNotifPayload(data);
-    }
-  });
-
-  return unsubscribe;
-}, []);
   // Helper: open Accept modal from navigation payload
   const openAcceptFromNotifPayload = useCallback(async payload => {
     if (!payload) return;
