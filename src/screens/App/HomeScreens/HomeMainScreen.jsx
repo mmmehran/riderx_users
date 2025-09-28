@@ -329,24 +329,24 @@ const HomeMainScreen = ({route}) => {
         }
       });
 
-      // fire when in app
-      messaging().onMessage(async remoteMessage => {
-        // 1. Extract the notification details
-        const {notification, data} = remoteMessage;
-        // 2. Use notifee to display the notification
-        if (notification) {
-          showLocalNotification({
-            title: notification.title,
-            body: notification.body,
-            data: data
-              ? {
-                  delivery_id: String(data?.id ?? ''),
-                  delivery_json: JSON.stringify(data || {}),
-                }
-              : null,
-          });
-        }
-      });
+      // // fire when in app
+      // messaging().onMessage(async remoteMessage => {
+      //   // 1. Extract the notification details
+      //   const {notification, data} = remoteMessage;
+      //   // 2. Use notifee to display the notification
+      //   if (notification) {
+      //     showLocalNotification({
+      //       title: notification.title,
+      //       body: notification.body,
+      //       data: data
+      //         ? {
+      //             delivery_id: String(data?.id ?? ''),
+      //             delivery_json: JSON.stringify(data || {}),
+      //           }
+      //         : null,
+      //     });
+      //   }
+      // });
 
       return token;
     } catch (e) {
