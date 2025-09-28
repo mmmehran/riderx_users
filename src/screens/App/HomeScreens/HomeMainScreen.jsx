@@ -172,56 +172,6 @@ const createNotifChannelOnce = async ref => {
   return ref.current;
 };
 
-const ensureFcmPermissionAndToken = async () => {
-  try {
-    // iOS will prompt; Android no-op (POST_NOTIFICATIONS handled above)
-    const authStatus = await messaging().requestPermission({
-      alert: true,
-      badge: true,
-      sound: true,
-      provisional: true,
-    });
-
-    const enabled =
-      authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-      authStatus === messaging.AuthorizationStatus.PROVISIONAL;
-
-    if (!enabled) return null;
-    const token = await messaging().getToken();
-    try {
-      await sendData(urls.SETFCMTOKEN, {fcm_token: token});
-    } catch (e) {
-      console.log(e);
-    }
-
-    // Keep backend synced on token rotation
-    messaging().onTokenRefresh(async newToken => {
-      try {
-        await sendData(urls.SETFCMTOKEN, {fcm_token: newToken});
-      } catch (e) {
-        console.log(e);
-      }
-    });
-
-    messaging().onMessage(async remoteMessage => {
-      console.log('get notification from firebase');
-
-      // 1. Extract the notification details
-      const {notification, data} = remoteMessage;
-      // 2. Use notifee to display the notification
-      if (notification) {
-        showLocalNotification(notification.title, notification.body, data);
-      }
-    });
-
-    return token;
-  } catch (e) {
-    console.log('error exception in firebase configuration');
-    console.log(e);
-    return null;
-  }
-};
-
 /* ──────────────────────────────────────────────────────────────────────────
    Screen
    ────────────────────────────────────────────────────────────────────────── */
@@ -348,6 +298,64 @@ const HomeMainScreen = ({route}) => {
     } catch {}
   }, []);
 
+  const ensureFcmPermissionAndToken = async () => {
+    try {
+      // iOS will prompt; Android no-op (POST_NOTIFICATIONS handled above)
+      const authStatus = await messaging().requestPermission({
+        alert: true,
+        badge: true,
+        sound: true,
+        provisional: true,
+      });
+
+      const enabled =
+        authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+        authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+
+      if (!enabled) return null;
+      const token = await messaging().getToken();
+      try {
+        await sendData(urls.SETFCMTOKEN, {fcm_token: token});
+      } catch (e) {
+        console.log(e);
+      }
+
+      // Keep backend synced on token rotation
+      messaging().onTokenRefresh(async newToken => {
+        try {
+          await sendData(urls.SETFCMTOKEN, {fcm_token: newToken});
+        } catch (e) {
+          console.log(e);
+        }
+      });
+
+      // fire when in app
+      messaging().onMessage(async remoteMessage => {
+        // 1. Extract the notification details
+        const {notification, data} = remoteMessage;
+        // 2. Use notifee to display the notification
+        if (notification) {
+          showLocalNotification({
+            title: notification.title,
+            body: notification.body,
+            data: data
+              ? {
+                  delivery_id: String(data?.id ?? ''),
+                  delivery_json: JSON.stringify(data || {}),
+                }
+              : null,
+          });
+        }
+      });
+
+      return token;
+    } catch (e) {
+      console.log('error exception in firebase configuration');
+      console.log(e);
+      return null;
+    }
+  };
+
   const removeOrderById = useCallback(id => {
     if (id == null) return;
     setData(prev => prev.filter(o => o?.id !== id));
@@ -378,16 +386,16 @@ const HomeMainScreen = ({route}) => {
           setShowAcceptOrder(true);
           setIsAccepted(false);
           if (isActive) playDing();
-          if (!isActive) {
-            await showLocalNotification({
-              title: 'New delivery request',
-              body: 'You have a new delivery request',
-              data: {
-                delivery_id: String(payload?.message?.id ?? ''),
-                delivery_json: JSON.stringify(payload?.message || {}),
-              },
-            });
-          }
+          // if (!isActive) {
+          //   await showLocalNotification({
+          //     title: 'New delivery request',
+          //     body: 'You have a new delivery request',
+          //     data: {
+          //       delivery_id: String(payload?.message?.id ?? ''),
+          //       delivery_json: JSON.stringify(payload?.message || {}),
+          //     },
+          //   });
+          // }
         } else {
           setCurrentOrderIndex(null);
           setShowAcceptOrder(false);
