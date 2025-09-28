@@ -70,28 +70,28 @@ const AcceptedOrderModal = ({order, changeOrder, loading, insets}) => {
           style={[styles.userContainer, {marginTop: hp(-2), height: hp(20.5)}]}>
           <View style={styles.textContainer}>
             <CustomText style={styles.textInfo}>
-              Number:{' '}
+              House Number:{' '}
+              {order?.status !== 'pickup'
+                ? order?.sender_address_json?.house_number
+                : order?.receiver_address_json?.house_number}
+            </CustomText>
+            <CustomText style={styles.textInfo}>
+              Entrance:{' '}
               {order?.status !== 'pickup'
                 ? order?.sender_address_json?.entrance
                 : order?.receiver_address_json?.entrance}
-            </CustomText>
-            <CustomText style={styles.textInfo}>
-              Apartment:{' '}
-              {order?.status !== 'pickup'
-                ? order?.sender_address_json?.apartment
-                : order?.receiver_address_json?.apartment}
-            </CustomText>
-            <CustomText style={styles.textInfo}>
-              Door:{' '}
-              {order?.status !== 'pickup'
-                ? order?.sender_address_json?.apartment_door
-                : order?.receiver_address_json?.apartment_door}
             </CustomText>
             <CustomText style={styles.textInfo}>
               Floor:{' '}
               {order?.status !== 'pickup'
                 ? order?.sender_address_json?.floor
                 : order?.receiver_address_json?.floor}
+            </CustomText>
+            <CustomText style={styles.textInfo}>
+              Door:{' '}
+              {order?.status !== 'pickup'
+                ? order?.sender_address_json?.apartment_door
+                : order?.receiver_address_json?.apartment_door}
             </CustomText>
             <CustomText numberOfLines={3} style={styles.textInfo}>
               Extra details:{' '}
