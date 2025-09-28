@@ -158,7 +158,7 @@ const createNotifChannelOnce = async ref => {
   if (ref.current) return ref.current;
   try {
     ref.current = await notifee.createChannel({
-      id: 'orders_v3',
+      id: 'firebase_v1',
       name: 'Orders & Alerts',
       importance: AndroidImportance.HIGH,
       sound: 'ding',
