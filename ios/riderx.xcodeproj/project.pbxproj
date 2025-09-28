@@ -11,6 +11,7 @@
 		19A0BE7273FD27F880493D16 /* libPods-riderx.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7CCA3BB409CCD1D8ED8E21E2 /* libPods-riderx.a */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
+		A62E0B402E89C586008D60D0 /* dingios.caf in Resources */ = {isa = PBXBuildFile; fileRef = A62E0B3F2E89C586008D60D0 /* dingios.caf */; };
 		A6E116E62E854FC500845ADE /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = A6E116E52E854FC500845ADE /* GoogleService-Info.plist */; };
 		A6E5C28E2E7AF3A600388BD8 /* ding.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = A6E5C28D2E7AF3A600388BD8 /* ding.mp3 */; };
 		E0925FFE2ECDC019506A6D2B /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
@@ -24,6 +25,7 @@
 		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = riderx/AppDelegate.swift; sourceTree = "<group>"; };
 		7CCA3BB409CCD1D8ED8E21E2 /* libPods-riderx.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-riderx.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = riderx/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		A62E0B3F2E89C586008D60D0 /* dingios.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = dingios.caf; sourceTree = "<group>"; };
 		A6E116DE2E83E62000845ADE /* riderx.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = riderx.entitlements; path = riderx/riderx.entitlements; sourceTree = "<group>"; };
 		A6E116E52E854FC500845ADE /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		A6E5C28D2E7AF3A600388BD8 /* ding.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = ding.mp3; sourceTree = "<group>"; };
@@ -50,6 +52,7 @@
 				A6E116DE2E83E62000845ADE /* riderx.entitlements */,
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				A6E5C28D2E7AF3A600388BD8 /* ding.mp3 */,
+				A62E0B3F2E89C586008D60D0 /* dingios.caf */,
 				761780EC2CA45674006654EE /* AppDelegate.swift */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */,
@@ -170,6 +173,7 @@
 			files = (
 				A6E5C28E2E7AF3A600388BD8 /* ding.mp3 in Resources */,
 				81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */,
+				A62E0B402E89C586008D60D0 /* dingios.caf in Resources */,
 				A6E116E62E854FC500845ADE /* GoogleService-Info.plist in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				E0925FFE2ECDC019506A6D2B /* PrivacyInfo.xcprivacy in Resources */,
@@ -311,7 +315,7 @@
 				CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION = YES;
 				CODE_SIGN_ENTITLEMENTS = riderx/riderx.entitlements;
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 8B53FN4H37;
 				ENABLE_BITCODE = NO;
@@ -322,7 +326,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.6;
+				MARKETING_VERSION = 1.0.7;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",
@@ -347,7 +351,7 @@
 				CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION = YES;
 				CODE_SIGN_ENTITLEMENTS = riderx/riderx.entitlements;
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 8B53FN4H37;
 				INFOPLIST_FILE = riderx/Info.plist;
@@ -357,7 +361,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.6;
+				MARKETING_VERSION = 1.0.7;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",

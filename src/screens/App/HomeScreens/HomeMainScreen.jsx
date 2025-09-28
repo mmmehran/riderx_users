@@ -283,7 +283,7 @@ const HomeMainScreen = ({route}) => {
           body,
           data,
           ios: {
-            sound: 'default',
+            sound: 'dingios.caf',
             foregroundPresentationOptions: {
               alert: true,
               sound: true,
