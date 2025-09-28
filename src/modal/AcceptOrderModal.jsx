@@ -44,7 +44,6 @@ const AcceptOrderModal = ({
     return Number.isFinite(lat) && Number.isFinite(lon) ? [lon, lat] : null;
   }, [order]);
 
-  console.log(order);
   const dropCoord = useMemo(() => {
     const lat = Number(order?.receiver_latitude);
     const lon = Number(order?.receiver_longitude);
