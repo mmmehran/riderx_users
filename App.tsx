@@ -7,8 +7,8 @@ import {PersistGate} from 'redux-persist/integration/react';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
 import {I18nextProvider} from 'react-i18next';
 import * as Sentry from '@sentry/react-native';
-import notifee, { EventType } from '@notifee/react-native';
 import { navigationRef, navigate } from './src/navigation/navigationRef';
+import messaging from '@react-native-firebase/messaging';
 
 
 import BaseNavigator from './src/navigation/BaseNavigator';
@@ -51,15 +51,29 @@ const App = () => {
     [],
   );
 
-notifee.onBackgroundEvent(async ({ type, detail }) => {
-  if (type === EventType.PRESS && detail?.pressAction?.id === 'open_accept') {
-    const data = detail?.notification?.data || {};
-      navigate(routes.DRAWERNAVIGATOR,{
-        screen: routes.HOMEMAIN,
-        params: data
-      })
-  }
-});
+const goToHomeMainWith = (data?: any) => {
+    if (!data) return;
+    navigate(routes.DRAWERNAVIGATOR, {
+      screen: routes.HOMEMAIN,
+      params: data,
+    });
+  };
+
+  useEffect(() => {
+    // 1) Cold start from a push
+    messaging().getInitialNotification().then(initial => {
+    //  if (initial?.data) goToHomeMainWith(initial.data);
+    });
+
+    // 2) Background → foreground (user tapped)
+    const unsubOpen = messaging().onNotificationOpenedApp(msg => {
+      if (msg?.data) goToHomeMainWith(msg.data);
+    });
+
+    return () => {
+      unsubOpen();
+    };
+  }, []);
 
   return (
     <SafeAreaProvider>

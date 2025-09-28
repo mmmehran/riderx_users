@@ -217,9 +217,9 @@ const HomeMainScreen = ({route}) => {
     if (!payload) return;
     if (selectedOrderRef.current) return;
     let item = null;
-    if (payload?.delivery_json) {
+    if (payload) {
       try {
-        item = JSON.parse(payload.delivery_json);
+        item = payload;
       } catch {}
     }
 
