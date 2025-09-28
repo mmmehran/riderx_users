@@ -5,7 +5,6 @@ import {
   PermissionsAndroid,
   Platform,
   AppState,
-  Alert,
 } from 'react-native';
 import {
   widthPercentageToDP as wp,
@@ -22,7 +21,6 @@ import notifee, {
 } from '@notifee/react-native';
 import Geolocation from '@react-native-community/geolocation';
 import messaging from '@react-native-firebase/messaging'; // ⬅️ NEW
-import {firebase} from '@react-native-firebase/app';
 
 import AcceptOrderModal from '../../../modal/AcceptOrderModal';
 import AcceptedOrderModal from '../../../modal/AcceptedOrderModal';
@@ -160,10 +158,10 @@ const createNotifChannelOnce = async ref => {
   if (ref.current) return ref.current;
   try {
     ref.current = await notifee.createChannel({
-      id: 'orders',
+      id: 'orders_v3',
       name: 'Orders & Alerts',
       importance: AndroidImportance.HIGH,
-      sound: 'default',
+      sound: 'ding',
       vibration: true,
     });
   } catch {
