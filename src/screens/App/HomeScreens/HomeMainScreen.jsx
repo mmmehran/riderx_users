@@ -173,8 +173,6 @@ const createNotifChannelOnce = async ref => {
 };
 
 const ensureFcmPermissionAndToken = async () => {
-
-
   try {
     // iOS will prompt; Android no-op (POST_NOTIFICATIONS handled above)
     const authStatus = await messaging().requestPermission({
@@ -183,51 +181,42 @@ const ensureFcmPermissionAndToken = async () => {
       sound: true,
       provisional: true,
     });
- 
-    
+
     const enabled =
       authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
       authStatus === messaging.AuthorizationStatus.PROVISIONAL;
 
     if (!enabled) return null;
-
     const token = await messaging().getToken();
-
-    console.log('fcm token');
-    console.log(token);
-
     try {
-      await sendData(urls.SETFCMTOKEN, { fcm_token: token });
-    } catch (e){
+      await sendData(urls.SETFCMTOKEN, {fcm_token: token});
+    } catch (e) {
       console.log(e);
     }
 
     // Keep backend synced on token rotation
     messaging().onTokenRefresh(async newToken => {
-      try {        
-        await sendData(urls.SETFCMTOKEN, { fcm_token: newToken });
-      } catch (e){
+      try {
+        await sendData(urls.SETFCMTOKEN, {fcm_token: newToken});
+      } catch (e) {
         console.log(e);
       }
     });
 
     messaging().onMessage(async remoteMessage => {
-      console.log("get notification from firebase");
+      console.log('get notification from firebase');
 
       // 1. Extract the notification details
       const {notification, data} = remoteMessage;
-
       // 2. Use notifee to display the notification
       if (notification) {
-          Alert.alert('New FCM Message',JSON.stringify(remoteMessage))
-        showLocalNotification(notification.title,notification.body,data)
-      
+        showLocalNotification(notification.title, notification.body, data);
       }
     });
 
     return token;
   } catch (e) {
-    console.log("error exception in firebase configuration");
+    console.log('error exception in firebase configuration');
     console.log(e);
     return null;
   }
@@ -272,17 +261,6 @@ const HomeMainScreen = ({route}) => {
   useEffect(() => {
     cameraRef.current = camera;
   }, [camera]);
-
-  useEffect(() => {
-    try {
-      const app = firebase.app(); // throws if not configured
-      console.log('[FIR] default app name:', app?.name); // should be "[DEFAULT]"
-      console.log('[FIR] options:', app?.options); // optional: confirms plist values
-    } catch (e) {
-      console.log('[FIR] error:', e?.message);
-    }
-  }, []);
-  // In a dedicated file, or your main component's useEffect:
 
   // Helper: open Accept modal from navigation payload
   const openAcceptFromNotifPayload = useCallback(async payload => {

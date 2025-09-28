@@ -12,7 +12,7 @@ import {  authenticated} from '../redux/reducers/authenticationReducer';
 import {setConfig,setConfigTest} from '../services/defaultAxios'
 import routes from "./routes";
 import {setSelectVehicle} from '../redux/reducers/configReducer';
-import { getData, putData} from '../services/common.service';
+import { getData} from '../services/common.service';
 import urls from '../services/urls.json';
 import errorHandler from '../utils/errorHandler';
 
@@ -32,17 +32,6 @@ const BaseNavigator = () => {
     } else {
       errorHandler(response);
     }
-  };
-
-  const registerDeviceOnFCM = async () => {
-    // const token = await messaging().getToken();
-    // console.log("FCM TOKEN:",token)
-
-    const response = await putData(`${urls.SETFCMTOKEN}`,{
-      // "fcm_token": token
-    });
-
-
   };
 
   const fetchRoute = async()=>{
