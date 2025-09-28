@@ -10,6 +10,8 @@
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
 	<string>riderx</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+  	<false/>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
