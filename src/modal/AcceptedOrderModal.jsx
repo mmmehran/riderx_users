@@ -1,4 +1,4 @@
-import React, {memo} from 'react';
+import React, {memo, useState} from 'react';
 import {StyleSheet, View, TouchableOpacity, Linking, Alert} from 'react-native';
 import {
   widthPercentageToDP as wp,
@@ -13,11 +13,14 @@ import {openGoogleMaps} from '../utils/googleMapsNavigator';
 import {isAndroid15Plus} from '../utils/helpers';
 
 const AcceptedOrderModal = ({order, changeOrder, loading, insets}) => {
+  const [showAddress, SetShowAddress] = useState(false);
+
   const phoneNumber = `tel:${
     order?.status !== 'pickup'
-      ? order?.sender_phone?.number
-      : order?.receiver_phone?.number
+      ? `+${order?.sender_phone?.country_code}${order?.sender_phone?.number}`
+      : `+${order?.receiver_phone?.country_code}${order?.receiver_phone?.number}`
   }`;
+
   const makeCall = async () => {
     try {
       const supported = await Linking.canOpenURL(phoneNumber);
@@ -33,8 +36,8 @@ const AcceptedOrderModal = ({order, changeOrder, loading, insets}) => {
 
   const phoneNumberSms = `sms:${
     order?.status !== 'pickup'
-      ? order?.sender_phone?.number
-      : order?.receiver_phone?.number
+      ? `+${order?.sender_phone?.country_code}${order?.sender_phone?.number}`
+      : `+${order?.receiver_phone?.country_code}${order?.receiver_phone?.number}`
   }?body=Hello, this is a test message!`;
 
   const sendSms = async () => {
@@ -66,57 +69,83 @@ const AcceptedOrderModal = ({order, changeOrder, loading, insets}) => {
               : order?.receiver_full_name}
           </CustomText>
         </View>
-        <View
-          style={[styles.userContainer, {marginTop: hp(-2), height: hp(20.5)}]}>
+        <View style={[styles.userContainer, {flexDirection: 'column'}]}>
           <View style={styles.textContainer}>
             <CustomText style={styles.textInfo}>
-              House Number:{' '}
+              Address:{' '}
               {order?.status !== 'pickup'
-                ? order?.sender_address_json?.house_number
-                : order?.receiver_address_json?.house_number}
+                ? order?.sender_address_json?.full_address
+                : order?.receiver_address_json?.full_address}
             </CustomText>
-            <CustomText style={styles.textInfo}>
-              Entrance:{' '}
-              {order?.status !== 'pickup'
-                ? order?.sender_address_json?.entrance
-                : order?.receiver_address_json?.entrance}
-            </CustomText>
-            <CustomText style={styles.textInfo}>
-              Floor:{' '}
-              {order?.status !== 'pickup'
-                ? order?.sender_address_json?.floor
-                : order?.receiver_address_json?.floor}
-            </CustomText>
-            <CustomText style={styles.textInfo}>
-              Door:{' '}
-              {order?.status !== 'pickup'
-                ? order?.sender_address_json?.apartment_door
-                : order?.receiver_address_json?.apartment_door}
-            </CustomText>
-            <CustomText numberOfLines={3} style={styles.textInfo}>
-              Extra details:{' '}
-              {order?.status !== 'pickup'
-                ? order?.sender_address_json?.address_extra_details
-                : order?.receiver_address_json?.address_extra_details}
-            </CustomText>
-          </View>
-          <View style={styles.iconContainer}>
-            <TouchableOpacity onPress={sendSms} style={styles.buttonIcon}>
-              <MessageIcon />
+            <TouchableOpacity onPress={() => SetShowAddress(!showAddress)}>
+              <CustomText style={styles.moreText}>More info ></CustomText>
             </TouchableOpacity>
-            <TouchableOpacity onPress={makeCall} style={styles.buttonIcon}>
-              <CallIcon />
-            </TouchableOpacity>
+            {showAddress && (
+              <>
+                <CustomText style={styles.textInfo}>
+                  Postal code:{' '}
+                  {order?.status !== 'pickup'
+                    ? order?.sender_address_json?.postal_code
+                    : order?.receiver_address_json?.postal_code}
+                </CustomText>
+                <CustomText style={styles.textInfo}>
+                  House Number:{' '}
+                  {order?.status !== 'pickup'
+                    ? order?.sender_address_json?.house_number
+                    : order?.receiver_address_json?.house_number}
+                </CustomText>
+                <CustomText style={styles.textInfo}>
+                  Entrance:{' '}
+                  {order?.status !== 'pickup'
+                    ? order?.sender_address_json?.entrance
+                    : order?.receiver_address_json?.entrance}
+                </CustomText>
+                <CustomText style={styles.textInfo}>
+                  Floor:{' '}
+                  {order?.status !== 'pickup'
+                    ? order?.sender_address_json?.floor
+                    : order?.receiver_address_json?.floor}
+                </CustomText>
+                <CustomText style={styles.textInfo}>
+                  Door:{' '}
+                  {order?.status !== 'pickup'
+                    ? order?.sender_address_json?.apartment_door
+                    : order?.receiver_address_json?.apartment_door}
+                </CustomText>
+                <CustomText style={styles.textInfo}>
+                  Extra details:{' '}
+                  {order?.status !== 'pickup'
+                    ? order?.sender_address_json?.address_extra_details
+                    : order?.receiver_address_json?.address_extra_details}
+                </CustomText>
+                <CustomText style={styles.textType}>
+                  Package Type: {order?.delivery_package?.title}
+                </CustomText>
+              </>
+            )}
           </View>
         </View>
-        <View
-          style={[
-            styles.userContainer,
-            {justifyContent: 'space-between', marginTop: hp(0)},
-          ]}>
-          <CustomText style={styles.textType}>
-            Package Type: {order?.delivery_package?.title}
-          </CustomText>
+        <View style={styles.iconContainer}>
+          {order?.status == 'pickup' && order?.receiver_phone?.number && (
+            <>
+              <TouchableOpacity onPress={sendSms} style={styles.buttonIcon}>
+                <MessageIcon />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={makeCall} style={styles.buttonIcon}>
+                <CallIcon />
+              </TouchableOpacity>
+            </>
+          )}
+          {order?.status == 'accepted' && order?.sender_phone?.number && (
+            <>
+              <TouchableOpacity onPress={sendSms} style={styles.buttonIcon}>
+                <MessageIcon />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={makeCall} style={styles.buttonIcon}>
+                <CallIcon />
+              </TouchableOpacity>
+            </>
+          )}
           <TouchableOpacity
             onPress={() => {
               openGoogleMaps({
@@ -195,11 +224,17 @@ export default memo(AcceptedOrderModal);
 const styles = StyleSheet.create({
   container: {
     width: wp(95),
-    height: hp(40),
     backgroundColor: '#B3B7C9B2',
     borderRadius: wp(3),
     position: 'absolute',
     bottom: hp(3),
+    paddingBottom: hp(2),
+  },
+  moreText: {
+    color: colors.blue,
+    fontWeight: 'bold',
+    fontSize: wp(4.5),
+    marginVertical: hp(1),
   },
   rowButton: {
     flexDirection: 'row',
@@ -242,7 +277,9 @@ const styles = StyleSheet.create({
   },
   iconContainer: {
     flex: 1,
-    alignItems: 'flex-end',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginBottom: hp(1),
   },
   buttonIcon: {
     width: wp(18),
@@ -258,6 +295,7 @@ const styles = StyleSheet.create({
     color: colors.black,
     fontWeight: '900',
     fontSize: wp(5),
+    marginBottom: hp(2),
   },
   buttonPick: {
     width: wp(60),
