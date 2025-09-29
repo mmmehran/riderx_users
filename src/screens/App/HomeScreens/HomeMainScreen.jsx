@@ -37,6 +37,7 @@ import {
   showToastWarning,
   parseSocketUrl,
   isAndroid15Plus,
+  isoWithOffsetPlusMinutes,
 } from '../../../utils/helpers';
 import {
   setUserProfile,
@@ -57,12 +58,8 @@ const POLL_MS = 2 * 60 * 1000;
 const MAPBOX_TOKEN =
   'pk.eyJ1IjoiYnl0ZWJyaWRnZXIiLCJhIjoiY21kZzVoNnU2MGlhcDJpcGVuNGV1amYxdyJ9.YMqlR9OovVOp-pm9yGK7eA';
 
-// Set once at module scope
 Mapbox.setAccessToken(MAPBOX_TOKEN);
 
-/* ──────────────────────────────────────────────────────────────────────────
-   Utilities (safe rounding, normalization, debounce, tiny cache)
-   ────────────────────────────────────────────────────────────────────────── */
 const toNum = v => {
   if (typeof v === 'number' && Number.isFinite(v)) return v;
   if (typeof v === 'string') {
@@ -71,13 +68,11 @@ const toNum = v => {
   }
   return null;
 };
-
 const round5 = v => {
   const x = toNum(v);
   if (x === null) return null;
   return Math.round(x * 1e5) / 1e5; // avoid .toFixed on undefined
 };
-
 const normalizeCoord = coord => {
   if (!Array.isArray(coord) || coord.length < 2) return null;
   const lng = round5(coord[0]);
@@ -85,16 +80,13 @@ const normalizeCoord = coord => {
   if (lng === null || lat === null) return null;
   return [lng, lat];
 };
-
 const coordKey = (lng, lat) => {
   const L = round5(lng);
   const A = round5(lat);
   return L === null || A === null ? '' : `${L},${A}`;
 };
-
 const legKey = (from, to) =>
   `${coordKey(from[0], from[1])}->${coordKey(to[0], to[1])}`;
-
 const useDebounced = (value, delay = 400) => {
   const [deb, setDeb] = useState(value);
   useEffect(() => {
@@ -103,9 +95,7 @@ const useDebounced = (value, delay = 400) => {
   }, [value, delay]);
   return deb;
 };
-
-// tiny route cache
-const routeCache = new Map(); // key: legKey, value: geometry
+const routeCache = new Map();
 const MAX_CACHE = 30;
 const cacheSet = (k, v) => {
   if (!routeCache.has(k) && routeCache.size >= MAX_CACHE) {
@@ -114,10 +104,6 @@ const cacheSet = (k, v) => {
   }
   routeCache.set(k, v);
 };
-
-/* ──────────────────────────────────────────────────────────────────────────
-   Notifications permission helpers
-   ────────────────────────────────────────────────────────────────────────── */
 const requestNotifPermission = async () => {
   if (Platform.OS === 'android') {
     if (Platform.Version < 33) return true;
@@ -152,7 +138,6 @@ const requestNotifPermission = async () => {
     return false;
   }
 };
-
 const createNotifChannelOnce = async ref => {
   if (Platform.OS !== 'android') return null;
   if (ref.current) return ref.current;
@@ -170,9 +155,6 @@ const createNotifChannelOnce = async ref => {
   return ref.current;
 };
 
-/* ──────────────────────────────────────────────────────────────────────────
-   Screen
-   ────────────────────────────────────────────────────────────────────────── */
 const HomeMainScreen = ({route}) => {
   const [camera, setCamera] = useState([-74.006, 40.7128]);
   const [data, setData] = useState([]);
@@ -185,6 +167,7 @@ const HomeMainScreen = ({route}) => {
   const [loadingChangeStatus, setLoadingChangeStatus] = useState(false);
   const [isAccepted, setIsAccepted] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [pickUpTimeUpdate, setPickUpTimeUpdate] = useState(null);
 
   // Route feature (GeoJSON Feature)
   const [routeFeature, setRouteFeature] = useState(null);
@@ -627,6 +610,10 @@ const HomeMainScreen = ({route}) => {
       delivery_id: order?.id,
       status: status,
       secure_pin: pin ? pin : null,
+      rider_arrive_to_pickup_calculated_time:
+        status == 'accepted'
+          ? isoWithOffsetPlusMinutes(pickUpTimeUpdate)
+          : null,
     });
 
     if (response?.data?.status) {
@@ -898,6 +885,7 @@ const HomeMainScreen = ({route}) => {
           onClose={handleNextOrder}
           onAccept={handleAcceptOrder}
           userCoord={userCoordMemo}
+          pickUpTime={value => setPickUpTimeUpdate(value)}
         />
       )}
 

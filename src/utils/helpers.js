@@ -25,6 +25,29 @@ export const showToastWarning = (message, type = "warning") => {
     });
 }
 
+export const isoWithOffsetPlusMinutes = (minutes = 0) => {
+     const d = new Date(Date.now() + minutes * 60_000);
+
+  const pad2 = n => String(n).padStart(2, '0');
+  const y = d.getFullYear();
+  const M = pad2(d.getMonth() + 1);
+  const D = pad2(d.getDate());
+  const h = pad2(d.getHours());
+  const m = pad2(d.getMinutes());
+  const s = pad2(d.getSeconds());
+
+  // JS only has milliseconds; make it 6 digits by padding with 3 zeros
+  const micro = String(d.getMilliseconds()).padStart(3, '0') + '000';
+
+  // Timezone offset (+/-HH:MM)
+  const tzMin = -d.getTimezoneOffset();
+  const sign = tzMin >= 0 ? '+' : '-';
+  const tzH = pad2(Math.floor(Math.abs(tzMin) / 60));
+  const tzM = pad2(Math.abs(tzMin) % 60);
+
+  return `${y}-${M}-${D}T${h}:${m}:${s}.${micro}${sign}${tzH}:${tzM}`;
+}
+
 export const convertDate = (isoString) => {
 
   const inputDate = new Date(isoString);

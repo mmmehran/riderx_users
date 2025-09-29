@@ -26,6 +26,7 @@ const AcceptOrderModal = ({
   onAccept,
   order,
   insets,
+  pickUpTime,
   userCoord, // <-- [lng, lat] from parent (Mapbox camera / user location)
 }) => {
   const progressAnim = useRef(new Animated.Value(0)).current;
@@ -99,12 +100,15 @@ const AcceptOrderModal = ({
       setPickupToDropKm(roundInt(leg2.km));
       setPickupToDropMins(leg2.mins);
     };
-
     compute();
     return () => {
       cancelled = true;
     };
   }, [isVisible, userCoord, pickupCoord, dropCoord]);
+
+  useEffect(() => {
+    userToPickupMins && pickUpTime(userToPickupMins);
+  }, [userToPickupMins]);
 
   // Accept/Auto-close animation
   useEffect(() => {
