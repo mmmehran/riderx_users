@@ -5,8 +5,12 @@ import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-nat
 import CustomText from '../common/CustomText';
 import colors from '../../config/colors';
 import { AddressCircle, UserIcon } from '../../../assets/svg/index';
+import {isoTo12Hour} from '../../utils/helpers'
 
 const ReportListRenderItem = ({ item }) => {
+
+    let num = parseFloat(item?.mileage);       
+    let formatted = Number(num.toFixed(1))
 
     return (
         <>
@@ -16,18 +20,19 @@ const ReportListRenderItem = ({ item }) => {
                 <UserIcon width={wp(10)} height={wp(10)} />
             </View>
                 <View style={styles.titleContainer}>
-                    <CustomText numberOfLines={1} style={styles.title}>{item?.price} €</CustomText>
-                    <CustomText numberOfLines={1} style={styles.dec}>{item?.service} - {item?.duration} - {item?.distance}</CustomText>
+                    <CustomText numberOfLines={1} style={styles.title}>{item?.rider_fee} €</CustomText>
+                    <CustomText numberOfLines={1} style={styles.title}>{item?.status}</CustomText>
+                    <CustomText numberOfLines={1} style={styles.dec}>{item?.delivery_package?.title} - {formatted} Km</CustomText>
                 </View>
                 <View style={styles.timeContainer}>
-                    <CustomText style={styles.time}>{item?.time}</CustomText>
+                    <CustomText style={styles.time}>{isoTo12Hour(item?.timestamp)}</CustomText>
                 </View>
            </View>
            <View style={styles.addressContainer}>
         <AddressCircle width={wp(7)} height={wp(11)} />
         <View>
-            <CustomText numberOfLines={1} style={styles.address}>{item?.address1}</CustomText>
-            <CustomText numberOfLines={1} style={[styles.address,{marginTop:hp(1)}]}>{item?.address2}</CustomText>
+            <CustomText numberOfLines={1} style={styles.address}>{item?.sender_address_json?.full_address}</CustomText>
+            <CustomText numberOfLines={1} style={[styles.address,{marginTop:hp(1)}]}>{item?.receiver_address_json?.full_address}</CustomText>
         </View>
            </View>
         </View>

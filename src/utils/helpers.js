@@ -48,6 +48,20 @@ export const isoWithOffsetPlusMinutes = (minutes = 0) => {
   return `${y}-${M}-${D}T${h}:${m}:${s}.${micro}${sign}${tzH}:${tzM}`;
 }
 
+export const isoTo12Hour = (isoString) => {
+     const d = new Date(isoString);
+
+  let hours = d.getHours();
+  let minutes = d.getMinutes();
+  const ampm = hours >= 12 ? "PM" : "AM";
+
+  hours = hours % 12 || 12; // convert 0 → 12 for midnight
+  minutes = String(minutes).padStart(2, "0");
+
+  return `${hours}:${minutes} ${ampm}`;
+}
+
+
 export const convertDate = (isoString) => {
 
   const inputDate = new Date(isoString);

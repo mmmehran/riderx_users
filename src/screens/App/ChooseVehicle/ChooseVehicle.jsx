@@ -94,7 +94,11 @@ const ChooseVehicle = props => {
                 }
                 service={config?.selectVehicle}
                 setService={value => {
-                  updateVehicleStatus(value);
+                  if (config?.selectVehicle?.id) {
+                    updateVehicleStatus(value);
+                  } else {
+                    dispatch(setSelectVehicle(value));
+                  }
                 }}></CustomButtonService>
             );
           })}
