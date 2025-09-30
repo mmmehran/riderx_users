@@ -78,7 +78,9 @@ const AcceptedOrderModal = ({order, changeOrder, loading, insets}) => {
                 : order?.receiver_address_json?.full_address}
             </CustomText>
             <TouchableOpacity onPress={() => SetShowAddress(!showAddress)}>
-              <CustomText style={styles.moreText}>More info ></CustomText>
+              <CustomText style={styles.moreText}>
+                {!showAddress ? 'More info' : 'Less info'}
+              </CustomText>
             </TouchableOpacity>
             {showAddress && (
               <>
