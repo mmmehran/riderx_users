@@ -10,6 +10,7 @@
   "GETVEHICLE": "vehicle/list",
   "GETVEHICLEDETAIL": "vehicle/details",
   "UPDATESTATUSVEHICLE": "vehicle/update_on_status",
+  "LOGOUT": "user/logout/",
   "UPDATELOCATION": "rider/locations/update_location",
   "RIDERDETAIL": "rider/details",
   "UPDATEPACKAGESTATUS": "rider/status/update_delivery_to_person_status",

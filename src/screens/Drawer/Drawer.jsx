@@ -16,7 +16,7 @@ import {
   logout,
   authenticated,
 } from '../../redux/reducers/authenticationReducer';
-import {sendData, getData} from '../../services/common.service';
+import {sendData, getData, postData} from '../../services/common.service';
 import urls from '../../services/urls.json';
 import errorHandler from '../../utils/errorHandler';
 import {
@@ -63,6 +63,16 @@ const LoginEmail = props => {
     }
   };
 
+  const logOutUser = async () => {
+    const response = await postData(urls.LOGOUT);
+    if (response?.data?.status) {
+      dispatch(logout());
+      dispatch(logouConfig());
+    } else {
+      errorHandler(response);
+    }
+  };
+
   const data = [
     // {
     //   id: 1,
@@ -93,8 +103,7 @@ const LoginEmail = props => {
       id: 6,
       name: t('logOut'),
       onPress: () => {
-        dispatch(logout());
-        dispatch(logouConfig());
+        logOutUser();
       },
     },
   ];
