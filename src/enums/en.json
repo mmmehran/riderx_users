@@ -27,5 +27,6 @@
   "paymentMethod": "Payment Method",
   "logOut": "Log Out",
   "cancel": "Cancel",
-  "start": "Start"
+  "start": "Start",
+  "sender": "Sender"
 }

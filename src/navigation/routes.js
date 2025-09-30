@@ -10,6 +10,7 @@ export default Object.freeze({
     LOGINEMAIL: "loginEmail",
     REPORT:"report",
     WALLET:"wallet",
+    SENDER:"sender",
     CHOOSEVEHICLE:"chooseVehicle"
    
 

@@ -89,11 +89,11 @@ const LoginEmail = props => {
       name: t('wallet'),
       onPress: () => props?.navigation.navigate(routes.WALLET),
     },
-    // {
-    //   id: 4,
-    //   name: t('account'),
-    //   onPress: () => console.log('ok'),
-    // },
+    {
+      id: 4,
+      name: t('sender'),
+      onPress: () => props?.navigation.navigate(routes.SENDER),
+    },
     {
       id: 5,
       name: t('report'),
