@@ -15,8 +15,8 @@ const BORDER = '#E5E7EB';
 
 const ConfirmCancelDeliveryModal = ({
   isVisible,
-  title = 'The customer has cancelled this delivery. Please stop proceeding with the order.',
-  confirmText = 'Confirm',
+  title,
+  confirmText,
   onConfirm,
   onCancel,
 }) => {

@@ -21,6 +21,7 @@ import notifee, {
 } from '@notifee/react-native';
 import Geolocation from '@react-native-community/geolocation';
 import messaging from '@react-native-firebase/messaging'; // ⬅️ NEW
+import {useTranslation} from 'react-i18next';
 
 import AcceptOrderModal from '../../../modal/AcceptOrderModal';
 import AcceptedOrderModal from '../../../modal/AcceptedOrderModal';
@@ -168,6 +169,7 @@ const HomeMainScreen = ({route}) => {
   const [isAccepted, setIsAccepted] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [pickUpTimeUpdate, setPickUpTimeUpdate] = useState(null);
+  const {t} = useTranslation();
 
   // Route feature (GeoJSON Feature)
   const [routeFeature, setRouteFeature] = useState(null);
@@ -388,8 +390,8 @@ const HomeMainScreen = ({route}) => {
           setSelectedOrder(null);
           setConfirmCancelModalVisible(true);
           await showLocalNotification({
-            title: 'Delivery canceled by sender',
-            body: 'A delivery was cancelled',
+            title: t('deliveryCancel'),
+            body: t('deliveryWasCancel'),
             data: {delivery_id: String(payload?.message?.id ?? '')},
           });
         }
@@ -398,7 +400,7 @@ const HomeMainScreen = ({route}) => {
         const removedId = payload?.message?.id;
         removeOrderById(removedId);
         showToastWarning(
-          `Delivery id: ${payload?.message?.id} accepted by another rider`,
+          `${t('deliveryId')} ${payload?.message?.id} ${t('acceptByAnother')}`,
         );
       }
     };
@@ -578,7 +580,7 @@ const HomeMainScreen = ({route}) => {
      ──────────────────────────────────────────────────────────────────────── */
   const requireVehicleOrToast = useCallback(() => {
     if (!config?.selectVehicle?.id) {
-      showToast('Select a vehicle first to accept deliveries.', 'error');
+      showToast(t('firstselectVehicle'), 'error');
       navigation.navigate(routes.CHOOSEVEHICLE);
       return false;
     }
@@ -628,9 +630,7 @@ const HomeMainScreen = ({route}) => {
         setRouteFeature(null);
         setSelectedOrder(null);
         showToast(
-          status === 'completed'
-            ? 'The order was successfully placed.'
-            : 'The order was canceled.',
+          status === 'completed' ? t('completeOrder') : t('cancelOrder'),
         );
       }
     } else {
@@ -870,7 +870,7 @@ const HomeMainScreen = ({route}) => {
         )}
         {config?.selectVehicle?.on_status == 'off' && (
           <View style={styles.vehicleStatus}>
-            <CustomText style={styles.text}>Vehicle is off !</CustomText>
+            <CustomText style={styles.text}>{t('vehicleOff')}</CustomText>
           </View>
         )}
         <CustomBottomTab />
@@ -937,6 +937,8 @@ const HomeMainScreen = ({route}) => {
       />
 
       <ConfirmCancelDeliveryModal
+        title={t('cancelOrderContent')}
+        confirmText={t('confirmText')}
         isVisible={confirmCancelModalVisible}
         onCancel={() => setConfirmCancelModalVisible(false)}
         onConfirm={() => setConfirmCancelModalVisible(false)}

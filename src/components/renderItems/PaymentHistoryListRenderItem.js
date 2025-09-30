@@ -11,7 +11,6 @@ import {convertDate} from '../../utils/helpers'
 const PaymentHistoryListRenderItem = ({ item }) => {
   const {t} = useTranslation();
 
-  console.log(item)
     return (
         <View style={styles.container}>
         <Calendar width={wp(9)} height={wp(9)} />

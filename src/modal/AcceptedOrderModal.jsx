@@ -5,6 +5,7 @@ import {
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
 import SwipeButton from 'rn-swipe-button';
+import {useTranslation} from 'react-i18next';
 
 import colors from '../config/colors';
 import CustomText from '../components/common/CustomText';
@@ -14,6 +15,7 @@ import {isAndroid15Plus} from '../utils/helpers';
 
 const AcceptedOrderModal = ({order, changeOrder, loading, insets}) => {
   const [showAddress, SetShowAddress] = useState(false);
+  const {t} = useTranslation();
 
   const phoneNumber = `tel:${
     order?.status !== 'pickup'
@@ -27,7 +29,7 @@ const AcceptedOrderModal = ({order, changeOrder, loading, insets}) => {
       if (supported) {
         await Linking.openURL(phoneNumber);
       } else {
-        Alert.alert('Error', 'Phone call not supported on this device');
+        Alert.alert('Error', t('phoneNotSupport'));
       }
     } catch (err) {
       console.error('Failed to make call:', err);
@@ -46,7 +48,7 @@ const AcceptedOrderModal = ({order, changeOrder, loading, insets}) => {
       if (supported) {
         await Linking.openURL(phoneNumberSms);
       } else {
-        Alert.alert('Error', 'SMS not supported on this device');
+        Alert.alert('Error', t('smsNotSupport'));
       }
     } catch (err) {
       console.error('Failed to send SMS:', err);
@@ -72,56 +74,56 @@ const AcceptedOrderModal = ({order, changeOrder, loading, insets}) => {
         <View style={[styles.userContainer, {flexDirection: 'column'}]}>
           <View style={styles.textContainer}>
             <CustomText style={styles.textInfo}>
-              Address:{' '}
+              {t('address')}:{' '}
               {order?.status !== 'pickup'
                 ? order?.sender_address_json?.full_address
                 : order?.receiver_address_json?.full_address}
             </CustomText>
             <TouchableOpacity onPress={() => SetShowAddress(!showAddress)}>
               <CustomText style={styles.moreText}>
-                {!showAddress ? 'More info' : 'Less info'}
+                {!showAddress ? t('moreInfo') : t('lessInfo')}
               </CustomText>
             </TouchableOpacity>
             {showAddress && (
               <>
                 <CustomText style={styles.textInfo}>
-                  Postal code:{' '}
+                  {t('postalCode')} :{' '}
                   {order?.status !== 'pickup'
                     ? order?.sender_address_json?.postal_code
                     : order?.receiver_address_json?.postal_code}
                 </CustomText>
                 <CustomText style={styles.textInfo}>
-                  House Number:{' '}
+                  {t('houseNumber')}:{' '}
                   {order?.status !== 'pickup'
                     ? order?.sender_address_json?.house_number
                     : order?.receiver_address_json?.house_number}
                 </CustomText>
                 <CustomText style={styles.textInfo}>
-                  Entrance:{' '}
+                  {t('Entrance')}:{' '}
                   {order?.status !== 'pickup'
                     ? order?.sender_address_json?.entrance
                     : order?.receiver_address_json?.entrance}
                 </CustomText>
                 <CustomText style={styles.textInfo}>
-                  Floor:{' '}
+                  {t('Floor')} :{' '}
                   {order?.status !== 'pickup'
                     ? order?.sender_address_json?.floor
                     : order?.receiver_address_json?.floor}
                 </CustomText>
                 <CustomText style={styles.textInfo}>
-                  Door:{' '}
+                  {t('Door')}:{' '}
                   {order?.status !== 'pickup'
                     ? order?.sender_address_json?.apartment_door
                     : order?.receiver_address_json?.apartment_door}
                 </CustomText>
                 <CustomText style={styles.textInfo}>
-                  Extra details:{' '}
+                  {t('Extradetails')}:{' '}
                   {order?.status !== 'pickup'
                     ? order?.sender_address_json?.address_extra_details
                     : order?.receiver_address_json?.address_extra_details}
                 </CustomText>
                 <CustomText style={styles.textType}>
-                  Package Type: {order?.delivery_package?.title}
+                  {t('PackageType')}: {order?.delivery_package?.title}
                 </CustomText>
               </>
             )}
@@ -170,7 +172,7 @@ const AcceptedOrderModal = ({order, changeOrder, loading, insets}) => {
         <View style={styles.rowButton}>
           {order?.status == 'accepted' && (
             <SwipeButton
-              title="Picked Up"
+              title={t('PickedUp')}
               titleColor="#fff"
               height={hp(5.5)}
               titleFontSize={wp(4.3)}
@@ -186,7 +188,7 @@ const AcceptedOrderModal = ({order, changeOrder, loading, insets}) => {
           )}
           {order?.status == 'pickup' && (
             <SwipeButton
-              title="Drop Off"
+              title={t('dropOff')}
               titleColor="#fff"
               height={hp(5.5)}
               titleFontSize={wp(4)}

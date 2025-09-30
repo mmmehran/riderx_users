@@ -4,22 +4,27 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
+import {useTranslation} from 'react-i18next';
 
 import CustomModal from '../components/common/CustomModal';
 import colors from '../config/colors';
 import CustomText from '../components/common/CustomText';
 
-const REASONS = [
-  {key: 'request_new_driver', label: 'Request new driver'},
-  {key: 'shipment_destroyed', label: 'Shipment destroyed'},
-  {key: 'address_not_found', label: 'Address not found'},
-];
-
 const CancelModal = ({isVisible, onSelectReason, onClose}) => {
+  const {t} = useTranslation();
+
+  const REASONS = [
+    {key: 'request_new_driver', label: t('Requestnewdriver')},
+    {key: 'shipment_destroyed', label: t('shipmentDestroyed')},
+    {key: 'address_not_found', label: t('addressNotFound')},
+  ];
+
   return (
     <CustomModal isVisible={isVisible} backdropOpacity={0}>
       <View style={styles.container}>
-        <CustomText style={styles.title}>Reason for cancellation</CustomText>
+        <CustomText style={styles.title}>
+          {t('Reasonforcancellation')}
+        </CustomText>
 
         {REASONS.map(item => (
           <TouchableOpacity
@@ -31,7 +36,7 @@ const CancelModal = ({isVisible, onSelectReason, onClose}) => {
         ))}
 
         <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-          <CustomText style={styles.closeText}>Close</CustomText>
+          <CustomText style={styles.closeText}>{t('close')}</CustomText>
         </TouchableOpacity>
       </View>
     </CustomModal>

@@ -26,16 +26,6 @@ import {getData} from '../../services/common.service';
 import urls from '../../services/urls.json';
 import errorHandler from '../../utils/errorHandler';
 
-const STATUS_OPTIONS = [
-  {label: 'All', value: null},
-  {label: 'Accepted', value: 'accepted'},
-  {label: 'Pickup', value: 'pickup'},
-  {label: 'Shipment destroyed', value: 'shipment_destroyed'},
-  {label: 'Address not found', value: 'address_not_found'},
-  {label: 'Completed', value: 'completed'},
-  {label: 'Canceled', value: 'cancel'},
-];
-
 const buildUrl = (base, paramsObj = {}) => {
   const parts = [];
   Object.keys(paramsObj).forEach(k => {
@@ -67,8 +57,18 @@ const Report = () => {
   const [showVehicleModal, setShowVehicleModal] = useState(false);
   const [showStatusModal, setShowStatusModal] = useState(false);
 
+  const STATUS_OPTIONS = [
+    {label: t('all'), value: null},
+    {label: t('accept'), value: 'accepted'},
+    {label: t('pickup'), value: 'pickup'},
+    {label: t('shipmentDestroyed'), value: 'shipment_destroyed'},
+    {label: t('addressNotFound'), value: 'address_not_found'},
+    {label: t('Completed'), value: 'completed'},
+    {label: t('Canceled'), value: 'cancel'},
+  ];
+
   const selectedVehicleLabel = (() => {
-    if (vehicleId == null) return 'All';
+    if (vehicleId == null) return t('all');
     const v = vehicles.find(v => String(v?.id) === String(vehicleId));
     if (!v) return `#${vehicleId}`;
 
@@ -81,7 +81,7 @@ const Report = () => {
 
   const selectedStatusLabel = (() => {
     const s = STATUS_OPTIONS.find(s => s.value === status);
-    return s?.label || t('type') || 'Type';
+    return s?.label || t('type');
   })();
 
   const getVehicle = async () => {
@@ -227,9 +227,7 @@ const Report = () => {
           onPress={() => setShowStatusModal(false)}
         />
         <View style={styles.sheet}>
-          <CustomText style={styles.sheetTitle}>
-            {t('type') || 'Type'}
-          </CustomText>
+          <CustomText style={styles.sheetTitle}>{t('type')}</CustomText>
           <FlatList
             data={STATUS_OPTIONS}
             keyExtractor={(it, idx) => String(it.value ?? `all-${idx}`)}
@@ -253,12 +251,10 @@ const Report = () => {
           onPress={() => setShowVehicleModal(false)}
         />
         <View style={styles.sheet}>
-          <CustomText style={styles.sheetTitle}>
-            {t('vehicle') || 'Vehicle'}
-          </CustomText>
+          <CustomText style={styles.sheetTitle}>{t('vehicle')}</CustomText>
           <FlatList
             data={[
-              {id: null, _label: t('all') || 'All'},
+              {id: null, _label: t('all')},
               ...vehicles.map(v => ({
                 ...v,
                 _label: v?.vehicle_brand

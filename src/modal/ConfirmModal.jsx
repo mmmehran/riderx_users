@@ -10,6 +10,7 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
+import {useTranslation} from 'react-i18next';
 
 import CustomModal from '../components/common/CustomModal'; // same wrapper you already use
 import CustomText from '../components/common/CustomText';
@@ -27,14 +28,14 @@ const ConfirmActionModal = ({
   isVisible,
   title = 'Are you sure?',
   message,
-  confirmText = 'Confirm',
-  cancelText = 'Cancel',
   onConfirm,
   onCancel,
   danger = false,
   loading = false,
   securePinShow,
 }) => {
+  const {t} = useTranslation();
+
   const [pin, setPin] = useState(null);
   return (
     <CustomModal
@@ -48,7 +49,7 @@ const ConfirmActionModal = ({
         {securePinShow && (
           <View>
             <CustomText style={[styles.title, {marginTop: hp(2)}]}>
-              Enter secure pin :
+              {t('enterPin')} :
             </CustomText>
             <CustomInput
               onChangeText={text => setPin(text)}
@@ -65,7 +66,7 @@ const ConfirmActionModal = ({
             onPress={onCancel}
             disabled={loading}
             activeOpacity={0.8}>
-            <CustomText style={styles.btnGhostText}>{cancelText}</CustomText>
+            <CustomText style={styles.btnGhostText}>{t('close')}</CustomText>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -86,7 +87,9 @@ const ConfirmActionModal = ({
             {loading ? (
               <ActivityIndicator color={WHITE} />
             ) : (
-              <CustomText style={styles.btnSolidText}>{confirmText}</CustomText>
+              <CustomText style={styles.btnSolidText}>
+                {t('confirmText')}
+              </CustomText>
             )}
           </TouchableOpacity>
         </View>

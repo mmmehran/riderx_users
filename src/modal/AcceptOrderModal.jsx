@@ -212,7 +212,7 @@ const AcceptOrderModal = ({
         </View>
         <View style={styles.buttonWrapper}>
           <SwipeButton
-            title={'Slide to Accept'}
+            title={t('SlidetoAccept')}
             titleColor="#fff"
             height={hp(5.5)}
             titleFontSize={wp(4)}
