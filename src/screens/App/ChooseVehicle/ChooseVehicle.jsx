@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useCallback} from 'react';
+import React, {useState, useCallback} from 'react';
 import {
   View,
   StyleSheet,
@@ -19,7 +19,7 @@ import CustomText from '../../../components/common/CustomText';
 import colors from '../../../config/colors';
 import {ArrowLeft} from '../../../../assets/svg/index';
 import CustomButtonService from '../../../components/custom/CustomButtonService';
-import {getData} from '../../../services/common.service';
+import {getData, sendData} from '../../../services/common.service';
 import urls from '../../../services/urls.json';
 import errorHandler from '../../../utils/errorHandler';
 import {
@@ -52,6 +52,18 @@ const ChooseVehicle = props => {
     }, []),
   );
 
+  const updateVehicleStatus = async value => {
+    const response = await sendData(urls.UPDATESTATUSVEHICLE, {
+      id: config?.selectVehicle?.id,
+      on_status: 'off',
+    });
+    if (response?.data?.status) {
+      dispatch(setSelectVehicle(value));
+    } else {
+      errorHandler(response);
+    }
+  };
+
   return (
     <CustomScreen>
       <TouchableOpacity
@@ -81,9 +93,9 @@ const ChooseVehicle = props => {
                       }`
                 }
                 service={config?.selectVehicle}
-                setService={value =>
-                  dispatch(setSelectVehicle(value))
-                }></CustomButtonService>
+                setService={value => {
+                  updateVehicleStatus(value);
+                }}></CustomButtonService>
             );
           })}
         </>
