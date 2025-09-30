@@ -64,5 +64,6 @@
   "close": "Close",
   "cancelOrderContent": "The customer has cancelled this delivery. Please stop proceeding with the order.",
   "confirmText": "Confirm",
-  "enterPin": "Enter secure pin"
+  "enterPin": "Enter secure pin",
+  "selectLanguage": "Select language"
 }

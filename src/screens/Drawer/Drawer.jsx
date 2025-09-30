@@ -1,5 +1,12 @@
-import React, {useCallback} from 'react';
-import {View, StyleSheet, TouchableOpacity, Image} from 'react-native';
+import React, {useCallback, useState} from 'react';
+import {
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+  Modal,
+  I18nManager,
+} from 'react-native';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
@@ -7,6 +14,8 @@ import {
 import {useTranslation} from 'react-i18next';
 import {useDispatch, useSelector} from 'react-redux';
 import {useFocusEffect} from '@react-navigation/core';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+// import RNRestart from 'react-native-restart'; // optional if you want instant RTL restart
 
 import CustomScreen from '../../components/common/CustomScreen';
 import routes from '../../navigation/routes';
@@ -24,13 +33,22 @@ import {
   logouConfig,
   setSelectVehicle,
 } from '../../redux/reducers/configReducer';
+import i18n from '../../utils/i18n';
+import {showToast} from '../../utils/helpers';
+
+const LANGS = [
+  {code: 'en', label: 'English', rtl: false},
+  {code: 'de', label: 'Deutsch', rtl: false},
+  {code: 'ar', label: 'العربية', rtl: true},
+];
 
 const LoginEmail = props => {
   const {t} = useTranslation();
   const dispatch = useDispatch();
   const user = useSelector(authenticated);
-
   const config = useSelector(selectConfig);
+
+  const [langModal, setLangModal] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -73,17 +91,28 @@ const LoginEmail = props => {
     }
   };
 
+  const applyLanguage = async (code, rtl) => {
+    setLangModal(false);
+    await AsyncStorage.setItem('language', code);
+    await i18n.changeLanguage(code);
+
+    const needRTL = !!rtl;
+    // if (I18nManager.isRTL !== needRTL) {
+    //   I18nManager.allowRTL(needRTL);
+    //   I18nManager.forceRTL(needRTL);
+    //   // If you want instant layout flip, uncomment next line (requires package):
+    //   // RNRestart.restart();
+    //   showToast(
+    //     t('languageChanged') ||
+    //       'Language changed. Please restart the app to apply layout direction.',
+    //   );
+    // }
+  };
+
+  const currentLangLabel =
+    LANGS.find(l => l.code === i18n.language)?.label || 'English';
+
   const data = [
-    // {
-    //   id: 1,
-    //   name: t('inbox'),
-    //   onPress: () => console.log('ok'),
-    // },
-    // {
-    //   id: 2,
-    //   name: t('findRide'),
-    //   onPress: () => console.log('ok'),
-    // },
     {
       id: 3,
       name: t('wallet'),
@@ -115,15 +144,12 @@ const LoginEmail = props => {
           <View style={styles.imageContainer}>
             <Image
               source={{uri: user?.profile_image}}
-              style={{
-                width: wp(20),
-                height: wp(20),
-              }}
+              style={{width: wp(20), height: wp(20)}}
             />
           </View>
           <View style={styles.textContainer}>
-            <CustomText numberOfLines={1} style={[styles.text]}>
-              {user?.userProfile?.first_name} {user?.userProfile?.last_name}{' '}
+            <CustomText numberOfLines={1} style={styles.text}>
+              {user?.userProfile?.first_name} {user?.userProfile?.last_name}
             </CustomText>
             <View style={styles.row}>
               <CustomText style={styles.text}>
@@ -132,9 +158,7 @@ const LoginEmail = props => {
             </View>
           </View>
           <TouchableOpacity
-            onPress={() => {
-              updateVehicleStatus();
-            }}
+            onPress={updateVehicleStatus}
             style={[
               styles.stopButton,
               config?.selectVehicle?.on_status !== 'on'
@@ -148,21 +172,54 @@ const LoginEmail = props => {
             </CustomText>
           </TouchableOpacity>
         </View>
+
         <View style={styles.rowContainer}>
-          {data.map(item => {
-            return (
-              <TouchableOpacity
-                onPress={item.onPress}
-                key={item.id}
-                style={styles.rowList}>
-                <CustomText style={styles.textRowbutton}>
-                  {item?.name}
-                </CustomText>
-              </TouchableOpacity>
-            );
-          })}
+          {data.map(item => (
+            <TouchableOpacity
+              onPress={item.onPress}
+              key={item.id}
+              style={styles.rowList}>
+              <CustomText style={styles.textRowbutton}>{item.name}</CustomText>
+            </TouchableOpacity>
+          ))}
+        </View>
+        <View style={styles.langContainer}>
+          <TouchableOpacity onPress={() => setLangModal(true)}>
+            <CustomText style={styles.langText}>{currentLangLabel}</CustomText>
+          </TouchableOpacity>
         </View>
       </View>
+      <Modal
+        visible={langModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setLangModal(false)}>
+        <View style={styles.backdrop}>
+          <View style={styles.sheet}>
+            <CustomText style={styles.sheetTitle}>
+              {t('selectLanguage') || 'Select language'}
+            </CustomText>
+            {LANGS.map(item => (
+              <TouchableOpacity
+                key={item.code}
+                style={styles.optionRow}
+                onPress={() => applyLanguage(item.code)}>
+                <CustomText style={styles.optionText}>
+                  {item.label}
+                  {i18n.language === item.code ? ' ✓' : ''}
+                </CustomText>
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity
+              style={[styles.optionRow, {alignItems: 'center'}]}
+              onPress={() => setLangModal(false)}>
+              <CustomText style={[styles.optionText, {color: colors.blue}]}>
+                {t('cancel') || 'Cancel'}
+              </CustomText>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </CustomScreen>
   );
 };
@@ -188,19 +245,14 @@ const styles = StyleSheet.create({
     paddingTop: hp(4.5),
     paddingLeft: wp(2.5),
   },
-  bottom: {
-    justifyContent: 'flex-end',
-    flex: 1,
-  },
+  bottom: {justifyContent: 'flex-end', flex: 1},
   textRowbutton: {
     fontSize: wp(7.5),
     color: colors.black,
     fontWeight: '800',
     marginLeft: wp(6),
   },
-  rowContainer: {
-    marginTop: hp(6),
-  },
+  rowContainer: {marginTop: hp(6)},
   imageContainer: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -211,41 +263,49 @@ const styles = StyleSheet.create({
     marginRight: wp(4),
     overflow: 'hidden',
   },
-  container: {
-    overflow: 'hidden',
-    flex: 1,
-  },
+  container: {overflow: 'hidden', flex: 1},
   profileContainer: {
     marginTop: hp(4),
     alignItems: 'center',
     marginHorizontal: wp(6),
     flexDirection: 'row',
   },
-  row: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    marginTop: hp(1),
-  },
-  text: {
-    fontSize: wp(5),
-    color: colors.black,
-    fontWeight: '800',
-  },
+  row: {flexDirection: 'row-reverse', alignItems: 'center', marginTop: hp(1)},
+  text: {fontSize: wp(5), color: colors.black, fontWeight: '800'},
   stopButton: {
     width: wp(25),
     height: wp(12),
     borderRadius: wp(2),
-    backgroundColor: '#CD2C2C',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  textContainer: {
-    width: wp(22),
-    alignItems: 'flex-start',
+  textContainer: {width: wp(22), alignItems: 'flex-start'},
+  textButton: {fontSize: wp(4.5), color: colors.black, fontWeight: '900'},
+  langContainer: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    marginBottom: hp(7),
   },
-  textButton: {
-    fontSize: wp(4.5),
-    color: colors.black,
-    fontWeight: '900',
+  langText: {color: colors.blue, fontSize: wp(4)},
+  backdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    justifyContent: 'flex-end',
   },
+  sheet: {
+    backgroundColor: '#fff',
+    paddingHorizontal: wp(6),
+    paddingTop: hp(2),
+    paddingBottom: hp(3),
+    borderTopLeftRadius: wp(6),
+    borderTopRightRadius: wp(6),
+  },
+  sheetTitle: {fontWeight: 'bold', fontSize: wp(4.3), marginBottom: hp(1.5)},
+  optionRow: {
+    paddingVertical: hp(1.8),
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(0,0,0,0.08)',
+  },
+  optionText: {fontSize: wp(4)},
 });

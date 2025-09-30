@@ -15,7 +15,7 @@ import BaseNavigator from './src/navigation/BaseNavigator';
 import toastConfig from './src/config/toastConfig';
 import AppContext from './src/components/common/AppContext';
 import store, {persistor} from './src/redux/store';
-import i18n from './src/utils/i18n';
+import i18n , {initLanguage} from './src/utils/i18n';
 import { initDing } from './src/utils/sounds';
 import routes from './src/navigation/routes';
 
@@ -42,6 +42,12 @@ const App = () => {
     // uncomment the line below to enable Spotlight (https://spotlightjs.com)
     // spotlight: __DEV__,
   });
+
+
+   useEffect(() => {
+    initLanguage(); // sets stored/device language + RTL
+  }, []);
+
 
   const globalState = useMemo(
     () => ({
