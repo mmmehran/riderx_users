@@ -36,6 +36,8 @@ import i18n from '../../utils/i18n';
 const LANGS = [
   {code: 'en', label: 'English', rtl: false},
   {code: 'de', label: 'Deutsch', rtl: false},
+  {code: 'tr', label: 'Türkçe', rtl: false},
+  {code: 'fa', label: 'فارسی', rtl: true},
   {code: 'ar', label: 'العربية', rtl: true},
 ];
 

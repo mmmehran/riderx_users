@@ -34,11 +34,12 @@ import {
   setSelectVehicle,
 } from '../../redux/reducers/configReducer';
 import i18n from '../../utils/i18n';
-import {showToast} from '../../utils/helpers';
 
 const LANGS = [
   {code: 'en', label: 'English', rtl: false},
   {code: 'de', label: 'Deutsch', rtl: false},
+  {code: 'tr', label: 'Türkçe', rtl: false},
+  {code: 'fa', label: 'فارسی', rtl: true},
   {code: 'ar', label: 'العربية', rtl: true},
 ];
 
