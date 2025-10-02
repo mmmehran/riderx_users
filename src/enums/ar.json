@@ -65,5 +65,6 @@
   "cancelOrderContent": "قام العميل بإلغاء هذا الطلب. يرجى التوقف عن متابعة التنفيذ.",
   "confirmText": "تأكيد",
   "enterPin": "أدخل الرقم السري",
-  "selectLanguage": "اختر اللغة"
+  "selectLanguage": "اختر اللغة",
+  "emailNotVerify": "البريد الإلكتروني غير مُؤكَّد"
 }

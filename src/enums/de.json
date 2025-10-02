@@ -65,5 +65,6 @@
   "cancelOrderContent": "Der Kunde hat diese Lieferung storniert. Bitte stoppen Sie die Bearbeitung der Bestellung.",
   "confirmText": "Bestätigen",
   "enterPin": "Sicheren PIN eingeben",
-  "selectLanguage": "Sprache auswählen"
+  "selectLanguage": "Sprache auswählen",
+  "emailNotVerify": "E-Mail nicht verifiziert"
 }

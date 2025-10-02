@@ -11,7 +11,6 @@ import ChooseVehicle from '../screens/App/ChooseVehicle/ChooseVehicle'
 import DrawerScreen from '../screens/Drawer/Drawer'
 import Report from '../screens/Drawer/Report'
 import Wallet from '../screens/Drawer/Wallet'
-import Sender from '../screens/Drawer/Sender'
 import {selectConfig} from '../redux/reducers/configReducer'
 
 const Drawer = createDrawerNavigator();
@@ -56,11 +55,6 @@ const DrawerNavigator = () => {
             <Drawer.Screen
                 name={routes.WALLET}
                 component={Wallet}
-                options={{ fullScreenGestureEnabled: false }}
-            />
-            <Drawer.Screen
-                name={routes.SENDER}
-                component={Sender}
                 options={{ fullScreenGestureEnabled: false }}
             />
         </Drawer.Navigator>

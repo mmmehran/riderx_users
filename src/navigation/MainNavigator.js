@@ -6,6 +6,7 @@ import AuthNavigator from './AuthNavigator';
 import DrawerNavigator from './DrawerNavigator';
 import routes from "./routes";
 import { selectAuthenticated } from '../redux/reducers/authenticationReducer';
+import Sender from '../screens/WebView/Sender'
 
 const Stack = createNativeStackNavigator();
 
@@ -25,6 +26,11 @@ const MainNavigator = () => {
             <Stack.Screen
                 name={routes.DRAWERNAVIGATOR}
                 component={DrawerNavigator}
+                options={{ fullScreenGestureEnabled: false }}
+            />
+            <Stack.Screen
+                name={routes.SENDER}
+                component={Sender}
                 options={{ fullScreenGestureEnabled: false }}
             />
         </Stack.Navigator>

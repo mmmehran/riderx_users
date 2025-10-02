@@ -65,5 +65,6 @@
   "cancelOrderContent": "Müşteri bu teslimatı iptal etti. Lütfen siparişi işlemeyi durdurun.",
   "confirmText": "Onayla",
   "enterPin": "Güvenli PIN'i girin",
-  "selectLanguage": "Dil seçin"
+  "selectLanguage": "Dil seçin",
+  "emailNotVerify": "E-posta doğrulanmadı"
 }

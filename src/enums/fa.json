@@ -65,5 +65,6 @@
   "cancelOrderContent": "مشتری این ارسال را لغو کرده است. لطفاً ادامه پردازش سفارش را متوقف کنید.",
   "confirmText": "تأیید",
   "enterPin": "پین امن را وارد کنید",
-  "selectLanguage": "انتخاب زبان"
+  "selectLanguage": "انتخاب زبان",
+  "emailNotVerify": "ایمیل تأیید نشده است"
 }

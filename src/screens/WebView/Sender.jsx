@@ -9,7 +9,7 @@ import {
 import {WebView} from 'react-native-webview';
 import colors from '../../config/colors';
 
-export default function Sender() {
+export default function Sender({route}) {
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.screen}>
@@ -17,7 +17,7 @@ export default function Sender() {
           <WebView
             key="only-web"
             style={{flex: 1}}
-            source={{uri: 'https://p3.riderx.me'}}
+            source={{uri: route?.params?.url}}
             javaScriptEnabled
             domStorageEnabled
             allowsInlineMediaPlayback

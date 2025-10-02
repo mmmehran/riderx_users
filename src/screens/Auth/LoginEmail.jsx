@@ -17,21 +17,21 @@ import {KeyboardAwareScrollView} from 'react-native-keyboard-aware-scroll-view';
 import {useTranslation} from 'react-i18next';
 import {useDispatch} from 'react-redux';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-// (optional) if you have it installed, you can restart automatically after RTL change
-// import RNRestart from 'react-native-restart';
+import {useNavigation} from '@react-navigation/native';
 
 import CustomScreen from '../../components/common/CustomScreen';
 import {Form, Input, Button} from '../../components/form/index';
 import {postData} from '../../services/common.service';
 import urls from '../../services/urls.json';
 import errorHandler from '../../utils/errorHandler';
-import {showToast} from '../../utils/helpers';
+import {showToast, showError} from '../../utils/helpers';
 import {Logo} from '../../../assets/svg/index';
 import {login} from '../../redux/reducers/authenticationReducer';
 import {setConfigTest, setConfig} from '../../services/defaultAxios';
 import CustomText from '../../components/common/CustomText';
 import colors from '../../config/colors';
 import i18n from '../../utils/i18n';
+import routes from '../../navigation/routes';
 
 const LANGS = [
   {code: 'en', label: 'English', rtl: false},
@@ -45,6 +45,7 @@ const LoginEmail = props => {
   const formikRef = useRef();
   const {t} = useTranslation();
   const dispatch = useDispatch();
+  const navigation = useNavigation();
 
   const [loading, setLoading] = useState(false);
   const [langModal, setLangModal] = useState(false);
@@ -66,7 +67,18 @@ const LoginEmail = props => {
       false,
     );
     if (response?.data?.status) {
-      dispatch(login(response?.data?.data));
+      if (!response?.data?.data?.email_verified) {
+        showError(t('emailNotVerify'));
+        setLoading(false);
+        return;
+      }
+      if (response?.data?.data?.is_rider) {
+        dispatch(login(response?.data?.data));
+      } else {
+        navigation.navigate(routes.SENDER, {
+          url: response?.data?.data?.sender_panel_direct_login_url,
+        });
+      }
       showToast(response?.data?.message);
     } else {
       errorHandler(response);
