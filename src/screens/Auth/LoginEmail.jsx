@@ -5,8 +5,6 @@ import {
   Keyboard,
   TouchableOpacity,
   Modal,
-  FlatList,
-  I18nManager,
 } from 'react-native';
 import {
   widthPercentageToDP as wp,
@@ -72,12 +70,9 @@ const LoginEmail = props => {
         setLoading(false);
         return;
       }
-      if (response?.data?.data?.is_rider) {
+
+      if (response?.data?.data) {
         dispatch(login(response?.data?.data));
-      } else {
-        navigation.navigate(routes.SENDER, {
-          url: response?.data?.data?.sender_panel_direct_login_url,
-        });
       }
       showToast(response?.data?.message);
     } else {

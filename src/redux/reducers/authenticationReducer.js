@@ -10,6 +10,9 @@ const initialStateObject = {
    socketio:null,
    userProfile:null,
    profile_image:null,
+   email_verified:null,
+   is_rider:null,
+   sender_panel_direct_login_url:null,
 };
 
 export const selectAuthenticated = (state) => state.auth.authenticated;
@@ -28,6 +31,9 @@ export const authenticationSlice = createSlice({
             phone: `${action.payload?.phone?.country_code}${action.payload?.phone?.number}`,
             socketio: action.payload?.socketio,
             profile_image: action.payload?.profile_image,
+            email_verified: action.payload?.email_verified,
+            is_rider: action.payload?.is_rider,
+            sender_panel_direct_login_url: action.payload?.sender_panel_direct_login_url,
          };
       },
       setUserProfile: (state, action) => {

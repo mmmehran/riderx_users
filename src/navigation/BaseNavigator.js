@@ -36,9 +36,12 @@ const BaseNavigator = () => {
 
   const fetchRoute = async()=>{
     if(user?.authenticated == true){
-     await  getVehicle()
-
-      navigation.navigate(routes.DRAWERNAVIGATOR)
+      if(user?.is_rider){
+        await  getVehicle()
+        navigation.navigate(routes.DRAWERNAVIGATOR)
+      }else{
+        navigation.navigate(routes.SENDER)
+      }
     }else{
        navigation.navigate(routes.AUTHNAVIGATOR);
     }

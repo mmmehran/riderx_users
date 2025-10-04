@@ -5,18 +5,18 @@ import { useSelector } from "react-redux";
 import AuthNavigator from './AuthNavigator';
 import DrawerNavigator from './DrawerNavigator';
 import routes from "./routes";
-import { selectAuthenticated } from '../redux/reducers/authenticationReducer';
+import { authenticated } from '../redux/reducers/authenticationReducer';
 import Sender from '../screens/WebView/Sender'
 
 const Stack = createNativeStackNavigator();
 
 const MainNavigator = () => {
-    const authenticated = useSelector(selectAuthenticated);
+    const user = useSelector(authenticated);
 
     return (
         <Stack.Navigator
             screenOptions={{ headerShown: false }}
-            initialRouteName={authenticated ? routes.DRAWERNAVIGATOR : routes.AUTHNAVIGATOR}
+            initialRouteName={user?.authenticated ?  user?.is_rider ? routes.DRAWERNAVIGATOR : routes.SENDER : routes.AUTHNAVIGATOR}
         >
             <Stack.Screen
                 name={routes.AUTHNAVIGATOR}
