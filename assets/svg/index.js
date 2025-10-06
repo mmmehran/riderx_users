@@ -28,3 +28,5 @@ export { default as CarIcon } from "./carIcon.svg";
 export { default as RefreshIcon } from "./refreshIcon.svg";
 export { default as EyeOn } from "./eyeOn.svg";
 export { default as EyeOff } from "./eyeOff.svg";
+export { default as PhoneCall } from "./phoneCall.svg";
+export { default as Message } from "./message.svg";

@@ -9,7 +9,13 @@ import {useTranslation} from 'react-i18next';
 
 import colors from '../config/colors';
 import CustomText from '../components/common/CustomText';
-import {MessageIcon, CallIcon, OpenMap} from '../../assets/svg/index';
+import {
+  MessageIcon,
+  CallIcon,
+  OpenMap,
+  Message,
+  PhoneCall,
+} from '../../assets/svg/index';
 import {openGoogleMaps} from '../utils/googleMapsNavigator';
 import {isAndroid15Plus} from '../utils/helpers';
 
@@ -133,20 +139,20 @@ const AcceptedOrderModal = ({order, changeOrder, loading, insets}) => {
           {order?.status == 'pickup' && order?.receiver_phone?.number && (
             <>
               <TouchableOpacity onPress={sendSms} style={styles.buttonIcon}>
-                <MessageIcon />
+                <Message width={wp(7)} height={wp(7)} />
               </TouchableOpacity>
               <TouchableOpacity onPress={makeCall} style={styles.buttonIcon}>
-                <CallIcon />
+                <PhoneCall width={wp(7)} height={wp(7)} />
               </TouchableOpacity>
             </>
           )}
           {order?.status == 'accepted' && order?.sender_phone?.number && (
             <>
               <TouchableOpacity onPress={sendSms} style={styles.buttonIcon}>
-                <MessageIcon />
+                <Message width={wp(7)} height={wp(7)} />
               </TouchableOpacity>
               <TouchableOpacity onPress={makeCall} style={styles.buttonIcon}>
-                <CallIcon />
+                <PhoneCall width={wp(7)} height={wp(7)} />
               </TouchableOpacity>
             </>
           )}
@@ -166,7 +172,7 @@ const AcceptedOrderModal = ({order, changeOrder, loading, insets}) => {
               });
             }}
             style={styles.buttonIcon}>
-            <OpenMap width={wp(12)} height={wp(12)} />
+            <OpenMap width={wp(8.5)} height={wp(8.5)} />
           </TouchableOpacity>
         </View>
         <View style={styles.rowButton}>
@@ -182,7 +188,7 @@ const AcceptedOrderModal = ({order, changeOrder, loading, insets}) => {
               railBorderColor="#303030ff"
               railFillBackgroundColor="#ffe71046"
               railFillBorderColor="#303030ff"
-              thumbIconBackgroundColor="#FFE710"
+              thumbIconBackgroundColor="#EFF65C"
               thumbIconBorderColor="#303030ff"
             />
           )}
@@ -205,7 +211,7 @@ const AcceptedOrderModal = ({order, changeOrder, loading, insets}) => {
               railBorderColor="#303030ff"
               railFillBackgroundColor="#ffe71046"
               railFillBorderColor="#303030ff"
-              thumbIconBackgroundColor="#FFE710"
+              thumbIconBackgroundColor="#EFF65C"
               thumbIconBorderColor="#303030ff"
             />
           )}
@@ -228,14 +234,16 @@ export default memo(AcceptedOrderModal);
 const styles = StyleSheet.create({
   container: {
     width: wp(95),
-    backgroundColor: '#B3B7C9B2',
-    borderRadius: wp(3),
+    backgroundColor: '#3030309a',
+    borderRadius: wp(6),
     position: 'absolute',
     bottom: hp(3),
     paddingBottom: hp(2),
+    borderWidth: wp(0.5),
+    borderColor: '#303030ff',
   },
   moreText: {
-    color: colors.blue,
+    color: '#000000ff',
     fontWeight: 'bold',
     fontSize: wp(4.5),
     marginVertical: hp(1),
@@ -269,14 +277,14 @@ const styles = StyleSheet.create({
     marginHorizontal: wp(5),
   },
   text: {
-    color: colors.black,
+    color: '#EFF65C',
     fontWeight: '900',
     fontSize: wp(5),
     width: wp(55),
   },
   textInfo: {
     fontSize: wp(5),
-    color: colors.black,
+    color: colors.white,
     fontWeight: '600',
   },
   iconContainer: {
@@ -286,17 +294,23 @@ const styles = StyleSheet.create({
     marginBottom: hp(1),
   },
   buttonIcon: {
-    width: wp(18),
+    width: wp(15),
     height: wp(15),
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: hp(1),
+    borderRadius: wp(50),
+    backgroundColor: '#EFF65C',
+    marginHorizontal: wp(4),
+    borderWidth: wp(0.5),
+    borderColor: '#303030ff',
+    marginVertical: hp(2),
   },
   textContainer: {
     flex: 2,
   },
   textType: {
-    color: colors.black,
+    color: colors.white,
     fontWeight: '900',
     fontSize: wp(5),
     marginBottom: hp(2),
