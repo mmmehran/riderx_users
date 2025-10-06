@@ -938,14 +938,26 @@ const HomeMainScreen = ({route}) => {
                 <Mapbox.LineLayer
                   id="routeLine"
                   style={{
-                    lineColor: '#ff0000',
-                    lineWidth: 4,
+                    lineColor: '#008cffff',
+                    lineWidth: 9,
                     lineJoin: 'round',
                     lineCap: 'round',
                   }}
                 />
               </Mapbox.ShapeSource>
             )}
+            <Mapbox.FillExtrusionLayer
+              id="3d-buildings"
+              sourceID="composite"
+              sourceLayerID="building"
+              filter={['==', ['get', 'underground'], 'false']}
+              style={{
+                fillExtrusionColor: '#afb2b4ff',
+                fillExtrusionHeight: ['coalesce', ['get', 'height'], 5],
+                fillExtrusionBase: ['coalesce', ['get', 'min_height'], 0],
+                fillExtrusionOpacity: 0.6,
+              }}
+            />
 
             {senderCoordinate && (
               <Mapbox.MarkerView coordinate={senderCoordinate}>
@@ -965,7 +977,7 @@ const HomeMainScreen = ({route}) => {
                 followUserLocation
                 followUserMode="course"
                 followZoomLevel={18}
-                followPitch={50}
+                followPitch={60}
                 animationMode="flyTo"
                 animationDuration={500}
               />
