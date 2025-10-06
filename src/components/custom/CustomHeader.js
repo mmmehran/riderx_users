@@ -38,13 +38,13 @@ const styles = StyleSheet.create({
         height: hp(6),
         marginVertical:hp(1),
         position: 'absolute',
-        top: hp(6),
+        top: hp(4),
         zIndex:9999
     },
     left: {
         justifyContent: 'center',
         alignItems: 'center',
-        marginHorizontal: wp(32),
+        marginHorizontal: wp(34.5),
     },
     button: {
        width: wp(12),

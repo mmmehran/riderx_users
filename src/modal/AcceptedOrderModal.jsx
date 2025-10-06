@@ -83,7 +83,9 @@ const AcceptedOrderModal = ({order, changeOrder, loading, insets}) => {
             {flexDirection: 'column', marginTop: hp(0.5)},
           ]}>
           <View style={styles.textContainer}>
-            <CustomText style={styles.textInfo}>
+            <CustomText
+              style={styles.textInfo}
+              numberOfLines={showAddress ? 10 : 2}>
               {t('address')}:{' '}
               {order?.status !== 'pickup'
                 ? order?.sender_address_json?.full_address
@@ -135,49 +137,59 @@ const AcceptedOrderModal = ({order, changeOrder, loading, insets}) => {
                 <CustomText style={styles.textType}>
                   {t('PackageType')}: {order?.delivery_package?.title}
                 </CustomText>
+                <View style={styles.iconContainer}>
+                  {order?.status == 'pickup' &&
+                    order?.receiver_phone?.number && (
+                      <>
+                        <TouchableOpacity
+                          onPress={sendSms}
+                          style={styles.buttonIcon}>
+                          <Message width={wp(7)} height={wp(7)} />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={makeCall}
+                          style={styles.buttonIcon}>
+                          <PhoneCall width={wp(7)} height={wp(7)} />
+                        </TouchableOpacity>
+                      </>
+                    )}
+                  {order?.status == 'accepted' &&
+                    order?.sender_phone?.number && (
+                      <>
+                        <TouchableOpacity
+                          onPress={sendSms}
+                          style={styles.buttonIcon}>
+                          <Message width={wp(7)} height={wp(7)} />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={makeCall}
+                          style={styles.buttonIcon}>
+                          <PhoneCall width={wp(7)} height={wp(7)} />
+                        </TouchableOpacity>
+                      </>
+                    )}
+                  <TouchableOpacity
+                    onPress={() => {
+                      openGoogleMaps({
+                        lat:
+                          order?.status !== 'pickup'
+                            ? order.sender_latitude
+                            : order.receiver_latitude,
+                        lng:
+                          order?.status !== 'pickup'
+                            ? order.sender_longitude
+                            : order.receiver_longitude,
+                        label: 'Pickup #1024',
+                        mode: 'd',
+                      });
+                    }}
+                    style={styles.buttonIcon}>
+                    <OpenMap width={wp(8.5)} height={wp(8.5)} />
+                  </TouchableOpacity>
+                </View>
               </>
             )}
           </View>
-        </View>
-        <View style={styles.iconContainer}>
-          {order?.status == 'pickup' && order?.receiver_phone?.number && (
-            <>
-              <TouchableOpacity onPress={sendSms} style={styles.buttonIcon}>
-                <Message width={wp(7)} height={wp(7)} />
-              </TouchableOpacity>
-              <TouchableOpacity onPress={makeCall} style={styles.buttonIcon}>
-                <PhoneCall width={wp(7)} height={wp(7)} />
-              </TouchableOpacity>
-            </>
-          )}
-          {order?.status == 'accepted' && order?.sender_phone?.number && (
-            <>
-              <TouchableOpacity onPress={sendSms} style={styles.buttonIcon}>
-                <Message width={wp(7)} height={wp(7)} />
-              </TouchableOpacity>
-              <TouchableOpacity onPress={makeCall} style={styles.buttonIcon}>
-                <PhoneCall width={wp(7)} height={wp(7)} />
-              </TouchableOpacity>
-            </>
-          )}
-          <TouchableOpacity
-            onPress={() => {
-              openGoogleMaps({
-                lat:
-                  order?.status !== 'pickup'
-                    ? order.sender_latitude
-                    : order.receiver_latitude,
-                lng:
-                  order?.status !== 'pickup'
-                    ? order.sender_longitude
-                    : order.receiver_longitude,
-                label: 'Pickup #1024',
-                mode: 'd',
-              });
-            }}
-            style={styles.buttonIcon}>
-            <OpenMap width={wp(8.5)} height={wp(8.5)} />
-          </TouchableOpacity>
         </View>
         <View style={styles.rowButton}>
           {order?.status == 'accepted' && (
@@ -278,14 +290,14 @@ const styles = StyleSheet.create({
   userContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: hp(2),
+    marginTop: hp(1.3),
     marginHorizontal: wp(5),
   },
   text: {
     color: '#EFF65C',
     fontWeight: '900',
     fontSize: wp(5),
-    width: wp(55),
+    width: wp(85),
   },
   textInfo: {
     fontSize: wp(5),

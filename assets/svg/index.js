@@ -30,3 +30,4 @@ export { default as EyeOn } from "./eyeOn.svg";
 export { default as EyeOff } from "./eyeOff.svg";
 export { default as PhoneCall } from "./phoneCall.svg";
 export { default as Message } from "./message.svg";
+export { default as LocationPin1 } from "./locationPin1.svg";

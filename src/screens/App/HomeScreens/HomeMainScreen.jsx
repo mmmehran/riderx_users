@@ -5,8 +5,7 @@ import {
   PermissionsAndroid,
   Platform,
   AppState,
-  Linking,
-  Alert,
+  TouchableOpacity,
 } from 'react-native';
 import {
   widthPercentageToDP as wp,
@@ -29,7 +28,7 @@ import AcceptOrderModal from '../../../modal/AcceptOrderModal';
 import AcceptedOrderModal from '../../../modal/AcceptedOrderModal';
 import CancelModal from '../../../modal/CancelModal';
 
-import {Marker, LocationPin} from '../../../../assets/svg/index';
+import {Marker, LocationPin, LocationPin1} from '../../../../assets/svg/index';
 import CustomHeader from '../../../components/custom/CustomHeader';
 import CustomBottomTab from '../../../components/custom/CustomBottomTab';
 import {getData, sendData} from '../../../services/common.service';
@@ -167,7 +166,6 @@ const createNotifChannelOnce = async ref => {
 /* ──────────────────────────────────────────────────────────────────────
    Nav-Lite helpers
    ────────────────────────────────────────────────────────────────────── */
-// Haversine (meters)
 const haversineMeters = (a, b) => {
   const toRad = d => (d * Math.PI) / 180;
   const R = 6371000;
@@ -180,7 +178,6 @@ const haversineMeters = (a, b) => {
     Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
   return 2 * R * Math.asin(Math.sqrt(x));
 };
-// prefer banner text if present
 const stepPrimaryText = step => {
   const bannerText = step?.bannerInstructions?.[0]?.primary?.text;
   return bannerText || step?.maneuver?.instruction || '';
@@ -209,7 +206,6 @@ const HomeMainScreen = ({route}) => {
   const [pickUpTimeUpdate, setPickUpTimeUpdate] = useState(null);
   const {t} = useTranslation();
 
-  // Route feature (GeoJSON Feature)
   const [routeFeature, setRouteFeature] = useState(null);
 
   const [currentStatus, setCurrentStatus] = useState(null);
@@ -222,6 +218,11 @@ const HomeMainScreen = ({route}) => {
   // Nav mode (Waze-like)
   const [isNavOn, setIsNavOn] = useState(false);
 
+  // Camera / controls
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followMode, setFollowMode] = useState('course'); // 'course' | 'normal'
+  const [bearing, setBearing] = useState(0); // used when NOT following
+
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const dispatch = useDispatch();
@@ -232,6 +233,9 @@ const HomeMainScreen = ({route}) => {
   const pollInFlightRef = useRef(false);
   const lastCamRef = useRef(null);
   const cameraRef = useRef(camera);
+  const camRef = useRef(null); // ⬅️ Camera ref for imperative control
+  const userLocRef = useRef(null); // ⬅️ Last known user location [lng,lat]
+
   useEffect(() => {
     cameraRef.current = camera;
   }, [camera]);
@@ -244,7 +248,6 @@ const HomeMainScreen = ({route}) => {
   const [banner, setBanner] = useState({primary: '', distance: 0});
   const [offRoute, setOffRoute] = useState(false);
 
-  // Helper: open Accept modal from notification payload
   const openAcceptFromNotifPayload = useCallback(async payload => {
     if (!payload) return;
     if (selectedOrderRef.current) return;
@@ -287,7 +290,6 @@ const HomeMainScreen = ({route}) => {
     return () => sub.remove();
   }, []);
 
-  // prevent state updates after unmount
   const mountedRef = useRef(true);
   useEffect(() => {
     mountedRef.current = true;
@@ -349,7 +351,6 @@ const HomeMainScreen = ({route}) => {
       } catch (e) {
         console.log(e);
       }
-
       messaging().onTokenRefresh(async newToken => {
         try {
           await sendData(urls.SETFCMTOKEN, {fcm_token: newToken});
@@ -406,6 +407,7 @@ const HomeMainScreen = ({route}) => {
           setRouteFeature(null);
           setSelectedOrder(null);
           setIsNavOn(false);
+          setIsFollowing(false);
           setConfirmCancelModalVisible(true);
           await showLocalNotification({
             title: t('deliveryCancel'),
@@ -535,26 +537,25 @@ const HomeMainScreen = ({route}) => {
     if (lng === null || lat === null) return;
 
     const rounded = [lng, lat];
+    userLocRef.current = rounded; // ⬅️ keep freshest user coordinate
+
     const last = lastCamRef.current;
     const movedEnough =
       !last ||
       Math.abs(rounded[0] - last[0]) > 0.0005 ||
       Math.abs(rounded[1] - last[1]) > 0.0005;
 
-    if (!isNavOn && movedEnough) {
-      // in non-nav mode we still keep your manual camera
+    if (!isNavOn && !isFollowing && movedEnough) {
       lastCamRef.current = rounded;
       setCamera(rounded);
     }
 
-    // ── Nav-Lite: step progress & banner
-    if (isNavOn && routeSteps.length > 0) {
+    if ((isNavOn || isFollowing) && routeSteps.length > 0) {
       const idx = Math.min(stepIndex, routeSteps.length - 1);
       const currentStep = routeSteps[idx];
       const nextPt = stepManeuverLngLat(currentStep);
       if (nextPt) {
         const d = Math.max(0, Math.round(haversineMeters(rounded, nextPt)));
-        // step completed? (slightly forgiving in city)
         if (d < 30 && idx < routeSteps.length - 1) {
           setStepIndex(idx + 1);
         }
@@ -572,7 +573,9 @@ const HomeMainScreen = ({route}) => {
         setSelectedOrder(orders[0]);
         setIsAccepted(true);
         setShowAcceptOrder(false);
-        setIsNavOn(true); // resume nav if you reopen app with active order
+        setIsNavOn(true);
+        setIsFollowing(true);
+        setFollowMode('course');
       } else {
         getDeliveryLists();
       }
@@ -666,6 +669,7 @@ const HomeMainScreen = ({route}) => {
         setRouteFeature(null);
         setSelectedOrder(null);
         setIsNavOn(false);
+        setIsFollowing(false);
         showToast(
           status === 'completed' ? t('completeOrder') : t('cancelOrder'),
         );
@@ -686,7 +690,9 @@ const HomeMainScreen = ({route}) => {
     setIsAccepted(true);
     setShowAcceptOrder(false);
     setCurrentOrderIndex(null);
-    setIsNavOn(true); // ⬅️ start in-app navigation after accept
+    setIsNavOn(true);
+    setIsFollowing(true);
+    setFollowMode('course');
   }, [data, currentOrderIndex, requireVehicleOrToast]);
 
   const currentOrder =
@@ -702,7 +708,7 @@ const HomeMainScreen = ({route}) => {
       selectedOrder?.status !== 'pickup'
         ? selectedOrder?.sender_latitude
         : selectedOrder?.receiver_latitude;
-    return normalizeCoord([lng, lat]); // [lng, lat] or null
+    return normalizeCoord([lng, lat]);
   }, [
     selectedOrder?.id,
     selectedOrder?.status,
@@ -713,7 +719,7 @@ const HomeMainScreen = ({route}) => {
   ]);
 
   /* ────────────────────────────────────────────────────────────────────────
-     Optimized, cancellable, debounced route fetch  (Nav-Lite enabled)
+     Route fetch
      ──────────────────────────────────────────────────────────────────────── */
   const abortRef = useRef(null);
   const debouncedUserCoord = useDebounced(camera, 600);
@@ -759,8 +765,8 @@ const HomeMainScreen = ({route}) => {
       const route = json?.routes?.[0];
       const geom = route?.geometry;
       const steps = route?.legs?.[0]?.steps || [];
-      const duration = route?.duration || 0; // seconds
-      const distance = route?.distance || 0; // meters
+      const duration = route?.duration || 0;
+      const distance = route?.distance || 0;
 
       if (geom && mountedRef.current && !controller.signal.aborted) {
         cacheSet(legK, {geometry: geom, steps, duration, distance});
@@ -772,7 +778,7 @@ const HomeMainScreen = ({route}) => {
         setBanner({primary: '', distance: 0});
       }
     } catch (e) {
-      // swallow; keep UI responsive
+      // silent
     } finally {
       if (abortRef.current === controller) abortRef.current = null;
     }
@@ -781,8 +787,7 @@ const HomeMainScreen = ({route}) => {
   useEffect(() => {
     if (!hasLocPerm) return;
 
-    // Only fetch when actually navigating to avoid races
-    if (!selectedOrder || !isAccepted || !isNavOn) {
+    if (!selectedOrder || !isAccepted || !(isNavOn || isFollowing)) {
       setRouteFeature(null);
       setRouteSteps([]);
       setBanner({primary: '', distance: 0});
@@ -800,6 +805,7 @@ const HomeMainScreen = ({route}) => {
     hasLocPerm,
     isAccepted,
     isNavOn,
+    isFollowing,
     selectedOrder?.id,
     fromKey,
     toKey,
@@ -818,7 +824,12 @@ const HomeMainScreen = ({route}) => {
      Off-route detection & auto-reroute
      ──────────────────────────────────────────────────────────────────────── */
   useEffect(() => {
-    if (!isNavOn || !routeFeature?.geometry || !routeSteps.length) return;
+    if (
+      !(isNavOn || isFollowing) ||
+      !routeFeature?.geometry ||
+      !routeSteps.length
+    )
+      return;
     const id = setInterval(() => {
       const cam = cameraRef.current;
       const norm = normalizeCoord(cam);
@@ -829,13 +840,14 @@ const HomeMainScreen = ({route}) => {
       if (!nextPt) return;
 
       const d = haversineMeters(norm, nextPt);
-      setOffRoute(d > 60); // ~60m threshold
+      setOffRoute(d > 60);
     }, 3000);
     return () => clearInterval(id);
-  }, [isNavOn, routeFeature?.geometry, routeSteps, stepIndex]);
+  }, [isNavOn, isFollowing, routeFeature?.geometry, routeSteps, stepIndex]);
 
   useEffect(() => {
-    if (!offRoute || !selectedOrder || !isAccepted || !isNavOn) return;
+    if (!offRoute || !selectedOrder || !isAccepted || !(isNavOn || isFollowing))
+      return;
     const from = normalizeCoord(cameraRef.current);
     const to = senderCoordinate;
     if (from && to) {
@@ -847,29 +859,11 @@ const HomeMainScreen = ({route}) => {
     offRoute,
     isAccepted,
     isNavOn,
+    isFollowing,
     selectedOrder?.id,
     senderCoordinate,
     fetchRoute,
   ]);
-
-  /* ────────────────────────────────────────────────────────────────────────
-     Polling deliveries when idle
-     ──────────────────────────────────────────────────────────────────────── */
-  useEffect(() => {
-    if (selectedOrder) return;
-    const handler = async () => {
-      if (showAcceptOrder || pollInFlightRef.current) return;
-      try {
-        pollInFlightRef.current = true;
-        await getDeliveryLists();
-      } finally {
-        pollInFlightRef.current = false;
-      }
-    };
-    const id = setInterval(handler, POLL_MS);
-    if (!user?.authenticated) clearInterval(id);
-    return () => clearInterval(id);
-  }, [selectedOrder, showAcceptOrder, user?.authenticated]);
 
   /* ────────────────────────────────────────────────────────────────────────
      Background location post
@@ -909,6 +903,36 @@ const HomeMainScreen = ({route}) => {
   );
 
   /* ────────────────────────────────────────────────────────────────────────
+     Center-on-user handler (LocationPin2 button)
+     ──────────────────────────────────────────────────────────────────────── */
+  const onPressMyLocation = useCallback(() => {
+    const target = userLocRef.current || cameraRef.current;
+    if (!target) return;
+
+    // Snap to user instantly
+    camRef.current?.setCamera({
+      followUserLocation: false,
+      centerCoordinate: target,
+      zoomLevel: 18,
+      pitch: 55,
+      animationDuration: 220,
+    });
+
+    // Then enable follow like Waze
+    setTimeout(() => {
+      setIsFollowing(true);
+      setFollowMode('course');
+      camRef.current?.setCamera({
+        followUserLocation: true,
+        followUserMode: 'course',
+        followZoomLevel: 18,
+        followPitch: 55,
+        animationDuration: 220,
+      });
+    }, 230);
+  }, []);
+
+  /* ────────────────────────────────────────────────────────────────────────
      Render
      ──────────────────────────────────────────────────────────────────────── */
   return (
@@ -926,107 +950,106 @@ const HomeMainScreen = ({route}) => {
           }}
         />
 
-        {hasLocPerm ? (
-          <Mapbox.MapView
-            key={mapMountKey}
-            zoomEnabled
-            styleURL="mapbox://styles/mapbox/streets-v12"
-            rotateEnabled
-            style={styles.map}>
-            {routeFeature && selectedOrder && (
-              <Mapbox.ShapeSource id="routeSource" shape={routeFeature}>
-                <Mapbox.LineLayer
-                  id="routeLine"
-                  style={{
-                    lineColor: '#008cffff',
-                    lineWidth: 9,
-                    lineJoin: 'round',
-                    lineCap: 'round',
-                  }}
-                />
-              </Mapbox.ShapeSource>
-            )}
-            <Mapbox.FillExtrusionLayer
-              id="3d-buildings"
-              sourceID="composite"
-              sourceLayerID="building"
-              filter={['==', ['get', 'underground'], 'false']}
-              style={{
-                fillExtrusionColor: '#afb2b4ff',
-                fillExtrusionHeight: ['coalesce', ['get', 'height'], 5],
-                fillExtrusionBase: ['coalesce', ['get', 'min_height'], 0],
-                fillExtrusionOpacity: 0.6,
-              }}
-            />
+        {/* Map wrapper so overlays can sit above the map */}
+        <View style={styles.mapWrap}>
+          {hasLocPerm ? (
+            <Mapbox.MapView
+              key={mapMountKey}
+              styleURL="mapbox://styles/mapbox/streets-v12"
+              zoomEnabled
+              rotateEnabled
+              style={styles.map}>
+              {routeFeature && selectedOrder && (
+                <Mapbox.ShapeSource id="routeSource" shape={routeFeature}>
+                  <Mapbox.LineLayer
+                    id="routeLine"
+                    style={{
+                      lineColor: '#008cffff',
+                      lineWidth: 15,
+                      lineJoin: 'round',
+                      lineCap: 'round',
+                    }}
+                  />
+                </Mapbox.ShapeSource>
+              )}
 
-            {senderCoordinate && (
-              <Mapbox.MarkerView coordinate={senderCoordinate}>
-                <LocationPin width={wp(8)} height={wp(8)} />
-              </Mapbox.MarkerView>
-            )}
-
-            <Mapbox.UserLocation
-              visible
-              showsUserHeadingIndicator
-              androidRenderMode="compass"
-              onUpdate={centerToUserLocation}
-            />
-
-            {isNavOn ? (
-              <Mapbox.Camera
-                followUserLocation
-                followUserMode="course"
-                followZoomLevel={18}
-                followPitch={60}
-                animationMode="flyTo"
-                animationDuration={500}
-              />
-            ) : (
-              <Mapbox.Camera
-                centerCoordinate={camera}
-                zoomLevel={13}
-                animationMode="flyTo"
-                animationDuration={2000}
-              />
-            )}
-
-            <Mapbox.MarkerView coordinate={camera}>
-              <Marker />
-            </Mapbox.MarkerView>
-
-            {/* Nav-Lite banner */}
-            {banner?.primary ? (
-              <View
+              {/* 3D buildings (optional) */}
+              {/* <Mapbox.FillExtrusionLayer
+                id="3d-buildings"
+                sourceID="composite"
+                sourceLayerID="building"
+                filter={['==', ['get', 'underground'], 'false']}
                 style={{
-                  position: 'absolute',
-                  top: hp(2),
-                  left: wp(5),
-                  right: wp(5),
-                  paddingVertical: 10,
-                  paddingHorizontal: 12,
-                  borderRadius: 10,
-                  backgroundColor: 'rgba(0,0,0,0.65)',
-                }}>
-                <CustomText
-                  style={{
-                    color: '#fff',
-                    fontSize: wp(4.2),
-                    fontWeight: '700',
-                  }}>
+                  fillExtrusionColor: '#afb2b4ff',
+                  fillExtrusionHeight: ['coalesce', ['get', 'height'], 5],
+                  fillExtrusionBase: ['coalesce', ['get', 'min_height'], 0],
+                  fillExtrusionOpacity: 0.6,
+                }}
+              /> */}
+
+              {senderCoordinate && (
+                <Mapbox.MarkerView coordinate={senderCoordinate}>
+                  <LocationPin width={wp(8)} height={wp(8)} />
+                </Mapbox.MarkerView>
+              )}
+
+              <Mapbox.UserLocation
+                visible
+                showsUserHeadingIndicator
+                androidRenderMode="compass"
+                onUpdate={centerToUserLocation}
+              />
+
+              {isNavOn || isFollowing ? (
+                <Mapbox.Camera
+                  ref={camRef}
+                  followUserLocation
+                  followUserMode={followMode}
+                  followZoomLevel={isNavOn ? 20 : 16}
+                  followPitch={isNavOn ? 55 : 0}
+                  animationMode="flyTo"
+                  animationDuration={500}
+                />
+              ) : (
+                <Mapbox.Camera
+                  ref={camRef}
+                  centerCoordinate={camera}
+                  zoomLevel={13}
+                  bearing={bearing}
+                  animationMode="flyTo"
+                  animationDuration={800}
+                />
+              )}
+
+              <Mapbox.MarkerView coordinate={camera}>
+                <Marker />
+              </Mapbox.MarkerView>
+            </Mapbox.MapView>
+          ) : (
+            <View style={styles.map} />
+          )}
+
+          {/* Overlay */}
+          <View style={styles.overlay} pointerEvents="box-none">
+            {banner?.primary ? (
+              <View style={styles.banner} pointerEvents="none">
+                <CustomText style={styles.bannerTitle}>
                   {banner.primary}
                 </CustomText>
                 {!!banner.distance && (
-                  <CustomText
-                    style={{color: '#fff', fontSize: wp(3.6), marginTop: 2}}>
+                  <CustomText style={styles.bannerSub}>
                     {banner.distance} m
                   </CustomText>
                 )}
               </View>
             ) : null}
-          </Mapbox.MapView>
-        ) : (
-          <View style={styles.map} />
-        )}
+          </View>
+
+          {/* LocationPin2 FAB */}
+          <TouchableOpacity onPress={onPressMyLocation} style={styles.fab}>
+            <LocationPin1 width={wp(6)} height={wp(6)} />
+          </TouchableOpacity>
+        </View>
 
         {config?.selectVehicle?.on_status == 'off' && (
           <View style={styles.vehicleStatus}>
@@ -1135,5 +1158,48 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontSize: wp(7),
   },
+
+  // Map + overlay
+  mapWrap: {
+    flex: 1,
+    width: wp(100),
+    position: 'relative',
+  },
   map: {flex: 1, width: wp(100)},
+  overlay: {
+    position: 'absolute',
+    top: hp(9.5),
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 9999,
+    pointerEvents: 'box-none',
+  },
+
+  // Navigation banner
+  banner: {
+    position: 'absolute',
+    top: hp(2.5),
+    left: wp(2.5),
+    right: wp(2.5),
+    paddingVertical: hp(1.5),
+    paddingHorizontal: wp(5),
+    borderRadius: wp(5),
+    backgroundColor: '#ff8800ef',
+  },
+  bannerTitle: {color: '#fff', fontSize: wp(5), fontWeight: 'bold'},
+  bannerSub: {color: '#303030ff', fontSize: wp(5), fontWeight: 'bold'},
+
+  // Location FAB
+  fab: {
+    position: 'absolute',
+    right: wp(4),
+    bottom: hp(35),
+    width: wp(12),
+    height: wp(12),
+    borderRadius: wp(6),
+    backgroundColor: colors.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 });
