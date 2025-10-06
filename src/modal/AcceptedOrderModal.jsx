@@ -77,7 +77,11 @@ const AcceptedOrderModal = ({order, changeOrder, loading, insets}) => {
               : order?.receiver_full_name}
           </CustomText>
         </View>
-        <View style={[styles.userContainer, {flexDirection: 'column'}]}>
+        <View
+          style={[
+            styles.userContainer,
+            {flexDirection: 'column', marginTop: hp(0.5)},
+          ]}>
           <View style={styles.textContainer}>
             <CustomText style={styles.textInfo}>
               {t('address')}:{' '}
@@ -238,7 +242,7 @@ const styles = StyleSheet.create({
     borderRadius: wp(6),
     position: 'absolute',
     bottom: hp(3),
-    paddingBottom: hp(2),
+    paddingBottom: hp(1),
     borderWidth: wp(0.5),
     borderColor: '#303030ff',
   },
@@ -246,7 +250,8 @@ const styles = StyleSheet.create({
     color: '#000000ff',
     fontWeight: 'bold',
     fontSize: wp(4.5),
-    marginVertical: hp(1),
+    marginVertical: hp(0.5),
+    marginBottom: hp(1.5),
   },
   rowButton: {
     flexDirection: 'row',
@@ -291,7 +296,7 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     justifyContent: 'center',
-    marginBottom: hp(1),
+    marginBottom: hp(0.5),
   },
   buttonIcon: {
     width: wp(15),
@@ -304,7 +309,6 @@ const styles = StyleSheet.create({
     marginHorizontal: wp(4),
     borderWidth: wp(0.5),
     borderColor: '#303030ff',
-    marginVertical: hp(2),
   },
   textContainer: {
     flex: 2,
