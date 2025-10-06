@@ -5,6 +5,8 @@ import {
   PermissionsAndroid,
   Platform,
   AppState,
+  Linking,
+  Alert,
 } from 'react-native';
 import {
   widthPercentageToDP as wp,
@@ -20,7 +22,7 @@ import notifee, {
   AuthorizationStatus,
 } from '@notifee/react-native';
 import Geolocation from '@react-native-community/geolocation';
-import messaging from '@react-native-firebase/messaging'; // ⬅️ NEW
+import messaging from '@react-native-firebase/messaging';
 import {useTranslation} from 'react-i18next';
 
 import AcceptOrderModal from '../../../modal/AcceptOrderModal';
@@ -61,6 +63,9 @@ const MAPBOX_TOKEN =
 
 Mapbox.setAccessToken(MAPBOX_TOKEN);
 
+/* ──────────────────────────────────────────────────────────────────────
+   Common utils
+   ────────────────────────────────────────────────────────────────────── */
 const toNum = v => {
   if (typeof v === 'number' && Number.isFinite(v)) return v;
   if (typeof v === 'string') {
@@ -72,7 +77,7 @@ const toNum = v => {
 const round5 = v => {
   const x = toNum(v);
   if (x === null) return null;
-  return Math.round(x * 1e5) / 1e5; // avoid .toFixed on undefined
+  return Math.round(x * 1e5) / 1e5;
 };
 const normalizeCoord = coord => {
   if (!Array.isArray(coord) || coord.length < 2) return null;
@@ -88,6 +93,7 @@ const coordKey = (lng, lat) => {
 };
 const legKey = (from, to) =>
   `${coordKey(from[0], from[1])}->${coordKey(to[0], to[1])}`;
+
 const useDebounced = (value, delay = 400) => {
   const [deb, setDeb] = useState(value);
   useEffect(() => {
@@ -96,6 +102,7 @@ const useDebounced = (value, delay = 400) => {
   }, [value, delay]);
   return deb;
 };
+
 const routeCache = new Map();
 const MAX_CACHE = 30;
 const cacheSet = (k, v) => {
@@ -105,6 +112,7 @@ const cacheSet = (k, v) => {
   }
   routeCache.set(k, v);
 };
+
 const requestNotifPermission = async () => {
   if (Platform.OS === 'android') {
     if (Platform.Version < 33) return true;
@@ -156,6 +164,36 @@ const createNotifChannelOnce = async ref => {
   return ref.current;
 };
 
+/* ──────────────────────────────────────────────────────────────────────
+   Nav-Lite helpers
+   ────────────────────────────────────────────────────────────────────── */
+// Haversine (meters)
+const haversineMeters = (a, b) => {
+  const toRad = d => (d * Math.PI) / 180;
+  const R = 6371000;
+  const dLat = toRad(b[1] - a[1]);
+  const dLng = toRad(b[0] - a[0]);
+  const lat1 = toRad(a[1]);
+  const lat2 = toRad(b[1]);
+  const x =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(x));
+};
+// prefer banner text if present
+const stepPrimaryText = step => {
+  const bannerText = step?.bannerInstructions?.[0]?.primary?.text;
+  return bannerText || step?.maneuver?.instruction || '';
+};
+const stepManeuverLngLat = step => {
+  const loc = step?.maneuver?.location;
+  return Array.isArray(loc) && loc.length === 2
+    ? [toNum(loc[0]), toNum(loc[1])]
+    : null;
+};
+
+/* ────────────────────────────────────────────────────────────────────── */
+
 const HomeMainScreen = ({route}) => {
   const [camera, setCamera] = useState([-74.006, 40.7128]);
   const [data, setData] = useState([]);
@@ -181,6 +219,9 @@ const HomeMainScreen = ({route}) => {
   const [hasLocPerm, setHasLocPerm] = useState(false);
   const [mapMountKey, setMapMountKey] = useState('map-0');
 
+  // Nav mode (Waze-like)
+  const [isNavOn, setIsNavOn] = useState(false);
+
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const dispatch = useDispatch();
@@ -195,7 +236,15 @@ const HomeMainScreen = ({route}) => {
     cameraRef.current = camera;
   }, [camera]);
 
-  // Helper: open Accept modal from navigation payload
+  // Nav-Lite state
+  const [routeSteps, setRouteSteps] = useState([]);
+  const [routeDistanceM, setRouteDistanceM] = useState(0);
+  const [routeDurationSec, setRouteDurationSec] = useState(0);
+  const [stepIndex, setStepIndex] = useState(0);
+  const [banner, setBanner] = useState({primary: '', distance: 0});
+  const [offRoute, setOffRoute] = useState(false);
+
+  // Helper: open Accept modal from notification payload
   const openAcceptFromNotifPayload = useCallback(async payload => {
     if (!payload) return;
     if (selectedOrderRef.current) return;
@@ -205,7 +254,6 @@ const HomeMainScreen = ({route}) => {
         item = payload;
       } catch {}
     }
-
     if (!item) return;
     setCurrentOrderIndex(null);
     setShowAcceptOrder(false);
@@ -283,7 +331,6 @@ const HomeMainScreen = ({route}) => {
 
   const ensureFcmPermissionAndToken = async () => {
     try {
-      // iOS will prompt; Android no-op (POST_NOTIFICATIONS handled above)
       const authStatus = await messaging().requestPermission({
         alert: true,
         badge: true,
@@ -303,7 +350,6 @@ const HomeMainScreen = ({route}) => {
         console.log(e);
       }
 
-      // Keep backend synced on token rotation
       messaging().onTokenRefresh(async newToken => {
         try {
           await sendData(urls.SETFCMTOKEN, {fcm_token: newToken});
@@ -311,25 +357,6 @@ const HomeMainScreen = ({route}) => {
           console.log(e);
         }
       });
-
-      // // fire when in app
-      // messaging().onMessage(async remoteMessage => {
-      //   // 1. Extract the notification details
-      //   const {notification, data} = remoteMessage;
-      //   // 2. Use notifee to display the notification
-      //   if (notification) {
-      //     showLocalNotification({
-      //       title: notification.title,
-      //       body: notification.body,
-      //       data: data
-      //         ? {
-      //             delivery_id: String(data?.id ?? ''),
-      //             delivery_json: JSON.stringify(data || {}),
-      //           }
-      //         : null,
-      //     });
-      //   }
-      // });
 
       return token;
     } catch (e) {
@@ -369,16 +396,6 @@ const HomeMainScreen = ({route}) => {
           setShowAcceptOrder(true);
           setIsAccepted(false);
           if (isActive) playDing();
-          // if (!isActive) {
-          //   await showLocalNotification({
-          //     title: 'New delivery request',
-          //     body: 'You have a new delivery request',
-          //     data: {
-          //       delivery_id: String(payload?.message?.id ?? ''),
-          //       delivery_json: JSON.stringify(payload?.message || {}),
-          //     },
-          //   });
-          // }
         } else {
           setCurrentOrderIndex(null);
           setShowAcceptOrder(false);
@@ -388,6 +405,7 @@ const HomeMainScreen = ({route}) => {
         if (payload?.message?.status === 'cancel') {
           setRouteFeature(null);
           setSelectedOrder(null);
+          setIsNavOn(false);
           setConfirmCancelModalVisible(true);
           await showLocalNotification({
             title: t('deliveryCancel'),
@@ -425,7 +443,7 @@ const HomeMainScreen = ({route}) => {
   ]);
 
   /* ────────────────────────────────────────────────────────────────────────
-     Bootstrap: location perm → notif perm → channel → data
+     Bootstrap
      ──────────────────────────────────────────────────────────────────────── */
   useEffect(() => {
     let live = true;
@@ -523,9 +541,26 @@ const HomeMainScreen = ({route}) => {
       Math.abs(rounded[0] - last[0]) > 0.0005 ||
       Math.abs(rounded[1] - last[1]) > 0.0005;
 
-    if (movedEnough) {
+    if (!isNavOn && movedEnough) {
+      // in non-nav mode we still keep your manual camera
       lastCamRef.current = rounded;
       setCamera(rounded);
+    }
+
+    // ── Nav-Lite: step progress & banner
+    if (isNavOn && routeSteps.length > 0) {
+      const idx = Math.min(stepIndex, routeSteps.length - 1);
+      const currentStep = routeSteps[idx];
+      const nextPt = stepManeuverLngLat(currentStep);
+      if (nextPt) {
+        const d = Math.max(0, Math.round(haversineMeters(rounded, nextPt)));
+        // step completed? (slightly forgiving in city)
+        if (d < 30 && idx < routeSteps.length - 1) {
+          setStepIndex(idx + 1);
+        }
+        const primary = stepPrimaryText(currentStep);
+        setBanner({primary, distance: d});
+      }
     }
   };
 
@@ -537,6 +572,7 @@ const HomeMainScreen = ({route}) => {
         setSelectedOrder(orders[0]);
         setIsAccepted(true);
         setShowAcceptOrder(false);
+        setIsNavOn(true); // resume nav if you reopen app with active order
       } else {
         getDeliveryLists();
       }
@@ -576,7 +612,7 @@ const HomeMainScreen = ({route}) => {
   };
 
   /* ────────────────────────────────────────────────────────────────────────
-     Accept / advance handlers (memoized)
+     Accept / advance handlers
      ──────────────────────────────────────────────────────────────────────── */
   const requireVehicleOrToast = useCallback(() => {
     if (!config?.selectVehicle?.id) {
@@ -629,6 +665,7 @@ const HomeMainScreen = ({route}) => {
       ) {
         setRouteFeature(null);
         setSelectedOrder(null);
+        setIsNavOn(false);
         showToast(
           status === 'completed' ? t('completeOrder') : t('cancelOrder'),
         );
@@ -643,11 +680,13 @@ const HomeMainScreen = ({route}) => {
     if (!requireVehicleOrToast()) return;
     const order = data[currentOrderIndex];
     if (!order) return;
+
     setSelectedOrder(order);
     changeStatusOrderAccept(order, 'accepted');
     setIsAccepted(true);
     setShowAcceptOrder(false);
     setCurrentOrderIndex(null);
+    setIsNavOn(true); // ⬅️ start in-app navigation after accept
   }, [data, currentOrderIndex, requireVehicleOrToast]);
 
   const currentOrder =
@@ -674,7 +713,7 @@ const HomeMainScreen = ({route}) => {
   ]);
 
   /* ────────────────────────────────────────────────────────────────────────
-     Optimized, cancellable, debounced route fetch
+     Optimized, cancellable, debounced route fetch  (Nav-Lite enabled)
      ──────────────────────────────────────────────────────────────────────── */
   const abortRef = useRef(null);
   const debouncedUserCoord = useDebounced(camera, 600);
@@ -692,8 +731,14 @@ const HomeMainScreen = ({route}) => {
   const fetchRoute = useCallback(async (from, to, legK) => {
     const cached = routeCache.get(legK);
     if (cached) {
-      if (mountedRef.current)
-        setRouteFeature({type: 'Feature', geometry: cached});
+      if (mountedRef.current) {
+        setRouteFeature({type: 'Feature', geometry: cached.geometry});
+        setRouteSteps(cached.steps || []);
+        setRouteDurationSec(cached.duration || 0);
+        setRouteDistanceM(cached.distance || 0);
+        setStepIndex(0);
+        setBanner({primary: '', distance: 0});
+      }
       return;
     }
 
@@ -702,19 +747,32 @@ const HomeMainScreen = ({route}) => {
     abortRef.current = controller;
 
     try {
-      const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${from[0]},${from[1]};${to[0]},${to[1]}?geometries=geojson&access_token=${MAPBOX_TOKEN}`;
+      const url =
+        `https://api.mapbox.com/directions/v5/mapbox/driving/` +
+        `${from[0]},${from[1]};${to[0]},${to[1]}` +
+        `?geometries=geojson&overview=full&steps=true&banner_instructions=true&voice_instructions=false&language=en&access_token=${MAPBOX_TOKEN}`;
+
       const res = await fetch(url, {signal: controller.signal});
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
-      const geom = json?.routes?.[0]?.geometry;
+
+      const route = json?.routes?.[0];
+      const geom = route?.geometry;
+      const steps = route?.legs?.[0]?.steps || [];
+      const duration = route?.duration || 0; // seconds
+      const distance = route?.distance || 0; // meters
+
       if (geom && mountedRef.current && !controller.signal.aborted) {
-        cacheSet(legK, geom);
+        cacheSet(legK, {geometry: geom, steps, duration, distance});
         setRouteFeature({type: 'Feature', geometry: geom});
+        setRouteSteps(steps);
+        setRouteDurationSec(duration);
+        setRouteDistanceM(distance);
+        setStepIndex(0);
+        setBanner({primary: '', distance: 0});
       }
     } catch (e) {
-      if (e?.name !== 'AbortError') {
-        // console.log('route fetch error:', e?.message);
-      }
+      // swallow; keep UI responsive
     } finally {
       if (abortRef.current === controller) abortRef.current = null;
     }
@@ -723,9 +781,11 @@ const HomeMainScreen = ({route}) => {
   useEffect(() => {
     if (!hasLocPerm) return;
 
-    // Keep route fetch idle while Accept modal is open / until accepted
-    if (!selectedOrder || !isAccepted) {
+    // Only fetch when actually navigating to avoid races
+    if (!selectedOrder || !isAccepted || !isNavOn) {
       setRouteFeature(null);
+      setRouteSteps([]);
+      setBanner({primary: '', distance: 0});
       if (abortRef.current) abortRef.current.abort();
       return;
     }
@@ -739,6 +799,7 @@ const HomeMainScreen = ({route}) => {
   }, [
     hasLocPerm,
     isAccepted,
+    isNavOn,
     selectedOrder?.id,
     fromKey,
     toKey,
@@ -752,6 +813,44 @@ const HomeMainScreen = ({route}) => {
       if (abortRef.current) abortRef.current.abort();
     };
   }, []);
+
+  /* ────────────────────────────────────────────────────────────────────────
+     Off-route detection & auto-reroute
+     ──────────────────────────────────────────────────────────────────────── */
+  useEffect(() => {
+    if (!isNavOn || !routeFeature?.geometry || !routeSteps.length) return;
+    const id = setInterval(() => {
+      const cam = cameraRef.current;
+      const norm = normalizeCoord(cam);
+      if (!norm) return;
+
+      const idx = Math.min(stepIndex, routeSteps.length - 1);
+      const nextPt = stepManeuverLngLat(routeSteps[idx]);
+      if (!nextPt) return;
+
+      const d = haversineMeters(norm, nextPt);
+      setOffRoute(d > 60); // ~60m threshold
+    }, 3000);
+    return () => clearInterval(id);
+  }, [isNavOn, routeFeature?.geometry, routeSteps, stepIndex]);
+
+  useEffect(() => {
+    if (!offRoute || !selectedOrder || !isAccepted || !isNavOn) return;
+    const from = normalizeCoord(cameraRef.current);
+    const to = senderCoordinate;
+    if (from && to) {
+      const legK = legKey(from, to);
+      fetchRoute(from, to, legK);
+    }
+    setOffRoute(false);
+  }, [
+    offRoute,
+    isAccepted,
+    isNavOn,
+    selectedOrder?.id,
+    senderCoordinate,
+    fetchRoute,
+  ]);
 
   /* ────────────────────────────────────────────────────────────────────────
      Polling deliveries when idle
@@ -854,20 +953,69 @@ const HomeMainScreen = ({route}) => {
               </Mapbox.MarkerView>
             )}
 
-            <Mapbox.UserLocation visible onUpdate={centerToUserLocation} />
-            <Mapbox.Camera
-              centerCoordinate={camera}
-              zoomLevel={13}
-              animationMode="flyTo"
-              animationDuration={2000}
+            <Mapbox.UserLocation
+              visible
+              showsUserHeadingIndicator
+              androidRenderMode="compass"
+              onUpdate={centerToUserLocation}
             />
+
+            {isNavOn ? (
+              <Mapbox.Camera
+                followUserLocation
+                followUserMode="course"
+                followZoomLevel={18}
+                followPitch={50}
+                animationMode="flyTo"
+                animationDuration={500}
+              />
+            ) : (
+              <Mapbox.Camera
+                centerCoordinate={camera}
+                zoomLevel={13}
+                animationMode="flyTo"
+                animationDuration={2000}
+              />
+            )}
+
             <Mapbox.MarkerView coordinate={camera}>
               <Marker />
             </Mapbox.MarkerView>
+
+            {/* Nav-Lite banner */}
+            {banner?.primary ? (
+              <View
+                style={{
+                  position: 'absolute',
+                  top: hp(2),
+                  left: wp(5),
+                  right: wp(5),
+                  paddingVertical: 10,
+                  paddingHorizontal: 12,
+                  borderRadius: 10,
+                  backgroundColor: 'rgba(0,0,0,0.65)',
+                }}>
+                <CustomText
+                  style={{
+                    color: '#fff',
+                    fontSize: wp(4.2),
+                    fontWeight: '700',
+                  }}>
+                  {banner.primary}
+                </CustomText>
+                {!!banner.distance && (
+                  <CustomText
+                    style={{color: '#fff', fontSize: wp(3.6), marginTop: 2}}>
+                    {banner.distance} m
+                  </CustomText>
+                )}
+              </View>
+            ) : null}
           </Mapbox.MapView>
         ) : (
           <View style={styles.map} />
         )}
+
         {config?.selectVehicle?.on_status == 'off' && (
           <View style={styles.vehicleStatus}>
             <CustomText style={styles.text}>{t('vehicleOff')}</CustomText>
