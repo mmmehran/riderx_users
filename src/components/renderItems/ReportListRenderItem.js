@@ -5,12 +5,13 @@ import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-nat
 import CustomText from '../common/CustomText';
 import colors from '../../config/colors';
 import { AddressCircle, UserIcon } from '../../../assets/svg/index';
-import {isoTo12Hour} from '../../utils/helpers'
+import {isoTo12Hour,formatDdMon} from '../../utils/helpers'
 
 const ReportListRenderItem = ({ item }) => {
 
     let num = parseFloat(item?.mileage);       
     let formatted = Number(num.toFixed(1))
+
 
     return (
         <>
@@ -25,6 +26,7 @@ const ReportListRenderItem = ({ item }) => {
                     <CustomText numberOfLines={1} style={styles.dec}>{item?.delivery_package?.title} - {formatted} Km</CustomText>
                 </View>
                 <View style={styles.timeContainer}>
+                                        <CustomText style={styles.time}>{formatDdMon(item?.timestamp)}</CustomText>
                     <CustomText style={styles.time}>{isoTo12Hour(item?.timestamp)}</CustomText>
                 </View>
            </View>

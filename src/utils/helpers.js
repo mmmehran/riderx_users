@@ -61,6 +61,12 @@ export const isoTo12Hour = (isoString) => {
   return `${hours}:${minutes} ${ampm}`;
 }
 
+export const formatDdMon = (iso) => {
+    const d = new Date(iso);
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  return `${String(d.getDate()).padStart(2,"0")} ${months[d.getMonth()]}`;
+}
+
 
 export const convertDate = (isoString) => {
 
