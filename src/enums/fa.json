@@ -66,5 +66,6 @@
   "confirmText": "تأیید",
   "enterPin": "پین امن را وارد کنید",
   "selectLanguage": "انتخاب زبان",
-  "emailNotVerify": "ایمیل تأیید نشده است"
+  "emailNotVerify": "ایمیل تأیید نشده است",
+  "rememberMe": "مرا به خاطر بسپار"
 }

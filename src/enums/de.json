@@ -66,5 +66,6 @@
   "confirmText": "Bestätigen",
   "enterPin": "Sicheren PIN eingeben",
   "selectLanguage": "Sprache auswählen",
-  "emailNotVerify": "E-Mail nicht verifiziert"
+  "emailNotVerify": "E-Mail nicht verifiziert",
+  "rememberMe": "Angemeldet bleiben"
 }

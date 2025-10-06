@@ -66,5 +66,6 @@
   "confirmText": "Onayla",
   "enterPin": "Güvenli PIN'i girin",
   "selectLanguage": "Dil seçin",
-  "emailNotVerify": "E-posta doğrulanmadı"
+  "emailNotVerify": "E-posta doğrulanmadı",
+  "rememberMe": "Beni hatırla"
 }

@@ -66,5 +66,6 @@
   "confirmText": "Confirm",
   "enterPin": "Enter secure pin",
   "selectLanguage": "Select language",
-  "emailNotVerify": "Email not verified"
+  "emailNotVerify": "Email not verified",
+  "rememberMe": "Remember me"
 }

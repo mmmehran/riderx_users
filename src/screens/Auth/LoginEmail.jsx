@@ -1,4 +1,4 @@
-import React, {useState, useRef} from 'react';
+import React, {useState, useRef, useCallback} from 'react';
 import {
   View,
   StyleSheet,
@@ -15,7 +15,7 @@ import {KeyboardAwareScrollView} from 'react-native-keyboard-aware-scroll-view';
 import {useTranslation} from 'react-i18next';
 import {useDispatch} from 'react-redux';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {useNavigation} from '@react-navigation/native';
+import {useNavigation, useFocusEffect} from '@react-navigation/native';
 
 import CustomScreen from '../../components/common/CustomScreen';
 import {Form, Input, Button} from '../../components/form/index';
@@ -29,7 +29,6 @@ import {setConfigTest, setConfig} from '../../services/defaultAxios';
 import CustomText from '../../components/common/CustomText';
 import colors from '../../config/colors';
 import i18n from '../../utils/i18n';
-import routes from '../../navigation/routes';
 
 const LANGS = [
   {code: 'en', label: 'English', rtl: false},
@@ -39,25 +38,69 @@ const LANGS = [
   {code: 'ar', label: 'العربية', rtl: true},
 ];
 
+const REMEMBER_KEY = 'remember_credentials_v1';
+
 const LoginEmail = props => {
-  const formikRef = useRef();
+  const formikRef = useRef(null);
   const {t} = useTranslation();
   const dispatch = useDispatch();
   const navigation = useNavigation();
 
   const [loading, setLoading] = useState(false);
   const [langModal, setLangModal] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+  const [prefill, setPrefill] = useState({email: '', password: ''});
 
   const validationSchema = Yup.object().shape({
     email: Yup.string().required(),
     password: Yup.string().min(4).required(),
   });
 
+  const loadRemembered = useCallback(async () => {
+    try {
+      const raw = await AsyncStorage.getItem(REMEMBER_KEY);
+      if (raw) {
+        const {email = '', password = ''} = JSON.parse(raw) || {};
+        setPrefill({email, password});
+        setRememberMe(true);
+        setTimeout(() => {
+          const f = formikRef.current;
+          if (f?.setFieldValue) {
+            f.setFieldValue('email', email, false);
+            f.setFieldValue('password', password, false);
+          }
+        }, 0);
+      } else {
+        setRememberMe(false);
+        setPrefill({email: '', password: ''});
+        setTimeout(() => {
+          const f = formikRef.current;
+          if (f?.setFieldValue) {
+            f.setFieldValue('email', '', false);
+            f.setFieldValue('password', '', false);
+          }
+        }, 0);
+      }
+    } catch {}
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadRemembered();
+    }, []),
+  );
+
+  const toggleRemember = async () => {
+    setRememberMe(!rememberMe);
+  };
+
   const onSubmit = async value => {
     setLoading(true);
     Keyboard.dismiss();
+
     if (/^[^@\s]+@bb\.com$/i.test(value?.email)) setConfigTest();
     else setConfig();
+
     await new Promise(r => setTimeout(r, 300));
     const response = await postData(
       urls.LOGIN,
@@ -70,7 +113,19 @@ const LoginEmail = props => {
         setLoading(false);
         return;
       }
-
+      try {
+        if (rememberMe) {
+          await AsyncStorage.setItem(
+            REMEMBER_KEY,
+            JSON.stringify({
+              email: value?.email,
+              password: value?.password,
+            }),
+          );
+        } else {
+          await AsyncStorage.removeItem(REMEMBER_KEY);
+        }
+      } catch {}
       if (response?.data?.data) {
         dispatch(login(response?.data?.data));
       }
@@ -85,27 +140,24 @@ const LoginEmail = props => {
 
   const applyLanguage = async (code, rtl) => {
     setLangModal(false);
-    // persist
     await AsyncStorage.setItem('language', code);
     await i18n.changeLanguage(code);
-
-    // handle RTL toggle for Arabic
-    const needRTL = !!rtl;
-    // if (I18nManager.isRTL !== needRTL) {
-    //   //  I18nManager.allowRTL(needRTL);
-    //   //I18nManager.forceRTL(needRTL);
-    //   // If you have RNRestart installed, uncomment:
-    //   // RNRestart.restart();
-    //   // Otherwise, suggest reopening the app or navigate to root.
-    //   showToast(
-    //     t('languageChanged') ||
-    //       'Language changed. Please restart the app to apply layout direction.',
-    //   );
-    // }
   };
 
   const currentLabel =
-    LANGS.find(l => l.code === i18n.language)?.label || 'English';
+    (LANGS.find(l => l.code === i18n.language) || {})?.label || 'English';
+
+  const RememberCheckbox = () => (
+    <TouchableOpacity
+      onPress={toggleRemember}
+      style={styles.rememberRow}
+      activeOpacity={0.8}>
+      <View style={[styles.checkbox, rememberMe && styles.checkboxChecked]}>
+        {rememberMe ? <View style={styles.checkboxDot} /> : null}
+      </View>
+      <CustomText style={styles.rememberText}>{t('rememberMe')}</CustomText>
+    </TouchableOpacity>
+  );
 
   return (
     <CustomScreen>
@@ -117,17 +169,19 @@ const LoginEmail = props => {
         </View>
         <View style={styles.formContainer}>
           <Form
-            initialValues={{email: '', password: ''}}
+            initialValues={{email: prefill.email, password: prefill.password}}
             validationSchema={validationSchema}
             onSubmit={onSubmit}
-            innerRef={formikRef}>
-            {() => (
+            innerRef={formikRef}
+            enableReinitialize>
+            {({values}) => (
               <>
                 <Input
                   name="email"
                   inputName={t('emailOrPhone')}
                   input={{textAlign: 'left'}}
                   autoCapitalize="none"
+                  value={values?.email}
                 />
                 <Input
                   name="password"
@@ -135,13 +189,18 @@ const LoginEmail = props => {
                   input={{textAlign: 'left'}}
                   password
                   autoCapitalize="none"
+                  value={values?.password}
                 />
+
+                <RememberCheckbox />
+
                 <View style={styles.buttonContainer}>
                   <Button loading={loading}>{t('login')}</Button>
                 </View>
               </>
             )}
           </Form>
+
           <View
             style={{flex: 1, justifyContent: 'flex-end', marginBottom: hp(7)}}>
             <TouchableOpacity onPress={openLangModal}>
@@ -150,6 +209,7 @@ const LoginEmail = props => {
           </View>
         </View>
       </KeyboardAwareScrollView>
+
       <Modal
         visible={langModal}
         transparent
@@ -164,7 +224,7 @@ const LoginEmail = props => {
               <TouchableOpacity
                 key={item.code}
                 style={styles.optionRow}
-                onPress={() => applyLanguage(item.code)}>
+                onPress={() => applyLanguage(item.code, item.rtl)}>
                 <CustomText style={styles.optionText}>
                   {item.label}
                   {i18n.language === item.code ? ' ✓' : ''}
@@ -192,8 +252,34 @@ const styles = StyleSheet.create({
   formContainer: {flex: 1, marginTop: hp(3)},
   buttonContainer: {marginTop: hp(4)},
   text: {textAlign: 'center', color: colors.blue},
-
-  // modal styles
+  rememberRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: hp(2),
+    marginLeft: wp(6),
+  },
+  rememberText: {
+    marginLeft: wp(1.5),
+  },
+  checkbox: {
+    width: wp(5.5),
+    height: wp(5.5),
+    borderRadius: wp(20),
+    borderWidth: 2,
+    borderColor: '#9AA0A6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+  },
+  checkboxChecked: {
+    borderColor: colors.blue,
+  },
+  checkboxDot: {
+    width: wp(3.6),
+    height: wp(3.6),
+    borderRadius: wp(20),
+    backgroundColor: colors.blue,
+  },
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.35)',

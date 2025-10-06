@@ -50,6 +50,7 @@ const CustomFormField = ({
                     onChangeText={handleChange(name)}
                     placeholderTextColor={colors.text}
                     placeholder={inputName}
+                    value={otherprops?.value}
                     onFocus={() => setFocus(true)}
                     onBlur={() => {
                         setFieldTouched(name);
