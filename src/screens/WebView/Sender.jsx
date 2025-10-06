@@ -1,4 +1,4 @@
-import React, {useCallback} from 'react';
+import React, {useCallback, useEffect} from 'react';
 import {
   View,
   SafeAreaView,
@@ -32,16 +32,18 @@ export default function Sender({route}) {
     <View style={styles.container}>
       <SafeAreaView style={styles.screen}>
         <View style={{flex: 1}}>
-          <WebView
-            key="only-web"
-            style={{flex: 1}}
-            source={{uri: user?.sender_panel_direct_login_url}}
-            javaScriptEnabled
-            onMessage={onMessage}
-            domStorageEnabled
-            allowsInlineMediaPlayback
-            mediaPlaybackRequiresUserAction={false}
-          />
+          {user?.sender_panel_direct_login_url && (
+            <WebView
+              key="only-web"
+              style={{flex: 1}}
+              source={{uri: user?.sender_panel_direct_login_url}}
+              javaScriptEnabled
+              onMessage={onMessage}
+              domStorageEnabled
+              allowsInlineMediaPlayback
+              mediaPlaybackRequiresUserAction={false}
+            />
+          )}
         </View>
       </SafeAreaView>
     </View>
