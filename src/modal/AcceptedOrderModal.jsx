@@ -235,7 +235,10 @@ const AcceptedOrderModal = ({order, changeOrder, loading, insets}) => {
             onPress={() => changeOrder('cancel', false)}
             style={[styles.buttonPick, styles.cancelButton]}>
             <CustomText
-              style={[styles.textPick, {color: colors.white, marginLeft: 0}]}>
+              style={[
+                styles.textPick,
+                {color: colors.white, marginLeft: 0, fontSize: wp(4)},
+              ]}>
               Cancel
             </CustomText>
           </TouchableOpacity>
@@ -249,14 +252,15 @@ export default memo(AcceptedOrderModal);
 
 const styles = StyleSheet.create({
   container: {
-    width: wp(95),
+    width: wp(92),
     backgroundColor: '#3030309a',
     borderRadius: wp(6),
     position: 'absolute',
-    bottom: hp(3),
+    bottom: hp(4),
     paddingBottom: hp(1),
     borderWidth: wp(0.5),
     borderColor: '#303030ff',
+    paddingHorizontal: wp(1.5),
   },
   moreText: {
     color: '#000000ff',
@@ -271,10 +275,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cancelButton: {
-    width: wp(25),
+    width: wp(20),
     marginLeft: wp(1),
     backgroundColor: '#ff8800ff',
-    borderRadius: wp(20),
+    borderRadius: wp(7),
   },
   modal: {
     alignItems: 'center',

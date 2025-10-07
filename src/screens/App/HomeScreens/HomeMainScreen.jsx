@@ -1168,9 +1168,9 @@ const styles = StyleSheet.create({
   map: {flex: 1, width: wp(100)},
   overlay: {
     position: 'absolute',
-    top: hp(9.5),
-    left: 0,
-    right: 0,
+    top: hp(11),
+    left: wp(2.3),
+    right: wp(2.3),
     bottom: 0,
     zIndex: 9999,
     pointerEvents: 'box-none',
@@ -1193,8 +1193,8 @@ const styles = StyleSheet.create({
   // Location FAB
   fab: {
     position: 'absolute',
-    right: wp(4),
-    bottom: hp(35),
+    right: wp(5),
+    bottom: hp(36),
     width: wp(12),
     height: wp(12),
     borderRadius: wp(6),
