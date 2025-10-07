@@ -1212,7 +1212,7 @@ const styles = StyleSheet.create({
   fab: {
     position: 'absolute',
     right: wp(5),
-    bottom: hp(36),
+    bottom: hp(45),
     width: wp(12),
     height: wp(12),
     borderRadius: wp(6),

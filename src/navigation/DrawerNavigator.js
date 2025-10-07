@@ -28,7 +28,8 @@ const DrawerNavigator = () => {
                     backgroundColor: colors.screen
                 },
                 drawerPosition: "left",
-                drawerType: "slide"
+                drawerType: "slide",
+                 swipeEnabled: false, 
             }}
             drawerContent={(props) => <DrawerScreen {...props}></DrawerScreen>}
         >

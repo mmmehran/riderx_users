@@ -88,8 +88,16 @@ const AcceptedOrderModal = ({order, changeOrder, loading, insets}) => {
               numberOfLines={showAddress ? 10 : 2}>
               {t('address')}:{' '}
               {order?.status !== 'pickup'
-                ? order?.sender_address_json?.full_address
-                : order?.receiver_address_json?.full_address}
+                ? order?.sender_address_json?.street +
+                  ' ' +
+                  order?.sender_address_json?.house_number +
+                  ', ' +
+                  order?.sender_address_json?.postal_code
+                : order?.receiver_address_json?.street +
+                  ' ' +
+                  order?.receiver_address_json?.house_number +
+                  ', ' +
+                  order?.receiver_address_json?.postal_code}
             </CustomText>
             <TouchableOpacity onPress={() => SetShowAddress(!showAddress)}>
               <CustomText style={styles.moreText}>
@@ -307,6 +315,7 @@ const styles = StyleSheet.create({
     fontSize: wp(5),
     color: colors.white,
     fontWeight: '600',
+    textAlign: 'left',
   },
   iconContainer: {
     flex: 1,
