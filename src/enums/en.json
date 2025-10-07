@@ -68,5 +68,6 @@
   "selectLanguage": "Select language",
   "emailNotVerify": "Email not verified",
   "rememberMe": "Remember me",
-  "vat": "vat"
+  "vat": "vat",
+  "fetchRoute": "Fetching route..."
 }

@@ -68,5 +68,6 @@
   "selectLanguage": "انتخاب زبان",
   "emailNotVerify": "ایمیل تأیید نشده است",
   "rememberMe": "مرا به خاطر بسپار",
-  "vat": "مالیات"
+  "vat": "مالیات",
+  "fetchRoute": "در حال دریافت مسیر..."
 }

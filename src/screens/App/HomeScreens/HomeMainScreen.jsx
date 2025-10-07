@@ -150,9 +150,12 @@ const stepPrimaryText = step => {
 };
 const stepManeuverLngLat = step => {
   const loc = step?.maneuver?.location;
-  return Array.isArray(loc) && loc.length === 2
-    ? [toNum(loc[0]), toNum(loc[1])]
-    : null;
+  if (Array.isArray(loc) && loc?.length === 2) {
+    const lng = toNum(loc[0]);
+    const lat = toNum(loc[1]);
+    return lng != null && lat != null ? [lng, lat] : null;
+  }
+  return null;
 };
 
 /* ────────────────────────────────────────────────────────────────────── */
@@ -191,10 +194,9 @@ const HomeMainScreen = ({route}) => {
   const [hasLocPerm, setHasLocPerm] = useState(false);
   const [mapMountKey, setMapMountKey] = useState('map-0');
 
-  // Nav mode (Waze-like)
+  // Map readiness & nav follow
+  const [mapReady, setMapReady] = useState(false);
   const [isNavOn, setIsNavOn] = useState(false);
-
-  // Camera / controls
   const [isFollowing, setIsFollowing] = useState(false);
   const [followMode, setFollowMode] = useState('course'); // 'course' | 'normal'
   const [bearing, setBearing] = useState(0);
@@ -634,7 +636,7 @@ const HomeMainScreen = ({route}) => {
     currentOrderIndex !== null ? data[currentOrderIndex] : null;
 
   /* ────────────────────────────────────────────────────────────────────────
-     Destination coordinate (sender or receiver based on status)
+     Destination coordinate
      ──────────────────────────────────────────────────────────────────────── */
   const senderCoordinate = useMemo(() => {
     if (!selectedOrder) return null;
@@ -682,6 +684,7 @@ const HomeMainScreen = ({route}) => {
     abortRef.current = controller;
 
     try {
+      showToast(t('fetchRoute'));
       const url =
         `https://api.mapbox.com/directions/v5/mapbox/driving/` +
         `${from[0]},${from[1]};${to[0]},${to[1]}` +
@@ -730,11 +733,10 @@ const HomeMainScreen = ({route}) => {
     }
   }, []);
 
-  // When we have an active order + nav, fetch route
   useEffect(() => {
     if (!hasLocPerm) return;
 
-    if (!selectedOrder || !isAccepted || !(isNavOn || isFollowing)) {
+    if (!selectedOrder || !isAccepted || !isFollowing) {
       resetRoute();
       return;
     }
@@ -747,8 +749,7 @@ const HomeMainScreen = ({route}) => {
   }, [
     hasLocPerm,
     isAccepted,
-    isNavOn,
-    isFollowing,
+    isFollowing, // follow state gates routing now
     selectedOrder?.id,
     senderCoordinate,
     fetchRoute,
@@ -807,17 +808,16 @@ const HomeMainScreen = ({route}) => {
         Math.abs(userLL[0] - last[0]) > 0.0005 ||
         Math.abs(userLL[1] - last[1]) > 0.0005;
 
-      if (!isNavOn && !isFollowing && movedEnough) {
+      if (!isFollowing && movedEnough) {
         setCamera(userLL);
       }
 
-      if ((isNavOn || isFollowing) && routeCoords.length > 1) {
+      if (isFollowing && routeCoords.length > 1) {
         updateRouteProgress(userLL);
         updateBannerAndSteps(userLL);
       }
     },
     [
-      isNavOn,
       isFollowing,
       routeCoords.length,
       updateRouteProgress,
@@ -843,8 +843,7 @@ const HomeMainScreen = ({route}) => {
   }, [remainingFeature?.geometry, routeSteps]);
 
   useEffect(() => {
-    if (!offRoute || !selectedOrder || !isAccepted || !(isNavOn || isFollowing))
-      return;
+    if (!offRoute || !selectedOrder || !isAccepted || !isFollowing) return;
     const from = normalizeCoord(cameraRef.current);
     const to = senderCoordinate;
     if (from && to) fetchRoute(from, to);
@@ -852,7 +851,6 @@ const HomeMainScreen = ({route}) => {
   }, [
     offRoute,
     isAccepted,
-    isNavOn,
     isFollowing,
     selectedOrder?.id,
     senderCoordinate,
@@ -860,7 +858,7 @@ const HomeMainScreen = ({route}) => {
   ]);
 
   /* ────────────────────────────────────────────────────────────────────────
-     Background location post (unchanged)
+     Background location post
      ──────────────────────────────────────────────────────────────────────── */
   const locationInFlightRef = useRef(false);
   const postLocation = useCallback(async () => {
@@ -893,30 +891,53 @@ const HomeMainScreen = ({route}) => {
   }, [postLocation]);
 
   /* ────────────────────────────────────────────────────────────────────────
-     Center on my location FAB
+     Center on my location FAB — robust snap
      ──────────────────────────────────────────────────────────────────────── */
-  const onPressMyLocation = useCallback(() => {
-    const target = userLocRef.current || cameraRef.current;
-    if (!target) return;
-    camRef.current?.setCamera({
-      followUserLocation: false,
-      centerCoordinate: target,
-      zoomLevel: 18,
-      pitch: 55,
-      animationDuration: 220,
+  const getOneShotGPS = () =>
+    new Promise(resolve => {
+      Geolocation.getCurrentPosition(
+        pos => {
+          const {latitude, longitude} = pos.coords || {};
+          if (latitude != null && longitude != null) {
+            resolve([round5(longitude), round5(latitude)]);
+          } else {
+            resolve(null);
+          }
+        },
+        () => resolve(null),
+        {enableHighAccuracy: true, timeout: 5000, maximumAge: 0},
+      );
     });
-    setTimeout(() => {
-      setIsFollowing(true);
-      setFollowMode('course');
+
+  const onPressMyLocation = useCallback(async () => {
+    if (!mapReady) return;
+
+    let target = userLocRef.current;
+    if (!target) {
+      target = await getOneShotGPS(); // fallback if puck not ready
+    }
+    if (!target) return;
+
+    // 1) turn follow OFF so imperative centering is respected
+    setIsFollowing(false);
+
+    // 2) center the camera
+    requestAnimationFrame(() => {
       camRef.current?.setCamera({
-        followUserLocation: true,
-        followUserMode: 'course',
-        followZoomLevel: 18,
-        followPitch: 55,
-        animationDuration: 220,
+        followUserLocation: false,
+        centerCoordinate: target,
+        zoomLevel: 18,
+        pitch: 55,
+        animationDuration: 250,
       });
-    }, 230);
-  }, []);
+
+      // 3) re-enable follow to keep tracking the user
+      setTimeout(() => {
+        setFollowMode('course');
+        setIsFollowing(true);
+      }, 280);
+    });
+  }, [mapReady]);
 
   const userCoordMemo = useMemo(
     () => normalizeCoord(camera) ?? camera,
@@ -948,7 +969,9 @@ const HomeMainScreen = ({route}) => {
               styleURL="mapbox://styles/mapbox/streets-v12"
               zoomEnabled
               rotateEnabled
-              style={styles.map}>
+              style={styles.map}
+              onDidFinishLoadingMap={() => setMapReady(true)} // ✅ map ready
+            >
               {/* Remaining route (blue) */}
               {remainingFeature && (
                 <Mapbox.ShapeSource
@@ -996,7 +1019,8 @@ const HomeMainScreen = ({route}) => {
                 onUpdate={onUserLocation}
               />
 
-              {isNavOn || isFollowing ? (
+              {/* Camera now follows ONLY when isFollowing is true */}
+              {isFollowing ? (
                 <Mapbox.Camera
                   ref={camRef}
                   followUserLocation
@@ -1017,8 +1041,8 @@ const HomeMainScreen = ({route}) => {
                 />
               )}
 
-              {/* Static marker you had (optional) */}
-              <Mapbox.MarkerView coordinate={camera}></Mapbox.MarkerView>
+              {/* Optional marker at camera center (no icon to avoid double marker) */}
+              <Mapbox.MarkerView coordinate={camera} />
             </Mapbox.MapView>
           ) : (
             <View style={styles.map} />

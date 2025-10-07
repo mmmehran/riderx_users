@@ -68,5 +68,6 @@
   "selectLanguage": "Dil seçin",
   "emailNotVerify": "E-posta doğrulanmadı",
   "rememberMe": "Beni hatırla",
-  "vat": "KDV"
+  "vat": "KDV",
+  "fetchRoute": "Rota alınıyor..."
 }

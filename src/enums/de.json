@@ -68,5 +68,6 @@
   "selectLanguage": "Sprache auswählen",
   "emailNotVerify": "E-Mail nicht verifiziert",
   "rememberMe": "Angemeldet bleiben",
-  "vat": "MwSt"
+  "vat": "MwSt",
+  "fetchRoute": "Route wird abgerufen..."
 }
