@@ -68,21 +68,21 @@ const Report = props => {
             <View style={styles.balanceContainer}>
               <CustomText style={styles.textBalance}>{t('balance')}</CustomText>
               <CustomText style={styles.textPrice}>
-                {data[0]?.balance} €
+                €{data[0]?.balance}
               </CustomText>
-              <CustomText
+              {/* <CustomText
                 style={[
                   styles.textBalance,
                   {fontSize: wp(3.8), marginTop: hp(1)},
                 ]}>
                 {t('payOutSchedule')}: -
-              </CustomText>
-              <TouchableOpacity style={styles.button}>
+              </CustomText> */}
+              {/* <TouchableOpacity style={styles.button}>
                 <CustomText style={styles.textButton}>
                   {t('InstanceWithdraw')}
                 </CustomText>
                 <Energy width={wp(6.5)} height={wp(7)} />
-              </TouchableOpacity>
+              </TouchableOpacity> */}
             </View>
             <View style={styles.topContainer}>
               <CustomText style={[styles.textBalance, {fontSize: wp(4.5)}]}>
@@ -112,9 +112,9 @@ const styles = StyleSheet.create({
   balanceContainer: {
     marginTop: hp(2),
     width: wp(100),
-    height: hp(23),
     backgroundColor: 'rgba(234, 234, 234, 0.5)',
     paddingLeft: wp(5),
+    paddingBottom: hp(2),
   },
   textBalance: {
     fontSize: wp(5),

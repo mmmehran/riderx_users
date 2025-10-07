@@ -55,7 +55,6 @@ import {playDing} from '../../../utils/sounds';
 import CustomText from '../../../components/common/CustomText';
 
 const LOCATION_UPDATE_MS = 30 * 1000;
-const POLL_MS = 2 * 60 * 1000;
 
 const MAPBOX_TOKEN =
   'pk.eyJ1IjoiYnl0ZWJyaWRnZXIiLCJhIjoiY21kZzVoNnU2MGlhcDJpcGVuNGV1amYxdyJ9.YMqlR9OovVOp-pm9yGK7eA';
@@ -63,7 +62,7 @@ const MAPBOX_TOKEN =
 Mapbox.setAccessToken(MAPBOX_TOKEN);
 
 /* ──────────────────────────────────────────────────────────────────────
-   Common utils
+   Utils
    ────────────────────────────────────────────────────────────────────── */
 const toNum = v => {
   if (typeof v === 'number' && Number.isFinite(v)) return v;
@@ -85,87 +84,6 @@ const normalizeCoord = coord => {
   if (lng === null || lat === null) return null;
   return [lng, lat];
 };
-const coordKey = (lng, lat) => {
-  const L = round5(lng);
-  const A = round5(lat);
-  return L === null || A === null ? '' : `${L},${A}`;
-};
-const legKey = (from, to) =>
-  `${coordKey(from[0], from[1])}->${coordKey(to[0], to[1])}`;
-
-const useDebounced = (value, delay = 400) => {
-  const [deb, setDeb] = useState(value);
-  useEffect(() => {
-    const t = setTimeout(() => setDeb(value), delay);
-    return () => clearTimeout(t);
-  }, [value, delay]);
-  return deb;
-};
-
-const routeCache = new Map();
-const MAX_CACHE = 30;
-const cacheSet = (k, v) => {
-  if (!routeCache.has(k) && routeCache.size >= MAX_CACHE) {
-    const first = routeCache.keys().next().value;
-    routeCache.delete(first);
-  }
-  routeCache.set(k, v);
-};
-
-const requestNotifPermission = async () => {
-  if (Platform.OS === 'android') {
-    if (Platform.Version < 33) return true;
-    try {
-      const res = await PermissionsAndroid.request(
-        PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
-        {
-          title: 'Allow notifications',
-          message:
-            'We use notifications to alert you about new delivery requests.',
-          buttonPositive: 'Allow',
-          buttonNegative: 'Deny',
-        },
-      );
-      return res === PermissionsAndroid.RESULTS.GRANTED;
-    } catch {
-      return false;
-    }
-  }
-  try {
-    const settings = await notifee.requestPermission({
-      alert: true,
-      badge: true,
-      sound: true,
-    });
-    const status = settings.authorizationStatus;
-    return (
-      status === AuthorizationStatus.AUTHORIZED ||
-      status === AuthorizationStatus.PROVISIONAL
-    );
-  } catch {
-    return false;
-  }
-};
-const createNotifChannelOnce = async ref => {
-  if (Platform.OS !== 'android') return null;
-  if (ref.current) return ref.current;
-  try {
-    ref.current = await notifee.createChannel({
-      id: 'firebase_v1',
-      name: 'Orders & Alerts',
-      importance: AndroidImportance.HIGH,
-      sound: 'ding',
-      vibration: true,
-    });
-  } catch {
-    ref.current = 'orders';
-  }
-  return ref.current;
-};
-
-/* ──────────────────────────────────────────────────────────────────────
-   Nav-Lite helpers
-   ────────────────────────────────────────────────────────────────────── */
 const haversineMeters = (a, b) => {
   const toRad = d => (d * Math.PI) / 180;
   const R = 6371000;
@@ -178,6 +96,54 @@ const haversineMeters = (a, b) => {
     Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
   return 2 * R * Math.asin(Math.sqrt(x));
 };
+
+// Approximate planar conversion for small local distances
+const lngLatToXY = ([lng, lat]) => {
+  const x = lng * 111320 * Math.cos((lat * Math.PI) / 180);
+  const y = lat * 110540;
+  return [x, y];
+};
+const dist2 = (a, b) => {
+  const dx = a[0] - b[0];
+  const dy = a[1] - b[1];
+  return dx * dx + dy * dy;
+};
+const clamp01 = t => (t < 0 ? 0 : t > 1 ? 1 : t);
+
+/** Find closest segment index and snapped point on polyline */
+const closestOnPolyline = (ptLngLat, coords) => {
+  if (!ptLngLat || !coords || coords.length < 2)
+    return {idx: 0, point: coords[0]};
+  const p = lngLatToXY(ptLngLat);
+  let bestIdx = 0;
+  let bestT = 0;
+  let bestD2 = Infinity;
+  let bestPoint = coords[0];
+
+  for (let i = 0; i < coords.length - 1; i++) {
+    const aLL = coords[i];
+    const bLL = coords[i + 1];
+    const a = lngLatToXY(aLL);
+    const b = lngLatToXY(bLL);
+    const ab = [b[0] - a[0], b[1] - a[1]];
+    const ap = [p[0] - a[0], p[1] - a[1]];
+    const ab2 = ab[0] * ab[0] + ab[1] * ab[1];
+    const t = ab2 === 0 ? 0 : clamp01((ap[0] * ab[0] + ap[1] * ab[1]) / ab2);
+    const proj = [a[0] + ab[0] * t, a[1] + ab[1] * t];
+    const d = dist2(p, proj);
+    if (d < bestD2) {
+      bestD2 = d;
+      bestIdx = i;
+      bestT = t;
+      const projLng = aLL[0] + (bLL[0] - aLL[0]) * t;
+      const projLat = aLL[1] + (bLL[1] - aLL[1]) * t;
+      bestPoint = [projLng, projLat];
+    }
+  }
+  const idx = bestT >= 0.999 ? bestIdx + 1 : bestIdx;
+  return {idx: Math.min(idx, coords.length - 2), point: bestPoint};
+};
+
 const stepPrimaryText = step => {
   const bannerText = step?.bannerInstructions?.[0]?.primary?.text;
   return bannerText || step?.maneuver?.instruction || '';
@@ -206,7 +172,17 @@ const HomeMainScreen = ({route}) => {
   const [pickUpTimeUpdate, setPickUpTimeUpdate] = useState(null);
   const {t} = useTranslation();
 
-  const [routeFeature, setRouteFeature] = useState(null);
+  // Route & live progress
+  const [routeSteps, setRouteSteps] = useState([]);
+  const [routeDistanceM, setRouteDistanceM] = useState(0);
+  const [routeDurationSec, setRouteDurationSec] = useState(0);
+  const [banner, setBanner] = useState({primary: '', distance: 0});
+  const [offRoute, setOffRoute] = useState(false);
+
+  const [routeCoords, setRouteCoords] = useState([]); // full route as coord array
+  const [remainingFeature, setRemainingFeature] = useState(null); // blue
+  const [traveledFeature, setTraveledFeature] = useState(null); // gray
+  const progressIdxRef = useRef(0);
 
   const [currentStatus, setCurrentStatus] = useState(null);
   const [socketConnected, setSocketConnected] = useState(false);
@@ -221,7 +197,7 @@ const HomeMainScreen = ({route}) => {
   // Camera / controls
   const [isFollowing, setIsFollowing] = useState(false);
   const [followMode, setFollowMode] = useState('course'); // 'course' | 'normal'
-  const [bearing, setBearing] = useState(0); // used when NOT following
+  const [bearing, setBearing] = useState(0);
 
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
@@ -230,150 +206,35 @@ const HomeMainScreen = ({route}) => {
   const config = useSelector(selectConfig);
 
   const selectedOrderRef = useRef(null);
-  const pollInFlightRef = useRef(false);
-  const lastCamRef = useRef(null);
+  const channelIdRef = useRef(null);
+  const appStateRef = useRef(AppState.currentState);
   const cameraRef = useRef(camera);
-  const camRef = useRef(null); // ⬅️ Camera ref for imperative control
-  const userLocRef = useRef(null); // ⬅️ Last known user location [lng,lat]
+  const camRef = useRef(null);
+  const userLocRef = useRef(null);
+  const mountedRef = useRef(true);
+  const abortRef = useRef(null);
 
   useEffect(() => {
     cameraRef.current = camera;
   }, [camera]);
-
-  // Nav-Lite state
-  const [routeSteps, setRouteSteps] = useState([]);
-  const [routeDistanceM, setRouteDistanceM] = useState(0);
-  const [routeDurationSec, setRouteDurationSec] = useState(0);
-  const [stepIndex, setStepIndex] = useState(0);
-  const [banner, setBanner] = useState({primary: '', distance: 0});
-  const [offRoute, setOffRoute] = useState(false);
-
-  const openAcceptFromNotifPayload = useCallback(async payload => {
-    if (!payload) return;
-    if (selectedOrderRef.current) return;
-    let item = null;
-    if (payload) {
-      try {
-        item = payload;
-      } catch {}
-    }
-    if (!item) return;
-    setCurrentOrderIndex(null);
-    setShowAcceptOrder(false);
-
-    setData([item]);
-    setTimeout(() => {
-      setCurrentOrderIndex(0);
-      setShowAcceptOrder(true);
-      setIsAccepted(false);
-    }, 1000);
-  }, []);
-
-  useEffect(() => {
-    const payload = route?.params;
-    if (payload) {
-      openAcceptFromNotifPayload(payload);
-    }
-  }, [route?.params, openAcceptFromNotifPayload, navigation]);
-
-  const locationInFlightRef = useRef(false);
-  useEffect(() => {
-    selectedOrderRef.current = selectedOrder;
-  }, [selectedOrder]);
-
-  const channelIdRef = useRef(null);
-  const appStateRef = useRef(AppState.currentState);
-  useEffect(() => {
-    const sub = AppState.addEventListener('change', state => {
-      appStateRef.current = state;
-    });
-    return () => sub.remove();
-  }, []);
-
-  const mountedRef = useRef(true);
   useEffect(() => {
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
     };
   }, []);
-
-  const showLocalNotification = useCallback(async ({title, body, data}) => {
-    try {
-      if (Platform.OS === 'android') {
-        const channelId = await createNotifChannelOnce(channelIdRef);
-        await notifee.displayNotification({
-          title,
-          body,
-          data,
-          android: {
-            channelId: channelId || 'orders',
-            smallIcon: 'ic_launcher',
-            pressAction: {id: 'open_accept', launchActivity: 'default'},
-          },
-        });
-      } else {
-        await notifee.displayNotification({
-          title,
-          body,
-          data,
-          ios: {
-            sound: 'dingios.caf',
-            foregroundPresentationOptions: {
-              alert: true,
-              sound: true,
-              badge: true,
-            },
-          },
-          pressAction: {id: 'open_accept'},
-        });
-      }
-    } catch {}
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', state => {
+      appStateRef.current = state;
+    });
+    return () => sub.remove();
   }, []);
-
-  const ensureFcmPermissionAndToken = async () => {
-    try {
-      const authStatus = await messaging().requestPermission({
-        alert: true,
-        badge: true,
-        sound: true,
-        provisional: true,
-      });
-
-      const enabled =
-        authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-        authStatus === messaging.AuthorizationStatus.PROVISIONAL;
-
-      if (!enabled) return null;
-      const token = await messaging().getToken();
-      try {
-        await sendData(urls.SETFCMTOKEN, {fcm_token: token});
-      } catch (e) {
-        console.log(e);
-      }
-      messaging().onTokenRefresh(async newToken => {
-        try {
-          await sendData(urls.SETFCMTOKEN, {fcm_token: newToken});
-        } catch (e) {
-          console.log(e);
-        }
-      });
-
-      return token;
-    } catch (e) {
-      console.log('error exception in firebase configuration');
-      console.log(e);
-      return null;
-    }
-  };
-
-  const removeOrderById = useCallback(id => {
-    if (id == null) return;
-    setData(prev => prev.filter(o => o?.id !== id));
-  }, []);
+  useEffect(() => {
+    selectedOrderRef.current = selectedOrder;
+  }, [selectedOrder]);
 
   /* ────────────────────────────────────────────────────────────────────────
-     Socket
+     Sockets
      ──────────────────────────────────────────────────────────────────────── */
   useEffect(() => {
     const rawUrl = user?.socketio;
@@ -404,7 +265,7 @@ const HomeMainScreen = ({route}) => {
       } else if (event === 'delivery_update_status_by_sender') {
         if (selectedOrderRef.current?.id !== payload?.message?.id) return;
         if (payload?.message?.status === 'cancel') {
-          setRouteFeature(null);
+          resetRoute();
           setSelectedOrder(null);
           setIsNavOn(false);
           setIsFollowing(false);
@@ -437,12 +298,124 @@ const HomeMainScreen = ({route}) => {
         s.offAny(anyLogger);
       } catch {}
     };
-  }, [
-    user?.socketio,
-    user?.authenticated,
-    removeOrderById,
-    showLocalNotification,
-  ]);
+  }, [user?.socketio, user?.authenticated, t]);
+
+  const removeOrderById = useCallback(id => {
+    if (id == null) return;
+    setData(prev => prev.filter(o => o?.id !== id));
+  }, []);
+
+  /* ────────────────────────────────────────────────────────────────────────
+     Notifications / FCM
+     ──────────────────────────────────────────────────────────────────────── */
+  const requestNotifPermission = async () => {
+    if (Platform.OS === 'android') {
+      if (Platform.Version < 33) return true;
+      try {
+        const res = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
+          {
+            title: 'Allow notifications',
+            message:
+              'We use notifications to alert you about new delivery requests.',
+            buttonPositive: 'Allow',
+            buttonNegative: 'Deny',
+          },
+        );
+        return res === PermissionsAndroid.RESULTS.GRANTED;
+      } catch {
+        return false;
+      }
+    }
+    try {
+      const settings = await notifee.requestPermission({
+        alert: true,
+        badge: true,
+        sound: true,
+      });
+      const status = settings.authorizationStatus;
+      return (
+        status === AuthorizationStatus.AUTHORIZED ||
+        status === AuthorizationStatus.PROVISIONAL
+      );
+    } catch {
+      return false;
+    }
+  };
+  const createNotifChannelOnce = async ref => {
+    if (Platform.OS !== 'android') return null;
+    if (ref.current) return ref.current;
+    try {
+      ref.current = await notifee.createChannel({
+        id: 'firebase_v1',
+        name: 'Orders & Alerts',
+        importance: AndroidImportance.HIGH,
+        sound: 'ding',
+        vibration: true,
+      });
+    } catch {
+      ref.current = 'orders';
+    }
+    return ref.current;
+  };
+  const showLocalNotification = useCallback(async ({title, body, data}) => {
+    try {
+      if (Platform.OS === 'android') {
+        const channelId = await createNotifChannelOnce(channelIdRef);
+        await notifee.displayNotification({
+          title,
+          body,
+          data,
+          android: {
+            channelId: channelId || 'orders',
+            smallIcon: 'ic_launcher',
+            pressAction: {id: 'open_accept', launchActivity: 'default'},
+          },
+        });
+      } else {
+        await notifee.displayNotification({
+          title,
+          body,
+          data,
+          ios: {
+            sound: 'dingios.caf',
+            foregroundPresentationOptions: {
+              alert: true,
+              sound: true,
+              badge: true,
+            },
+          },
+          pressAction: {id: 'open_accept'},
+        });
+      }
+    } catch {}
+  }, []);
+  const ensureFcmPermissionAndToken = async () => {
+    try {
+      const authStatus = await messaging().requestPermission({
+        alert: true,
+        badge: true,
+        sound: true,
+        provisional: true,
+      });
+      const enabled =
+        authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+        authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+      if (!enabled) return null;
+      const token = await messaging().getToken();
+      try {
+        await sendData(urls.SETFCMTOKEN, {fcm_token: token});
+      } catch (e) {}
+      messaging().onTokenRefresh(async newToken => {
+        try {
+          await sendData(urls.SETFCMTOKEN, {fcm_token: newToken});
+        } catch (e) {}
+      });
+      return token;
+    } catch (e) {
+      return null;
+    }
+  };
 
   /* ────────────────────────────────────────────────────────────────────────
      Bootstrap
@@ -527,44 +500,8 @@ const HomeMainScreen = ({route}) => {
   };
 
   /* ────────────────────────────────────────────────────────────────────────
-     Data helpers
+     Data fetchers
      ──────────────────────────────────────────────────────────────────────── */
-  const centerToUserLocation = location => {
-    if (!location?.coords) return;
-    const {latitude, longitude} = location.coords;
-    const lng = round5(longitude);
-    const lat = round5(latitude);
-    if (lng === null || lat === null) return;
-
-    const rounded = [lng, lat];
-    userLocRef.current = rounded; // ⬅️ keep freshest user coordinate
-
-    const last = lastCamRef.current;
-    const movedEnough =
-      !last ||
-      Math.abs(rounded[0] - last[0]) > 0.0005 ||
-      Math.abs(rounded[1] - last[1]) > 0.0005;
-
-    if (!isNavOn && !isFollowing && movedEnough) {
-      lastCamRef.current = rounded;
-      setCamera(rounded);
-    }
-
-    if ((isNavOn || isFollowing) && routeSteps.length > 0) {
-      const idx = Math.min(stepIndex, routeSteps.length - 1);
-      const currentStep = routeSteps[idx];
-      const nextPt = stepManeuverLngLat(currentStep);
-      if (nextPt) {
-        const d = Math.max(0, Math.round(haversineMeters(rounded, nextPt)));
-        if (d < 30 && idx < routeSteps.length - 1) {
-          setStepIndex(idx + 1);
-        }
-        const primary = stepPrimaryText(currentStep);
-        setBanner({primary, distance: d});
-      }
-    }
-  };
-
   const getLastDelivery = async () => {
     const response = await getData(urls.GETLASTDELIVERY);
     if (response?.data?.status) {
@@ -583,7 +520,6 @@ const HomeMainScreen = ({route}) => {
       errorHandler(response);
     }
   };
-
   const getDeliveryLists = async () => {
     const response = await getData(
       `${urls.GETLISTDELIVERY}?page=1&status=created`,
@@ -604,7 +540,6 @@ const HomeMainScreen = ({route}) => {
       errorHandler(response);
     }
   };
-
   const getUserProfile = async () => {
     const response = await getData(urls.GETUSER);
     if (response?.data?.status) {
@@ -615,7 +550,7 @@ const HomeMainScreen = ({route}) => {
   };
 
   /* ────────────────────────────────────────────────────────────────────────
-     Accept / advance handlers
+     Accept / advance
      ──────────────────────────────────────────────────────────────────────── */
   const requireVehicleOrToast = useCallback(() => {
     if (!config?.selectVehicle?.id) {
@@ -624,7 +559,7 @@ const HomeMainScreen = ({route}) => {
       return false;
     }
     return true;
-  }, [config?.selectVehicle?.id, navigation]);
+  }, [config?.selectVehicle?.id, navigation, t]);
 
   const handleNextOrder = useCallback(() => {
     if (isAccepted) {
@@ -649,7 +584,7 @@ const HomeMainScreen = ({route}) => {
     const response = await sendData(urls.CHANGESTATUSORDER, {
       vehicle_id: config?.selectVehicle?.id,
       delivery_id: order?.id,
-      status: status,
+      status,
       secure_pin: pin ? pin : null,
       rider_arrive_to_pickup_calculated_time:
         status == 'accepted'
@@ -666,7 +601,7 @@ const HomeMainScreen = ({route}) => {
         status === 'shipment_destroyed' ||
         status === 'address_not_found'
       ) {
-        setRouteFeature(null);
+        resetRoute();
         setSelectedOrder(null);
         setIsNavOn(false);
         setIsFollowing(false);
@@ -698,6 +633,9 @@ const HomeMainScreen = ({route}) => {
   const currentOrder =
     currentOrderIndex !== null ? data[currentOrderIndex] : null;
 
+  /* ────────────────────────────────────────────────────────────────────────
+     Destination coordinate (sender or receiver based on status)
+     ──────────────────────────────────────────────────────────────────────── */
   const senderCoordinate = useMemo(() => {
     if (!selectedOrder) return null;
     const lng =
@@ -719,35 +657,26 @@ const HomeMainScreen = ({route}) => {
   ]);
 
   /* ────────────────────────────────────────────────────────────────────────
-     Route fetch
+     Route fetching + init progress
      ──────────────────────────────────────────────────────────────────────── */
-  const abortRef = useRef(null);
-  const debouncedUserCoord = useDebounced(camera, 600);
+  const resetRoute = () => {
+    setRouteCoords([]);
+    setRouteSteps([]);
+    setRouteDistanceM(0);
+    setRouteDurationSec(0);
+    setBanner({primary: '', distance: 0});
+    setTraveledFeature(null);
+    setRemainingFeature(null);
+    progressIdxRef.current = 0;
+    if (abortRef.current) abortRef.current.abort();
+  };
 
-  const fromKey = useMemo(() => {
-    const n = normalizeCoord(debouncedUserCoord);
-    return n ? coordKey(n[0], n[1]) : '';
-  }, [debouncedUserCoord]);
+  const buildLineFeature = coords =>
+    coords && coords.length >= 2
+      ? {type: 'Feature', geometry: {type: 'LineString', coordinates: coords}}
+      : null;
 
-  const toKey = useMemo(() => {
-    const n = normalizeCoord(senderCoordinate);
-    return n ? coordKey(n[0], n[1]) : '';
-  }, [senderCoordinate]);
-
-  const fetchRoute = useCallback(async (from, to, legK) => {
-    const cached = routeCache.get(legK);
-    if (cached) {
-      if (mountedRef.current) {
-        setRouteFeature({type: 'Feature', geometry: cached.geometry});
-        setRouteSteps(cached.steps || []);
-        setRouteDurationSec(cached.duration || 0);
-        setRouteDistanceM(cached.distance || 0);
-        setStepIndex(0);
-        setBanner({primary: '', distance: 0});
-      }
-      return;
-    }
-
+  const fetchRoute = useCallback(async (from, to) => {
     if (abortRef.current) abortRef.current.abort();
     const controller = new AbortController();
     abortRef.current = controller;
@@ -768,14 +697,31 @@ const HomeMainScreen = ({route}) => {
       const duration = route?.duration || 0;
       const distance = route?.distance || 0;
 
-      if (geom && mountedRef.current && !controller.signal.aborted) {
-        cacheSet(legK, {geometry: geom, steps, duration, distance});
-        setRouteFeature({type: 'Feature', geometry: geom});
+      if (geom && !controller.signal.aborted) {
+        const coords = (geom.coordinates || [])
+          .map(c => normalizeCoord(c))
+          .filter(Boolean);
+
+        setRouteCoords(coords);
         setRouteSteps(steps);
         setRouteDurationSec(duration);
         setRouteDistanceM(distance);
-        setStepIndex(0);
         setBanner({primary: '', distance: 0});
+        progressIdxRef.current = 0;
+
+        const userLL = userLocRef.current || normalizeCoord(cameraRef.current);
+        if (userLL) {
+          const {idx, point} = closestOnPolyline(userLL, coords);
+          progressIdxRef.current = idx;
+          const traveled = coords.slice(0, idx + 1);
+          traveled[traveled.length - 1] = point;
+          const remaining = [point, ...coords.slice(idx + 1)];
+          setTraveledFeature(buildLineFeature(traveled));
+          setRemainingFeature(buildLineFeature(remaining));
+        } else {
+          setTraveledFeature(null);
+          setRemainingFeature(buildLineFeature(coords));
+        }
       }
     } catch (e) {
       // silent
@@ -784,76 +730,124 @@ const HomeMainScreen = ({route}) => {
     }
   }, []);
 
+  // When we have an active order + nav, fetch route
   useEffect(() => {
     if (!hasLocPerm) return;
 
     if (!selectedOrder || !isAccepted || !(isNavOn || isFollowing)) {
-      setRouteFeature(null);
-      setRouteSteps([]);
-      setBanner({primary: '', distance: 0});
-      if (abortRef.current) abortRef.current.abort();
+      resetRoute();
       return;
     }
 
-    const from = normalizeCoord(debouncedUserCoord);
+    const from = normalizeCoord(userLocRef.current || cameraRef.current);
     const to = normalizeCoord(senderCoordinate);
     if (!from || !to) return;
 
-    const legK = legKey(from, to);
-    fetchRoute(from, to, legK);
+    fetchRoute(from, to);
   }, [
     hasLocPerm,
     isAccepted,
     isNavOn,
     isFollowing,
     selectedOrder?.id,
-    fromKey,
-    toKey,
-    fetchRoute,
-    debouncedUserCoord,
     senderCoordinate,
+    fetchRoute,
   ]);
 
-  useEffect(() => {
-    return () => {
-      if (abortRef.current) abortRef.current.abort();
-    };
-  }, []);
+  /* ────────────────────────────────────────────────────────────────────────
+     Live progress on user updates
+     ──────────────────────────────────────────────────────────────────────── */
+  const updateBannerAndSteps = useCallback(
+    userLL => {
+      if (!routeSteps.length) return;
+      const idx = Math.min(progressIdxRef.current, routeSteps.length - 1);
+      const currentStep = routeSteps[idx];
+      const nextPt = stepManeuverLngLat(currentStep);
+      if (!nextPt) return;
+      const d = Math.max(0, Math.round(haversineMeters(userLL, nextPt)));
+      if (d < 30 && idx < routeSteps.length - 1) {
+        progressIdxRef.current = idx + 1;
+      }
+      const primary = stepPrimaryText(currentStep);
+      setBanner({primary, distance: d});
+    },
+    [routeSteps],
+  );
+
+  const updateRouteProgress = useCallback(
+    userLL => {
+      if (!routeCoords || routeCoords.length < 2) return;
+      const {idx, point} = closestOnPolyline(userLL, routeCoords);
+      const nextIdx = Math.max(idx, progressIdxRef.current);
+      progressIdxRef.current = nextIdx;
+
+      const traveled = routeCoords.slice(0, nextIdx + 1);
+      traveled[traveled.length - 1] = point;
+      const remaining = [point, ...routeCoords.slice(nextIdx + 1)];
+
+      setTraveledFeature(buildLineFeature(traveled));
+      setRemainingFeature(buildLineFeature(remaining));
+    },
+    [routeCoords],
+  );
+
+  const onUserLocation = useCallback(
+    location => {
+      if (!location?.coords) return;
+      const {latitude, longitude} = location.coords;
+      const userLL = [round5(longitude), round5(latitude)];
+      if (userLL[0] == null || userLL[1] == null) return;
+
+      userLocRef.current = userLL;
+
+      // If not following, softly recenter on significant move
+      const last = cameraRef.current;
+      const movedEnough =
+        !last ||
+        Math.abs(userLL[0] - last[0]) > 0.0005 ||
+        Math.abs(userLL[1] - last[1]) > 0.0005;
+
+      if (!isNavOn && !isFollowing && movedEnough) {
+        setCamera(userLL);
+      }
+
+      if ((isNavOn || isFollowing) && routeCoords.length > 1) {
+        updateRouteProgress(userLL);
+        updateBannerAndSteps(userLL);
+      }
+    },
+    [
+      isNavOn,
+      isFollowing,
+      routeCoords.length,
+      updateRouteProgress,
+      updateBannerAndSteps,
+    ],
+  );
 
   /* ────────────────────────────────────────────────────────────────────────
-     Off-route detection & auto-reroute
+     Off-route & reroute
      ──────────────────────────────────────────────────────────────────────── */
   useEffect(() => {
-    if (
-      !(isNavOn || isFollowing) ||
-      !routeFeature?.geometry ||
-      !routeSteps.length
-    )
-      return;
+    if (!remainingFeature?.geometry || !routeSteps.length) return;
     const id = setInterval(() => {
-      const cam = cameraRef.current;
-      const norm = normalizeCoord(cam);
-      if (!norm) return;
-
-      const idx = Math.min(stepIndex, routeSteps.length - 1);
+      const userLL = normalizeCoord(cameraRef.current);
+      if (!userLL) return;
+      const idx = Math.min(progressIdxRef.current, routeSteps.length - 1);
       const nextPt = stepManeuverLngLat(routeSteps[idx]);
       if (!nextPt) return;
-
-      const d = haversineMeters(norm, nextPt);
-      setOffRoute(d > 60);
+      const d = haversineMeters(userLL, nextPt);
+      if (d > 60) setOffRoute(true);
     }, 3000);
     return () => clearInterval(id);
-  }, [isNavOn, isFollowing, routeFeature?.geometry, routeSteps, stepIndex]);
+  }, [remainingFeature?.geometry, routeSteps]);
 
   useEffect(() => {
     if (!offRoute || !selectedOrder || !isAccepted || !(isNavOn || isFollowing))
       return;
     const from = normalizeCoord(cameraRef.current);
     const to = senderCoordinate;
-    if (from && to) {
-      const legK = legKey(from, to);
-      fetchRoute(from, to, legK);
-    }
+    if (from && to) fetchRoute(from, to);
     setOffRoute(false);
   }, [
     offRoute,
@@ -866,8 +860,9 @@ const HomeMainScreen = ({route}) => {
   ]);
 
   /* ────────────────────────────────────────────────────────────────────────
-     Background location post
+     Background location post (unchanged)
      ──────────────────────────────────────────────────────────────────────── */
+  const locationInFlightRef = useRef(false);
   const postLocation = useCallback(async () => {
     if (!config?.selectVehicle?.id) return;
     if (locationInFlightRef.current) return;
@@ -897,19 +892,12 @@ const HomeMainScreen = ({route}) => {
     };
   }, [postLocation]);
 
-  const userCoordMemo = useMemo(
-    () => normalizeCoord(camera) ?? camera,
-    [camera],
-  );
-
   /* ────────────────────────────────────────────────────────────────────────
-     Center-on-user handler (LocationPin2 button)
+     Center on my location FAB
      ──────────────────────────────────────────────────────────────────────── */
   const onPressMyLocation = useCallback(() => {
     const target = userLocRef.current || cameraRef.current;
     if (!target) return;
-
-    // Snap to user instantly
     camRef.current?.setCamera({
       followUserLocation: false,
       centerCoordinate: target,
@@ -917,8 +905,6 @@ const HomeMainScreen = ({route}) => {
       pitch: 55,
       animationDuration: 220,
     });
-
-    // Then enable follow like Waze
     setTimeout(() => {
       setIsFollowing(true);
       setFollowMode('course');
@@ -931,6 +917,11 @@ const HomeMainScreen = ({route}) => {
       });
     }, 230);
   }, []);
+
+  const userCoordMemo = useMemo(
+    () => normalizeCoord(camera) ?? camera,
+    [camera],
+  );
 
   /* ────────────────────────────────────────────────────────────────────────
      Render
@@ -950,7 +941,6 @@ const HomeMainScreen = ({route}) => {
           }}
         />
 
-        {/* Map wrapper so overlays can sit above the map */}
         <View style={styles.mapWrap}>
           {hasLocPerm ? (
             <Mapbox.MapView
@@ -959,13 +949,16 @@ const HomeMainScreen = ({route}) => {
               zoomEnabled
               rotateEnabled
               style={styles.map}>
-              {routeFeature && selectedOrder && (
-                <Mapbox.ShapeSource id="routeSource" shape={routeFeature}>
+              {/* Remaining route (blue) */}
+              {remainingFeature && (
+                <Mapbox.ShapeSource
+                  id="remainingSource"
+                  shape={remainingFeature}>
                   <Mapbox.LineLayer
-                    id="routeLine"
+                    id="remainingLine"
                     style={{
-                      lineColor: '#008cffff',
-                      lineWidth: 15,
+                      lineColor: '#008CFF',
+                      lineWidth: 14,
                       lineJoin: 'round',
                       lineCap: 'round',
                     }}
@@ -973,31 +966,34 @@ const HomeMainScreen = ({route}) => {
                 </Mapbox.ShapeSource>
               )}
 
-              {/* 3D buildings (optional) */}
-              {/* <Mapbox.FillExtrusionLayer
-                id="3d-buildings"
-                sourceID="composite"
-                sourceLayerID="building"
-                filter={['==', ['get', 'underground'], 'false']}
-                style={{
-                  fillExtrusionColor: '#afb2b4ff',
-                  fillExtrusionHeight: ['coalesce', ['get', 'height'], 5],
-                  fillExtrusionBase: ['coalesce', ['get', 'min_height'], 0],
-                  fillExtrusionOpacity: 0.6,
-                }}
-              /> */}
+              {/* Traveled route (gray) */}
+              {traveledFeature && (
+                <Mapbox.ShapeSource id="traveledSource" shape={traveledFeature}>
+                  <Mapbox.LineLayer
+                    id="traveledLine"
+                    style={{
+                      lineColor: '#A0A4AA',
+                      lineWidth: 10,
+                      lineJoin: 'round',
+                      lineCap: 'round',
+                    }}
+                  />
+                </Mapbox.ShapeSource>
+              )}
 
+              {/* Destination pin */}
               {senderCoordinate && (
                 <Mapbox.MarkerView coordinate={senderCoordinate}>
                   <LocationPin width={wp(8)} height={wp(8)} />
                 </Mapbox.MarkerView>
               )}
 
+              {/* Live user location → updates progress */}
               <Mapbox.UserLocation
                 visible
                 showsUserHeadingIndicator
                 androidRenderMode="compass"
-                onUpdate={centerToUserLocation}
+                onUpdate={onUserLocation}
               />
 
               {isNavOn || isFollowing ? (
@@ -1021,15 +1017,14 @@ const HomeMainScreen = ({route}) => {
                 />
               )}
 
-              <Mapbox.MarkerView coordinate={camera}>
-                <Marker />
-              </Mapbox.MarkerView>
+              {/* Static marker you had (optional) */}
+              <Mapbox.MarkerView coordinate={camera}></Mapbox.MarkerView>
             </Mapbox.MapView>
           ) : (
             <View style={styles.map} />
           )}
 
-          {/* Overlay */}
+          {/* Step banner */}
           <View style={styles.overlay} pointerEvents="box-none">
             {banner?.primary ? (
               <View style={styles.banner} pointerEvents="none">
@@ -1045,7 +1040,7 @@ const HomeMainScreen = ({route}) => {
             ) : null}
           </View>
 
-          {/* LocationPin2 FAB */}
+          {/* Center-on-me */}
           <TouchableOpacity onPress={onPressMyLocation} style={styles.fab}>
             <LocationPin1 width={wp(6)} height={wp(6)} />
           </TouchableOpacity>
@@ -1059,6 +1054,7 @@ const HomeMainScreen = ({route}) => {
         <CustomBottomTab />
       </View>
 
+      {/* Accept modal */}
       {currentOrder?.status === 'created' && showAcceptOrder && !isAccepted && (
         <AcceptOrderModal
           insets={insets}
@@ -1072,6 +1068,7 @@ const HomeMainScreen = ({route}) => {
         />
       )}
 
+      {/* Active order modal */}
       {selectedOrder && (
         <AcceptedOrderModal
           insets={insets}
@@ -1096,6 +1093,7 @@ const HomeMainScreen = ({route}) => {
         />
       )}
 
+      {/* Cancel reasons modal */}
       <CancelModal
         isVisible={cancelModalVisible}
         onSelectReason={reasonKey => {
@@ -1105,6 +1103,7 @@ const HomeMainScreen = ({route}) => {
         onClose={() => setCancelModalVisible(false)}
       />
 
+      {/* Confirm modal */}
       <ConfirmModal
         securePinShow={securePinShow}
         isVisible={confirmModalVisible}
@@ -1119,6 +1118,7 @@ const HomeMainScreen = ({route}) => {
         }}
       />
 
+      {/* Cancel delivery confirmation */}
       <ConfirmCancelDeliveryModal
         title={t('cancelOrderContent')}
         confirmText={t('confirmText')}
@@ -1158,8 +1158,6 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontSize: wp(7),
   },
-
-  // Map + overlay
   mapWrap: {
     flex: 1,
     width: wp(100),
@@ -1175,8 +1173,6 @@ const styles = StyleSheet.create({
     zIndex: 9999,
     pointerEvents: 'box-none',
   },
-
-  // Navigation banner
   banner: {
     position: 'absolute',
     top: hp(2.5),
@@ -1189,8 +1185,6 @@ const styles = StyleSheet.create({
   },
   bannerTitle: {color: '#fff', fontSize: wp(5), fontWeight: 'bold'},
   bannerSub: {color: '#303030ff', fontSize: wp(5), fontWeight: 'bold'},
-
-  // Location FAB
   fab: {
     position: 'absolute',
     right: wp(5),

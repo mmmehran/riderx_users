@@ -24,8 +24,8 @@ const ReportListRenderItem = ({ item }) => {
             </View>
                 <View style={styles.titleContainer}>
                     <View style={styles.priceRow}>
-                    <CustomText numberOfLines={1} style={styles.title}>{item?.rider_fee} €</CustomText>
-                    <CustomText numberOfLines={1} style={[styles.title,{marginLeft:wp(2), fontSize:wp(3.6),color:colors.gray300}]}> +{(item?.rider_fee * 0.2).toFixed(2)} € {t("vat")}</CustomText>
+                    <CustomText numberOfLines={1} style={styles.title}>€{item?.rider_fee}</CustomText>
+                    <CustomText numberOfLines={1} style={[styles.title,{marginLeft:wp(2), fontSize:wp(3.6),color:colors.gray300}]}>  + €{(item?.rider_fee * 0.2).toFixed(2)}  {t("vat")}</CustomText>
                     </View>
                     <CustomText numberOfLines={1} style={styles.title}>{item?.status}</CustomText>
                     <CustomText numberOfLines={1} style={styles.dec}>{item?.delivery_package?.title} - {formatted} Km</CustomText>

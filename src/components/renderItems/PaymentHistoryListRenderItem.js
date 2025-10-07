@@ -19,7 +19,7 @@ const PaymentHistoryListRenderItem = ({ item }) => {
             <CustomText style={[styles.title,{fontSize:wp(3.5)}]}>{t("initiated")} {convertDate(item?.timestamp)}</CustomText>
         </View>
         <View style={styles.priceContainer}>
-            <CustomText style={[styles.title,{fontSize:wp(5)}]}>{item?.amount} €</CustomText>
+            <CustomText style={[styles.title,{fontSize:wp(5)}]}>€{item?.amount}</CustomText>
         </View>
         </View>
     )
