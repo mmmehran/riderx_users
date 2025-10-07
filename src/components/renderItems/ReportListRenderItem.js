@@ -6,11 +6,13 @@ import CustomText from '../common/CustomText';
 import colors from '../../config/colors';
 import { AddressCircle, UserIcon } from '../../../assets/svg/index';
 import {isoTo12Hour,formatDdMon} from '../../utils/helpers'
+import {useTranslation} from 'react-i18next';
 
 const ReportListRenderItem = ({ item }) => {
 
     let num = parseFloat(item?.mileage);       
     let formatted = Number(num.toFixed(1))
+  const {t} = useTranslation();
 
 
     return (
@@ -21,7 +23,10 @@ const ReportListRenderItem = ({ item }) => {
                 <UserIcon width={wp(10)} height={wp(10)} />
             </View>
                 <View style={styles.titleContainer}>
+                    <View style={styles.priceRow}>
                     <CustomText numberOfLines={1} style={styles.title}>{item?.rider_fee} €</CustomText>
+                    <CustomText numberOfLines={1} style={[styles.title,{marginLeft:wp(2), fontSize:wp(3.6),color:colors.gray300}]}> +{(item?.rider_fee * 0.2).toFixed(2)} € {t("vat")}</CustomText>
+                    </View>
                     <CustomText numberOfLines={1} style={styles.title}>{item?.status}</CustomText>
                     <CustomText numberOfLines={1} style={styles.dec}>{item?.delivery_package?.title} - {formatted} Km</CustomText>
                 </View>
@@ -51,6 +56,11 @@ const styles = StyleSheet.create({
        // backgroundColor: colors.gray100,
         marginTop:hp(2),
         marginHorizontal:wp(5)
+    },
+    priceRow:{
+        flexDirection:"row",
+        alignItems:"center"
+
     },
     address:{
         color: "rgba(70, 67, 67, 0.84)",

@@ -67,5 +67,6 @@
   "enterPin": "Sicheren PIN eingeben",
   "selectLanguage": "Sprache auswählen",
   "emailNotVerify": "E-Mail nicht verifiziert",
-  "rememberMe": "Angemeldet bleiben"
+  "rememberMe": "Angemeldet bleiben",
+  "vat": "MwSt"
 }

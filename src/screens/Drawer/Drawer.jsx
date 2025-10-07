@@ -34,6 +34,7 @@ import {
   setSelectVehicle,
 } from '../../redux/reducers/configReducer';
 import i18n from '../../utils/i18n';
+import {version} from '../../../package.json';
 
 const LANGS = [
   {code: 'en', label: 'English', rtl: false},
@@ -140,19 +141,30 @@ const LoginEmail = props => {
           <View style={styles.imageContainer}>
             <Image
               source={{uri: user?.profile_image}}
-              style={{width: wp(20), height: wp(20)}}
+              style={{width: wp(15), height: wp(15)}}
             />
           </View>
           <View style={styles.textContainer}>
-            <CustomText numberOfLines={1} style={styles.text}>
+            <CustomText numberOfLines={2} style={styles.text}>
               {user?.userProfile?.first_name} {user?.userProfile?.last_name}
             </CustomText>
             <View style={styles.row}>
-              <CustomText style={styles.text}>
-                {user?.userProfile?.city_name}
+              <CustomText
+                numberOfLines={1}
+                style={[
+                  styles.text,
+                  {
+                    marginLeft: wp(0),
+                    marginTop: hp(-0.5),
+                    fontSize: wp(3.6),
+                    width: wp(35),
+                  },
+                ]}>
+                {user?.email}
               </CustomText>
             </View>
           </View>
+
           <TouchableOpacity
             onPress={updateVehicleStatus}
             style={[
@@ -183,6 +195,15 @@ const LoginEmail = props => {
           <TouchableOpacity onPress={() => setLangModal(true)}>
             <CustomText style={styles.langText}>{currentLangLabel}</CustomText>
           </TouchableOpacity>
+        </View>
+        <View style={{marginBottom: hp(3.5), alignItems: 'center'}}>
+          <CustomText
+            style={[
+              styles.langText,
+              {color: colors.gray300, fontWeight: 'bold'},
+            ]}>
+            {version}
+          </CustomText>
         </View>
       </View>
       <Modal
@@ -252,36 +273,36 @@ const styles = StyleSheet.create({
   imageContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    width: wp(20),
-    height: wp(20),
+    width: wp(15),
+    height: wp(15),
     backgroundColor: colors.grayLight,
     borderRadius: wp(50),
-    marginRight: wp(4),
+    marginRight: wp(2),
     overflow: 'hidden',
   },
   container: {overflow: 'hidden', flex: 1},
   profileContainer: {
     marginTop: hp(4),
     alignItems: 'center',
-    marginHorizontal: wp(6),
+    marginHorizontal: wp(4),
     flexDirection: 'row',
   },
   row: {flexDirection: 'row-reverse', alignItems: 'center', marginTop: hp(1)},
   text: {fontSize: wp(5), color: colors.black, fontWeight: '800'},
   stopButton: {
-    width: wp(25),
-    height: wp(12),
+    width: wp(18),
+    height: wp(11),
     borderRadius: wp(2),
     alignItems: 'center',
     justifyContent: 'center',
   },
-  textContainer: {width: wp(22), alignItems: 'flex-start'},
+  textContainer: {width: wp(36), alignItems: 'flex-start', marginRight: wp(2)},
   textButton: {fontSize: wp(4.5), color: colors.black, fontWeight: '900'},
   langContainer: {
     flex: 1,
     justifyContent: 'flex-end',
     alignItems: 'center',
-    marginBottom: hp(7),
+    marginBottom: hp(2),
   },
   langText: {color: colors.blue, fontSize: wp(4)},
   backdrop: {

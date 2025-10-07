@@ -7,8 +7,11 @@ import {
 import {useNavigation} from '@react-navigation/native';
 
 import CustomScreen from '../../components/common/CustomScreen';
+import CustomText from '../../components/common/CustomText';
 import routes from '../../navigation/routes';
 import {Logo} from '../../../assets/svg/index';
+import {version} from '../../../package.json';
+import colors from '../../config/colors';
 
 const Splash = props => {
   const navigation = useNavigation();
@@ -23,6 +26,15 @@ const Splash = props => {
     <CustomScreen>
       <View style={styles.container}>
         <Logo width={wp(50)} height={hp(20)} />
+      </View>
+      <View style={{marginBottom: hp(4), alignItems: 'center'}}>
+        <CustomText
+          style={[
+            styles.langText,
+            {color: colors.gray300, fontWeight: 'bold'},
+          ]}>
+          {version}
+        </CustomText>
       </View>
     </CustomScreen>
   );

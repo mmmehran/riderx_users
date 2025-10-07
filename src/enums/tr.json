@@ -67,5 +67,6 @@
   "enterPin": "Güvenli PIN'i girin",
   "selectLanguage": "Dil seçin",
   "emailNotVerify": "E-posta doğrulanmadı",
-  "rememberMe": "Beni hatırla"
+  "rememberMe": "Beni hatırla",
+  "vat": "KDV"
 }

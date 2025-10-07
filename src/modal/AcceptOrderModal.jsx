@@ -160,8 +160,23 @@ const AcceptOrderModal = ({
             </CustomText>
           </TouchableOpacity>
         </View>
-
-        <CustomText style={styles.textPrice}>{order?.rider_fee} €</CustomText>
+        <View style={{flexDirection: 'row', alignItems: 'center'}}>
+          <CustomText style={styles.textPrice}>{order?.rider_fee} €</CustomText>
+          <CustomText
+            numberOfLines={1}
+            style={[
+              styles.title,
+              {
+                marginLeft: wp(2),
+                fontSize: wp(5),
+                color: colors.gray300,
+                marginTop: hp(1.5),
+              },
+            ]}>
+            {' '}
+            +{(order?.rider_fee * 0.2).toFixed(2)} € {t('vat')}
+          </CustomText>
+        </View>
 
         <View style={styles.starContainer}>
           <StarIcon />
