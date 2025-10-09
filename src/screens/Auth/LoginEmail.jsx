@@ -164,18 +164,24 @@ const LoginEmail = props => {
     iosClientId:
       '224724744593-sshnpoo8igmgi1h5aku239r1f6bikma7.apps.googleusercontent.com',
     webClientId:
-      '224724744593-q1euvg82ki7krk29qs41pjhp63q4qq38.apps.googleusercontent.com',
-    offlineAccess: false,
+      '224724744593-puvbgi93mp7uvpodv0qvnhb9tbneggej.apps.googleusercontent.com',
   });
 
   const handleGoogleLogin = async () => {
     try {
+      setLoading(true);
       await GoogleSignin.hasPlayServices();
       const userInfo = await GoogleSignin.signIn();
       const token = await GoogleSignin.getTokens();
-      //  showToast(userInfo?.data?.idToken);
-      showToast(token);
-      setLoading(true);
+      const response = await postData(urls.SOCIALLOGIN, {
+        access_token: token?.accessToken,
+      });
+      if (response?.data?.data) {
+        console.log(response?.data?.data);
+        dispatch(login(response?.data?.data));
+      } else {
+        errorHandler(response);
+      }
     } catch (error) {
       console.log(error);
       showError(error?.message || 'Something went wrong');
