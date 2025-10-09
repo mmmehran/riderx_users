@@ -101,7 +101,7 @@ const LoginEmail = props => {
       iosClientId:
         '224724744593-sshnpoo8igmgi1h5aku239r1f6bikma7.apps.googleusercontent.com',
       webClientId:
-        '224724744593-om912qf7noac77mr1bcnldlugla62mfk.apps.googleusercontent.com',
+        '224724744593-h32i8kmlgcj029vv27tmqhh5i815cd8h.apps.googleusercontent.com',
     });
   }, []);
 
