@@ -11,7 +11,8 @@ export default Object.freeze({
     REPORT:"report",
     WALLET:"wallet",
     SENDER:"sender",
-    CHOOSEVEHICLE:"chooseVehicle"
+    CHOOSEVEHICLE:"chooseVehicle",
+    SIGNUPSENDER:"signUpSender"
    
 
  

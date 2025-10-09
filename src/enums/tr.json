@@ -71,5 +71,6 @@
   "vat": "KDV",
   "fetchRoute": "Rota alınıyor...",
   "googleLogin": "Google ile giriş yap",
-  "appleLogin": "Apple ile giriş yap"
+  "appleLogin": "Apple ile giriş yap",
+  "signUp": "Kayıt Ol"
 }

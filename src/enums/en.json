@@ -71,5 +71,6 @@
   "vat": "vat",
   "fetchRoute": "Fetching route...",
   "googleLogin": "Login with Google",
-  "appleLogin": "Login with Apple"
+  "appleLogin": "Login with Apple",
+  "signUp": "Sign Up"
 }

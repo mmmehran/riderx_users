@@ -71,5 +71,6 @@
   "vat": "MwSt",
   "fetchRoute": "Route wird abgerufen...",
   "googleLogin": "Mit Google anmelden",
-  "appleLogin": "Mit Apple anmelden"
+  "appleLogin": "Mit Apple anmelden",
+  "signUp": "Registrieren"
 }

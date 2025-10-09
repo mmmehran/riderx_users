@@ -32,6 +32,7 @@ import {setConfigTest, setConfig} from '../../services/defaultAxios';
 import CustomText from '../../components/common/CustomText';
 import colors from '../../config/colors';
 import i18n from '../../utils/i18n';
+import routes from '../../navigation/routes';
 
 const LANGS = [
   {code: 'en', label: 'English', rtl: false},
@@ -100,7 +101,7 @@ const LoginEmail = props => {
       iosClientId:
         '224724744593-sshnpoo8igmgi1h5aku239r1f6bikma7.apps.googleusercontent.com',
       webClientId:
-        '224724744593-puvbgi93mp7uvpodv0qvnhb9tbneggej.apps.googleusercontent.com',
+        '224724744593-om912qf7noac77mr1bcnldlugla62mfk.apps.googleusercontent.com',
     });
   }, []);
 
@@ -181,16 +182,19 @@ const LoginEmail = props => {
       setConfig();
       await new Promise(r => setTimeout(r, 300));
 
-      const response = await postData(urls.SOCIALLOGIN, {
-        access_token: token?.accessToken,
-      },false);
+      const response = await postData(
+        urls.SOCIALLOGIN,
+        {
+          access_token: token?.accessToken,
+        },
+        false,
+      );
 
       if (response?.data?.status) {
         if (response?.data?.data) {
           dispatch(login(response?.data?.data));
         }
-                  showToast(response?.data?.message);
-
+        showToast(response?.data?.message);
       } else {
         errorHandler(response);
       }
@@ -216,17 +220,21 @@ const LoginEmail = props => {
         appleResponse;
       setConfig();
       await new Promise(r => setTimeout(r, 300));
-      const response = await postData(urls.SOCIALLOGINAPPLE, {
-        id_token: identityToken,
-        apple_user: user,
-        email,
-        fullName,
-      },false);
+      const response = await postData(
+        urls.SOCIALLOGINAPPLE,
+        {
+          id_token: identityToken,
+          apple_user: user,
+          email,
+          fullName,
+        },
+        false,
+      );
       if (response?.data?.status) {
         if (response?.data?.data) {
           dispatch(login(response?.data?.data));
         }
-          showToast(response?.data?.message);
+        showToast(response?.data?.message);
       } else {
         errorHandler(response);
       }
@@ -282,8 +290,13 @@ const LoginEmail = props => {
               </>
             )}
           </Form>
+          <TouchableOpacity
+            style={{marginTop: hp(3), alignSelf: 'center'}}
+            onPress={() => navigation.navigate(routes.SIGNUPSENDER)}>
+            <CustomText style={styles.textSignu}>{t('signUp')}</CustomText>
+          </TouchableOpacity>
 
-          <View style={{alignItems: 'center', marginTop: hp(6)}}>
+          <View style={{alignItems: 'center', marginTop: hp(3)}}>
             <TouchableOpacity
               onPress={handleGoogleLogin}
               style={styles.socialButton}>
@@ -359,6 +372,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: hp(2),
     marginLeft: wp(6),
+  },
+  textSignu: {
+    textAlign: 'center',
+    color: colors.blue,
   },
   rememberText: {
     marginLeft: wp(1.5),
