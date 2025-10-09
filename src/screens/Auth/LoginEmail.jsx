@@ -178,7 +178,7 @@ const LoginEmail = props => {
       const userInfo = await GoogleSignin.signIn();
       const token = await GoogleSignin.getTokens();
 
-      setConfigTest();
+      setConfig();
       await new Promise(r => setTimeout(r, 300));
 
       const response = await postData(urls.SOCIALLOGIN, {
@@ -189,6 +189,8 @@ const LoginEmail = props => {
         if (response?.data?.data) {
           dispatch(login(response?.data?.data));
         }
+                  showToast(response?.data?.message);
+
       } else {
         errorHandler(response);
       }
@@ -212,7 +214,7 @@ const LoginEmail = props => {
       });
       const {user, email, fullName, identityToken, authorizationCode} =
         appleResponse;
-      setConfigTest();
+      setConfig();
       await new Promise(r => setTimeout(r, 300));
       const response = await postData(urls.SOCIALLOGINAPPLE, {
         id_token: identityToken,
@@ -224,6 +226,7 @@ const LoginEmail = props => {
         if (response?.data?.data) {
           dispatch(login(response?.data?.data));
         }
+          showToast(response?.data?.message);
       } else {
         errorHandler(response);
       }
