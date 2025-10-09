@@ -1,10 +1,12 @@
-import React, {useState, useRef, useCallback} from 'react';
+import React, {useState, useRef, useCallback, useEffect} from 'react';
 import {
   View,
   StyleSheet,
   Keyboard,
   TouchableOpacity,
   Modal,
+  Platform,
+  Alert,
 } from 'react-native';
 import {
   widthPercentageToDP as wp,
@@ -17,6 +19,10 @@ import {useDispatch} from 'react-redux';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import {GoogleSignin} from '@react-native-google-signin/google-signin';
+import {
+  AppleButton,
+  appleAuth,
+} from '@invertase/react-native-apple-authentication';
 
 import CustomScreen from '../../components/common/CustomScreen';
 import {Form, Input, Button} from '../../components/form/index';
@@ -57,6 +63,7 @@ const LoginEmail = props => {
     password: Yup.string().min(4).required(),
   });
 
+  // --- Load remembered creds ---
   const loadRemembered = useCallback(async () => {
     try {
       const raw = await AsyncStorage.getItem(REMEMBER_KEY);
@@ -88,13 +95,22 @@ const LoginEmail = props => {
   useFocusEffect(
     useCallback(() => {
       loadRemembered();
-    }, []),
+    }, [loadRemembered]),
   );
 
-  const toggleRemember = async () => {
-    setRememberMe(!rememberMe);
-  };
+  const toggleRemember = async () => setRememberMe(v => !v);
 
+  // --- Google config (once) ---
+  useEffect(() => {
+    GoogleSignin.configure({
+      iosClientId:
+        '224724744593-sshnpoo8igmgi1h5aku239r1f6bikma7.apps.googleusercontent.com',
+      webClientId:
+        '224724744593-puvbgi93mp7uvpodv0qvnhb9tbneggej.apps.googleusercontent.com',
+    });
+  }, []);
+
+  // --- Email/password login ---
   const onSubmit = async value => {
     setLoading(true);
     Keyboard.dismiss();
@@ -137,14 +153,13 @@ const LoginEmail = props => {
     setLoading(false);
   };
 
+  // --- Language modal ---
   const openLangModal = () => setLangModal(true);
-
   const applyLanguage = async (code, rtl) => {
     setLangModal(false);
     await AsyncStorage.setItem('language', code);
     await i18n.changeLanguage(code);
   };
-
   const currentLabel =
     (LANGS.find(l => l.code === i18n.language) || {})?.label || 'English';
 
@@ -160,28 +175,29 @@ const LoginEmail = props => {
     </TouchableOpacity>
   );
 
-  GoogleSignin.configure({
-    iosClientId:
-      '224724744593-sshnpoo8igmgi1h5aku239r1f6bikma7.apps.googleusercontent.com',
-    webClientId:
-      '224724744593-puvbgi93mp7uvpodv0qvnhb9tbneggej.apps.googleusercontent.com',
-  });
-
+  // --- Google login ---
   const handleGoogleLogin = async () => {
     try {
       setLoading(true);
-      await GoogleSignin.hasPlayServices();
+      if (Platform.OS === 'android') {
+        await GoogleSignin.hasPlayServices({
+          showPlayServicesUpdateDialog: true,
+        });
+      }
       const userInfo = await GoogleSignin.signIn();
       const token = await GoogleSignin.getTokens();
+
+      // choose base config (you already had this heuristic)
       setConfigTest();
       await new Promise(r => setTimeout(r, 300));
+
       const response = await postData(urls.SOCIALLOGIN, {
-        access_token: token?.accessToken,
+        access_token: token?.accessToken, // or idToken depending on your backend
       });
-      console.log(response?.data);
+
       if (response?.data?.status) {
         if (response?.data?.data) {
-          // dispatch(login(response?.data?.data));
+          dispatch(login(response?.data?.data));
         }
       } else {
         errorHandler(response);
@@ -189,6 +205,68 @@ const LoginEmail = props => {
     } catch (error) {
       console.log(error);
       showError(error?.message || 'Something went wrong');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // --- Apple login (iOS 13+) ---
+  const handleAppleLogin = async () => {
+    try {
+      if (Platform.OS !== 'ios' || !appleAuth.isSupported) {
+        Alert.alert('Unavailable', 'Sign in with Apple is not supported.');
+        return;
+      }
+      setLoading(true);
+
+      const appleResponse = await appleAuth.performRequest({
+        requestedOperation: appleAuth.Operation.LOGIN,
+        requestedScopes: [appleAuth.Scope.FULL_NAME, appleAuth.Scope.EMAIL],
+      });
+
+      const {user, email, fullName, identityToken, authorizationCode} =
+        appleResponse;
+
+      console.log({
+        id_token: identityToken, // or code: authorizationCode (server exchange)
+        apple_user: user,
+        email,
+        name:
+          fullName?.givenName || fullName?.familyName
+            ? `${fullName?.givenName ?? ''} ${
+                fullName?.familyName ?? ''
+              }`.trim()
+            : undefined,
+      });
+      // Persist / send to backend
+      // Typically you send identityToken (JWT) or authorizationCode to your server.
+      // setConfigTest();
+      // await new Promise(r => setTimeout(r, 300));
+      // const response = await postData(urls.SOCIALLOGIN, {
+      //   id_token: identityToken, // or code: authorizationCode (server exchange)
+      //   apple_user: user,
+      //   email,
+      //   name:
+      //     fullName?.givenName || fullName?.familyName
+      //       ? `${fullName?.givenName ?? ''} ${
+      //           fullName?.familyName ?? ''
+      //         }`.trim()
+      //       : undefined,
+      // });
+
+      // if (response?.data?.status) {
+      //   if (response?.data?.data) {
+      //     dispatch(login(response?.data?.data));
+      //   }
+      // } else {
+      //   errorHandler(response);
+      // }
+    } catch (e) {
+      // user cancel = appleAuth.Error.CANCELED
+      if (e?.code !== appleAuth.Error.CANCELED) {
+        console.log('Apple sign-in error', e);
+        showError(e?.message || 'Apple Sign-In failed');
+      }
     } finally {
       setLoading(false);
     }
@@ -202,6 +280,7 @@ const LoginEmail = props => {
         <View style={styles.logoContainer}>
           <Logo width={wp(33)} height={wp(33)} />
         </View>
+
         <View style={styles.formContainer}>
           <Form
             initialValues={{email: prefill.email, password: prefill.password}}
@@ -236,11 +315,24 @@ const LoginEmail = props => {
             )}
           </Form>
 
+          {/* Google */}
           <TouchableOpacity
             onPress={handleGoogleLogin}
             style={{marginTop: hp(5), marginLeft: wp(10)}}>
-            <CustomText>Google login </CustomText>
+            <CustomText>Google login</CustomText>
           </TouchableOpacity>
+
+          {/* Apple (iOS 13+) */}
+          {Platform.OS === 'ios' && appleAuth.isSupported ? (
+            <View style={styles.appleRow}>
+              <AppleButton
+                buttonStyle={AppleButton.Style.BLACK}
+                buttonType={AppleButton.Type.SIGN_IN}
+                style={styles.appleButton}
+                onPress={handleAppleLogin}
+              />
+            </View>
+          ) : null}
 
           <View
             style={{flex: 1, justifyContent: 'flex-end', marginBottom: hp(7)}}>
@@ -251,6 +343,7 @@ const LoginEmail = props => {
         </View>
       </KeyboardAwareScrollView>
 
+      {/* Language modal */}
       <Modal
         visible={langModal}
         transparent
@@ -312,9 +405,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'transparent',
   },
-  checkboxChecked: {
-    borderColor: colors.blue,
-  },
+  checkboxChecked: {borderColor: colors.blue},
   checkboxDot: {
     width: wp(3.6),
     height: wp(3.6),
@@ -341,4 +432,13 @@ const styles = StyleSheet.create({
     borderBottomColor: 'rgba(0,0,0,0.08)',
   },
   optionText: {fontSize: wp(4)},
+  appleRow: {
+    marginTop: hp(3),
+    alignItems: 'center',
+  },
+  appleButton: {
+    width: wp(80),
+    height: 44,
+    borderRadius: 8,
+  },
 });
