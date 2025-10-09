@@ -69,5 +69,7 @@
   "emailNotVerify": "Email not verified",
   "rememberMe": "Remember me",
   "vat": "vat",
-  "fetchRoute": "Fetching route..."
+  "fetchRoute": "Fetching route...",
+  "googleLogin": "Login with Google",
+  "appleLogin": "Login with Apple"
 }

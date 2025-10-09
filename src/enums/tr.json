@@ -69,5 +69,7 @@
   "emailNotVerify": "E-posta doğrulanmadı",
   "rememberMe": "Beni hatırla",
   "vat": "KDV",
-  "fetchRoute": "Rota alınıyor..."
+  "fetchRoute": "Rota alınıyor...",
+  "googleLogin": "Google ile giriş yap",
+  "appleLogin": "Apple ile giriş yap"
 }
