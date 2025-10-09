@@ -183,7 +183,7 @@ const LoginEmail = props => {
 
       const response = await postData(urls.SOCIALLOGIN, {
         access_token: token?.accessToken,
-      });
+      },false);
 
       if (response?.data?.status) {
         if (response?.data?.data) {
@@ -221,7 +221,7 @@ const LoginEmail = props => {
         apple_user: user,
         email,
         fullName,
-      });
+      },false);
       if (response?.data?.status) {
         if (response?.data?.data) {
           dispatch(login(response?.data?.data));
