@@ -16,6 +16,7 @@ import {useTranslation} from 'react-i18next';
 import {useDispatch} from 'react-redux';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useNavigation, useFocusEffect} from '@react-navigation/native';
+import {GoogleSignin} from '@react-native-google-signin/google-signin';
 
 import CustomScreen from '../../components/common/CustomScreen';
 import {Form, Input, Button} from '../../components/form/index';
@@ -159,6 +160,30 @@ const LoginEmail = props => {
     </TouchableOpacity>
   );
 
+  GoogleSignin.configure({
+    iosClientId:
+      '224724744593-sshnpoo8igmgi1h5aku239r1f6bikma7.apps.googleusercontent.com',
+    webClientId:
+      '224724744593-q1euvg82ki7krk29qs41pjhp63q4qq38.apps.googleusercontent.com',
+    offlineAccess: false,
+  });
+
+  const handleGoogleLogin = async () => {
+    try {
+      await GoogleSignin.hasPlayServices();
+      const userInfo = await GoogleSignin.signIn();
+      const token = await GoogleSignin.getTokens();
+      //  showToast(userInfo?.data?.idToken);
+      showToast(token);
+      setLoading(true);
+    } catch (error) {
+      console.log(error);
+      showError(error?.message || 'Something went wrong');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <CustomScreen>
       <KeyboardAwareScrollView
@@ -200,6 +225,12 @@ const LoginEmail = props => {
               </>
             )}
           </Form>
+
+          <TouchableOpacity
+            onPress={handleGoogleLogin}
+            style={{marginTop: hp(5), marginLeft: wp(10)}}>
+            <CustomText>Google login </CustomText>
+          </TouchableOpacity>
 
           <View
             style={{flex: 1, justifyContent: 'flex-end', marginBottom: hp(7)}}>
