@@ -173,12 +173,16 @@ const LoginEmail = props => {
       await GoogleSignin.hasPlayServices();
       const userInfo = await GoogleSignin.signIn();
       const token = await GoogleSignin.getTokens();
+      setConfigTest();
+      await new Promise(r => setTimeout(r, 300));
       const response = await postData(urls.SOCIALLOGIN, {
         access_token: token?.accessToken,
       });
-      if (response?.data?.data) {
-        console.log(response?.data?.data);
-        dispatch(login(response?.data?.data));
+      console.log(response?.data);
+      if (response?.data?.status) {
+        if (response?.data?.data) {
+          // dispatch(login(response?.data?.data));
+        }
       } else {
         errorHandler(response);
       }
