@@ -596,6 +596,14 @@ const HomeMainScreen = ({route}) => {
 
     if (response?.data?.status) {
       setSelectedOrder(response?.data?.data);
+      if (status === 'accepted') {
+        setIsAccepted(true);
+        setShowAcceptOrder(false);
+        setCurrentOrderIndex(null);
+        setIsNavOn(true);
+        setIsFollowing(true);
+        setFollowMode('course');
+      }
       if (
         status === 'completed' ||
         status === 'cancel' ||
@@ -613,6 +621,7 @@ const HomeMainScreen = ({route}) => {
       }
     } else {
       errorHandler(response);
+      return;
     }
     status !== 'cancel' && setLoadingChangeStatus(false);
   };
@@ -622,14 +631,7 @@ const HomeMainScreen = ({route}) => {
     const order = data[currentOrderIndex];
     if (!order) return;
 
-    setSelectedOrder(order);
     changeStatusOrderAccept(order, 'accepted');
-    setIsAccepted(true);
-    setShowAcceptOrder(false);
-    setCurrentOrderIndex(null);
-    setIsNavOn(true);
-    setIsFollowing(true);
-    setFollowMode('course');
   }, [data, currentOrderIndex, requireVehicleOrToast]);
 
   const currentOrder =
