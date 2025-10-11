@@ -1136,7 +1136,7 @@ const HomeMainScreen = ({route}) => {
                     id="remainingLine"
                     style={{
                       lineColor: '#008CFF',
-                      lineWidth: 14,
+                      lineWidth: 15,
                       lineJoin: 'round',
                       lineCap: 'round',
                     }}
@@ -1151,7 +1151,7 @@ const HomeMainScreen = ({route}) => {
                     id="traveledLine"
                     style={{
                       lineColor: '#A0A4AA',
-                      lineWidth: 10,
+                      lineWidth: 13,
                       lineJoin: 'round',
                       lineCap: 'round',
                     }}
@@ -1174,16 +1174,15 @@ const HomeMainScreen = ({route}) => {
                 onUpdate={onUserLocation}
               />
 
-              {/* Camera */}
               {isFollowing ? (
                 <Mapbox.Camera
                   ref={camRef}
                   followUserLocation
                   followUserMode={followMode}
-                  followZoomLevel={isNavOn ? 20 : 16}
-                  followPitch={isNavOn ? 55 : 0}
+                  followZoomLevel={isNavOn ? 17 : 15}
+                  followPitch={isNavOn ? 65 : 0}
                   animationMode="flyTo"
-                  animationDuration={500}
+                  animationDuration={1000}
                 />
               ) : (
                 <Mapbox.Camera
