@@ -200,7 +200,7 @@ const smoothHeading = (prev, next, alpha = 0.25) => {
 
 /* ===== Reroute throttling constants ===== */
 
-const REROUTE_COOLDOWN_MS = 45_000; // min time between fetches
+const REROUTE_COOLDOWN_MS = 10_000; // min time between fetches
 const REROUTE_MIN_MOVE_M = 60; // require leg change > 60m
 const OFFROUTE_DISTANCE_M = 120; // distance from next maneuver
 const OFFROUTE_PERSIST_MS = 8000; // must persist for 8s
@@ -869,7 +869,7 @@ const HomeMainScreen = ({route}) => {
     if (!hasLocPerm) return;
 
     if (!selectedOrder || !isAccepted || !isFollowing) {
-      resetRoute();
+      // resetRoute();
       return;
     }
 
@@ -1077,13 +1077,11 @@ const HomeMainScreen = ({route}) => {
     if (!mapReady) return;
 
     let target = userLocRef.current;
-    if (!target) {
-      target = await getOneShotGPS();
-    }
+    if (!target) target = await getOneShotGPS();
     if (!target) return;
 
+    // re-center first
     setIsFollowing(false);
-
     requestAnimationFrame(() => {
       camRef.current?.setCamera({
         followUserLocation: false,
@@ -1093,12 +1091,25 @@ const HomeMainScreen = ({route}) => {
         animationDuration: 250,
       });
 
-      setTimeout(() => {
+      setTimeout(async () => {
         setFollowMode('course');
         setIsFollowing(true);
+
+        // 🔽 Immediately fetch a new route from here (if we have a destination)
+        const to = senderCoordinate;
+        if (to && isAccepted) {
+          // reset throttling so this tap can fetch right now
+          lastFetchAtRef.current = 0;
+          lastLegRef.current = {from: null, to: null};
+
+          const from = normalizeCoord(target);
+          if (from) {
+            await guardedFetchRoute(from, to); // uses your throttled fetch
+          }
+        }
       }, 280);
     });
-  }, [mapReady]);
+  }, [mapReady, isAccepted, senderCoordinate, guardedFetchRoute]);
 
   const userCoordMemo = useMemo(
     () => normalizeCoord(camera) ?? camera,
