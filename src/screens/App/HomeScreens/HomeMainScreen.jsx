@@ -16,7 +16,7 @@ import {
 import Mapbox from '@rnmapbox/maps';
 import {useDispatch, useSelector} from 'react-redux';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {useNavigation} from '@react-navigation/native';
+import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import {check, request, PERMISSIONS, RESULTS} from 'react-native-permissions';
 import notifee, {
   AndroidImportance,
@@ -25,13 +25,12 @@ import notifee, {
 import Geolocation from '@react-native-community/geolocation';
 import messaging from '@react-native-firebase/messaging';
 import {useTranslation} from 'react-i18next';
-import {useFocusEffect} from '@react-navigation/native';
 
 import AcceptOrderModal from '../../../modal/AcceptOrderModal';
 import AcceptedOrderModal from '../../../modal/AcceptedOrderModal';
 import CancelModal from '../../../modal/CancelModal';
 
-import {Marker, LocationPin, LocationPin1} from '../../../../assets/svg/index';
+import {LocationPin, LocationPin1} from '../../../../assets/svg/index';
 import CustomHeader from '../../../components/custom/CustomHeader';
 import CustomBottomTab from '../../../components/custom/CustomBottomTab';
 import {getData, sendData} from '../../../services/common.service';
@@ -61,7 +60,6 @@ const LOCATION_UPDATE_MS = 30 * 1000;
 
 const MAPBOX_TOKEN =
   'pk.eyJ1IjoiYnl0ZWJyaWRnZXIiLCJhIjoiY21kZzVoNnU2MGlhcDJpcGVuNGV1amYxdyJ9.YMqlR9OovVOp-pm9yGK7eA';
-
 Mapbox.setAccessToken(MAPBOX_TOKEN);
 
 /* ──────────────────────────────────────────────────────────────────────
@@ -161,7 +159,47 @@ const stepManeuverLngLat = step => {
   return null;
 };
 
-/* ────────────────────────────────────────────────────────────────────── */
+/* ===== Heading helpers ===== */
+const normDeg = d => ((d % 360) + 360) % 360;
+const bearingAB = (a, b) => {
+  const toRad = x => (x * Math.PI) / 180;
+  const toDeg = x => (x * 180) / Math.PI;
+  const [lng1, lat1] = a;
+  const [lng2, lat2] = b;
+  const φ1 = toRad(lat1);
+  const φ2 = toRad(lat2);
+  const Δλ = toRad(lng2 - lng1);
+  const y = Math.sin(Δλ) * Math.cos(φ2);
+  const x =
+    Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
+  return normDeg(toDeg(Math.atan2(y, x)));
+};
+const smoothHeading = (prev, next, alpha = 0.25) => {
+  if (prev == null) return next;
+  let diff = ((next - prev + 540) % 360) - 180; // shortest path
+  return normDeg(prev + alpha * diff);
+};
+/* ================================= */
+
+// REROUTE_COOLDOWN_MS = 45_000
+// Minimum time (in ms) between any Directions API calls. If a reroute need is detected sooner, it’s skipped until this cooldown expires.
+
+// REROUTE_MIN_MOVE_M = 60
+// We only call Directions again if the from/to leg has actually changed by more than ~60 meters compared to the last request. Prevents refetching for tiny GPS jitter.
+
+// OFFROUTE_DISTANCE_M = 120
+// Consider the rider “off route” if they’re >120 meters from the next maneuver point on the current step. (Being a little off won’t trigger reroute.)
+
+// OFFROUTE_PERSIST_MS = 8000
+// The off-route condition must hold continuously for 8 seconds before we actually trigger a reroute. Filters out brief GPS spikes or quick detours.
+
+/* ===== Reroute throttling constants ===== */
+
+const REROUTE_COOLDOWN_MS = 45_000; // min time between fetches
+const REROUTE_MIN_MOVE_M = 60; // require leg change > 60m
+const OFFROUTE_DISTANCE_M = 120; // distance from next maneuver
+const OFFROUTE_PERSIST_MS = 8000; // must persist for 8s
+/* ======================================= */
 
 const HomeMainScreen = ({route}) => {
   const [camera, setCamera] = useState([-74.006, 40.7128]);
@@ -183,7 +221,6 @@ const HomeMainScreen = ({route}) => {
   const [routeDistanceM, setRouteDistanceM] = useState(0);
   const [routeDurationSec, setRouteDurationSec] = useState(0);
   const [banner, setBanner] = useState({primary: '', distance: 0});
-  const [offRoute, setOffRoute] = useState(false);
 
   const [routeCoords, setRouteCoords] = useState([]); // full route as coord array
   const [remainingFeature, setRemainingFeature] = useState(null); // blue
@@ -219,6 +256,7 @@ const HomeMainScreen = ({route}) => {
   const mountedRef = useRef(true);
   const abortRef = useRef(null);
 
+  // back press
   const backPressCountRef = useRef(0);
   const backResetTimerRef = useRef(null);
   const resetBackCounter = () => {
@@ -231,40 +269,49 @@ const HomeMainScreen = ({route}) => {
   useFocusEffect(
     React.useCallback(() => {
       if (Platform.OS !== 'android') return undefined;
-
       const onBackPress = () => {
         backPressCountRef.current += 1;
         const remaining = 2 - backPressCountRef.current;
-
         if (remaining > 0) {
           ToastAndroid.show(
             remaining === 1 && t?.('pressBackOneMoreTimeToExit'),
             ToastAndroid.SHORT,
           );
-
           if (backResetTimerRef.current)
             clearTimeout(backResetTimerRef.current);
           backResetTimerRef.current = setTimeout(resetBackCounter, 4000);
-          return true; // prevent default
+          return true;
         }
-
-        BackHandler.exitApp(); // third press
+        BackHandler.exitApp();
         return true;
       };
-
-      // subscribe
       const sub = BackHandler.addEventListener(
         'hardwareBackPress',
         onBackPress,
       );
-
-      // cleanup
       return () => {
-        sub?.remove?.(); // ✅ correct in RN 0.65+
+        sub?.remove?.();
         resetBackCounter();
       };
     }, [t]),
   );
+
+  // heading/last points
+  const lastLLRef = useRef(null);
+  const headingRef = useRef(null);
+
+  // reroute throttling caches
+  const lastFetchAtRef = useRef(0);
+  const lastLegRef = useRef({from: null, to: null});
+  const offRouteSinceRef = useRef(null);
+
+  const sameLegClose = (a, b) => {
+    if (!a?.from || !a?.to || !b?.from || !b?.to) return false;
+    return (
+      haversineMeters(a.from, b.from) < REROUTE_MIN_MOVE_M &&
+      haversineMeters(a.to, b.to) < REROUTE_MIN_MOVE_M
+    );
+  };
 
   useEffect(() => {
     cameraRef.current = camera;
@@ -680,7 +727,6 @@ const HomeMainScreen = ({route}) => {
     if (!requireVehicleOrToast()) return;
     const order = data[currentOrderIndex];
     if (!order) return;
-
     changeStatusOrderAccept(order, 'accepted');
   }, [data, currentOrderIndex, requireVehicleOrToast]);
 
@@ -711,7 +757,7 @@ const HomeMainScreen = ({route}) => {
   ]);
 
   /* ────────────────────────────────────────────────────────────────────────
-     Route fetching + init progress
+     Route fetching + init progress (throttled)
      ──────────────────────────────────────────────────────────────────────── */
   const resetRoute = () => {
     setRouteCoords([]);
@@ -730,6 +776,7 @@ const HomeMainScreen = ({route}) => {
       ? {type: 'Feature', geometry: {type: 'LineString', coordinates: coords}}
       : null;
 
+  // keep deps minimal for stability (no `t` here)
   const fetchRoute = useCallback(
     async (from, to) => {
       if (abortRef.current) abortRef.current.abort();
@@ -737,17 +784,19 @@ const HomeMainScreen = ({route}) => {
       abortRef.current = controller;
 
       try {
-        showToast(t('fetchRoute'));
+        showToast('fetch Roud...');
+        const profile =
+          config?.selectVehicle?.vehicle_type == 'bicycle' ||
+          config?.selectVehicle?.vehicle_type == 'e_bicycle' ||
+          config?.selectVehicle?.vehicle_type == 'moped'
+            ? 'cycling'
+            : 'driving';
+
         const url =
-          `https://api.mapbox.com/directions/v5/mapbox/${
-            config?.selectVehicle?.vehicle_type == 'bicycle' ||
-            config?.selectVehicle?.vehicle_type == 'e_bicycle' ||
-            config?.selectVehicle?.vehicle_type == 'moped'
-              ? 'cycling'
-              : 'driving'
-          }/` +
+          `https://api.mapbox.com/directions/v5/mapbox/${profile}/` +
           `${from[0]},${from[1]};${to[0]},${to[1]}` +
           `?geometries=geojson&overview=full&steps=true&banner_instructions=true&voice_instructions=false&language=en&access_token=${MAPBOX_TOKEN}`;
+
         const res = await fetch(url, {signal: controller.signal});
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const json = await res.json();
@@ -794,6 +843,23 @@ const HomeMainScreen = ({route}) => {
     [config?.selectVehicle?.vehicle_type],
   );
 
+  const guardedFetchRoute = useCallback(
+    async (from, to) => {
+      if (!isAccepted || !isFollowing) return;
+
+      const now = Date.now();
+      if (now - (lastFetchAtRef.current || 0) < REROUTE_COOLDOWN_MS) return;
+
+      const newLeg = {from, to};
+      if (sameLegClose(lastLegRef.current, newLeg)) return;
+
+      await fetchRoute(from, to);
+      lastFetchAtRef.current = Date.now();
+      lastLegRef.current = newLeg;
+    },
+    [fetchRoute, isAccepted, isFollowing],
+  );
+
   useEffect(() => {
     if (!hasLocPerm) return;
 
@@ -806,18 +872,24 @@ const HomeMainScreen = ({route}) => {
     const to = normalizeCoord(senderCoordinate);
     if (!from || !to) return;
 
-    fetchRoute(from, to);
+    guardedFetchRoute(from, to);
   }, [
     hasLocPerm,
     isAccepted,
-    isFollowing, // follow state gates routing now
+    isFollowing,
     selectedOrder?.id,
     senderCoordinate,
-    fetchRoute,
+    guardedFetchRoute,
   ]);
 
+  // clear fetch cache on destination change
+  useEffect(() => {
+    lastLegRef.current = {from: null, to: null};
+    lastFetchAtRef.current = 0;
+  }, [selectedOrder?.id, senderCoordinate?.[0], senderCoordinate?.[1]]);
+
   /* ────────────────────────────────────────────────────────────────────────
-     Live progress on user updates
+     Live progress + heading
      ──────────────────────────────────────────────────────────────────────── */
   const updateBannerAndSteps = useCallback(
     userLL => {
@@ -856,13 +928,30 @@ const HomeMainScreen = ({route}) => {
   const onUserLocation = useCallback(
     location => {
       if (!location?.coords) return;
-      const {latitude, longitude} = location.coords;
+      const {latitude, longitude, heading, course} = location.coords;
+
       const userLL = [round5(longitude), round5(latitude)];
       if (userLL[0] == null || userLL[1] == null) return;
 
+      // derive & smooth heading
+      let hdg = toNum(heading);
+      if (hdg == null || !Number.isFinite(hdg)) hdg = toNum(course);
+      if ((hdg == null || hdg === 0) && lastLLRef.current) {
+        const dist = haversineMeters(lastLLRef.current, userLL);
+        if (dist > 1) hdg = bearingAB(lastLLRef.current, userLL);
+      }
+      if (hdg != null && Number.isFinite(hdg)) {
+        const smoothed = smoothHeading(
+          headingRef.current ?? normDeg(hdg),
+          normDeg(hdg),
+        );
+        headingRef.current = smoothed;
+        if (!isFollowing) setBearing(smoothed);
+      }
+      lastLLRef.current = userLL;
+
       userLocRef.current = userLL;
 
-      // If not following, softly recenter on significant move
       const last = cameraRef.current;
       const movedEnough =
         !last ||
@@ -887,39 +976,44 @@ const HomeMainScreen = ({route}) => {
   );
 
   /* ────────────────────────────────────────────────────────────────────────
-     Off-route & reroute
+     Off-route & reroute (GPS-based, persistent, throttled)
      ──────────────────────────────────────────────────────────────────────── */
   useEffect(() => {
     if (!remainingFeature?.geometry || !routeSteps.length) return;
+
     const id = setInterval(() => {
-      const userLL = normalizeCoord(cameraRef.current);
+      const userLL = userLocRef.current; // use real GPS, not camera
       if (!userLL) return;
+
       const idx = Math.min(progressIdxRef.current, routeSteps.length - 1);
       const nextPt = stepManeuverLngLat(routeSteps[idx]);
       if (!nextPt) return;
-      const d = haversineMeters(userLL, nextPt);
-      if (d > 60) setOffRoute(true);
-    }, 3000);
-    return () => clearInterval(id);
-  }, [remainingFeature?.geometry, routeSteps]);
 
-  useEffect(() => {
-    if (!offRoute || !selectedOrder || !isAccepted || !isFollowing) return;
-    const from = normalizeCoord(cameraRef.current);
-    const to = senderCoordinate;
-    if (from && to) fetchRoute(from, to);
-    setOffRoute(false);
+      const d = haversineMeters(userLL, nextPt);
+
+      if (d > OFFROUTE_DISTANCE_M) {
+        if (!offRouteSinceRef.current) offRouteSinceRef.current = Date.now();
+        const elapsed = Date.now() - offRouteSinceRef.current;
+        if (elapsed >= OFFROUTE_PERSIST_MS) {
+          const to = senderCoordinate;
+          if (to) guardedFetchRoute(userLL, to); // throttled/cached
+          offRouteSinceRef.current = null;
+        }
+      } else {
+        offRouteSinceRef.current = null; // back on route
+      }
+    }, 2000);
+
+    return () => clearInterval(id);
   }, [
-    offRoute,
-    isAccepted,
-    isFollowing,
-    selectedOrder?.id,
+    remainingFeature?.geometry,
+    routeSteps,
     senderCoordinate,
-    fetchRoute,
+    guardedFetchRoute,
   ]);
 
   /* ────────────────────────────────────────────────────────────────────────
-     Background location post
+     Background location post (with heading)
      ──────────────────────────────────────────────────────────────────────── */
   const locationInFlightRef = useRef(false);
   const postLocation = useCallback(async () => {
@@ -929,11 +1023,15 @@ const HomeMainScreen = ({route}) => {
     const norm = normalizeCoord(cam);
     if (!norm) return;
 
+    const dir =
+      headingRef.current != null ? Math.round(headingRef.current) : null;
+
     locationInFlightRef.current = true;
     try {
       await sendData(urls.UPDATELOCATION, {
         longitude: norm[0],
         latitude: norm[1],
+        heading: dir,
         vehicle_id: config?.selectVehicle?.id,
       });
     } catch {
@@ -952,7 +1050,7 @@ const HomeMainScreen = ({route}) => {
   }, [postLocation]);
 
   /* ────────────────────────────────────────────────────────────────────────
-     Center on my location FAB — robust snap
+     Center on my location FAB
      ──────────────────────────────────────────────────────────────────────── */
   const getOneShotGPS = () =>
     new Promise(resolve => {
@@ -975,14 +1073,12 @@ const HomeMainScreen = ({route}) => {
 
     let target = userLocRef.current;
     if (!target) {
-      target = await getOneShotGPS(); // fallback if puck not ready
+      target = await getOneShotGPS();
     }
     if (!target) return;
 
-    // 1) turn follow OFF so imperative centering is respected
     setIsFollowing(false);
 
-    // 2) center the camera
     requestAnimationFrame(() => {
       camRef.current?.setCamera({
         followUserLocation: false,
@@ -992,7 +1088,6 @@ const HomeMainScreen = ({route}) => {
         animationDuration: 250,
       });
 
-      // 3) re-enable follow to keep tracking the user
       setTimeout(() => {
         setFollowMode('course');
         setIsFollowing(true);
@@ -1031,8 +1126,7 @@ const HomeMainScreen = ({route}) => {
               zoomEnabled
               rotateEnabled
               style={styles.map}
-              onDidFinishLoadingMap={() => setMapReady(true)} // ✅ map ready
-            >
+              onDidFinishLoadingMap={() => setMapReady(true)}>
               {/* Remaining route (blue) */}
               {remainingFeature && (
                 <Mapbox.ShapeSource
@@ -1072,7 +1166,7 @@ const HomeMainScreen = ({route}) => {
                 </Mapbox.MarkerView>
               )}
 
-              {/* Live user location → updates progress */}
+              {/* Live user location */}
               <Mapbox.UserLocation
                 visible
                 showsUserHeadingIndicator
@@ -1080,7 +1174,7 @@ const HomeMainScreen = ({route}) => {
                 onUpdate={onUserLocation}
               />
 
-              {/* Camera now follows ONLY when isFollowing is true */}
+              {/* Camera */}
               {isFollowing ? (
                 <Mapbox.Camera
                   ref={camRef}
@@ -1102,7 +1196,6 @@ const HomeMainScreen = ({route}) => {
                 />
               )}
 
-              {/* Optional marker at camera center (no icon to avoid double marker) */}
               <Mapbox.MarkerView coordinate={camera} />
             </Mapbox.MapView>
           ) : (
