@@ -72,5 +72,7 @@
   "fetchRoute": "جاري جلب المسار...",
   "googleLogin": "تسجيل الدخول عبر جوجل",
   "appleLogin": "تسجيل الدخول عبر أبل",
-  "signUp": "إنشاء حساب"
+  "signUp": "إنشاء حساب",
+  "pressBackTwoMoreTimesToExit": "اضغط رجوع مرتين للخروج",
+  "pressBackOneMoreTimeToExit": "اضغط رجوع مرة واحدة للخروج"
 }

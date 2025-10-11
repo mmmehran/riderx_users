@@ -72,5 +72,7 @@
   "fetchRoute": "Rota alınıyor...",
   "googleLogin": "Google ile giriş yap",
   "appleLogin": "Apple ile giriş yap",
-  "signUp": "Kayıt Ol"
+  "signUp": "Kayıt Ol",
+  "pressBackTwoMoreTimesToExit": "Çıkmak için iki kez geri basın",
+  "pressBackOneMoreTimeToExit": "Çıkmak için bir kez daha geri basın"
 }

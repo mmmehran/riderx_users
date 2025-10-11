@@ -72,5 +72,7 @@
   "fetchRoute": "Fetching route...",
   "googleLogin": "Login with Google",
   "appleLogin": "Login with Apple",
-  "signUp": "Sign Up"
+  "signUp": "Sign Up",
+  "pressBackTwoMoreTimesToExit": "Press back two more times to exit",
+  "pressBackOneMoreTimeToExit": "Press back one more time to exit"
 }

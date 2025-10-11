@@ -72,5 +72,7 @@
   "fetchRoute": "Route wird abgerufen...",
   "googleLogin": "Mit Google anmelden",
   "appleLogin": "Mit Apple anmelden",
-  "signUp": "Registrieren"
+  "signUp": "Registrieren",
+  "pressBackTwoMoreTimesToExit": "Drücken Sie zweimal zurück, um zu beenden",
+  "pressBackOneMoreTimeToExit": "Drücken Sie einmal zurück, um zu beenden"
 }

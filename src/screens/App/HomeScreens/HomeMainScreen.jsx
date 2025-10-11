@@ -6,6 +6,8 @@ import {
   Platform,
   AppState,
   TouchableOpacity,
+  BackHandler,
+  ToastAndroid,
 } from 'react-native';
 import {
   widthPercentageToDP as wp,
@@ -23,6 +25,7 @@ import notifee, {
 import Geolocation from '@react-native-community/geolocation';
 import messaging from '@react-native-firebase/messaging';
 import {useTranslation} from 'react-i18next';
+import {useFocusEffect} from '@react-navigation/native';
 
 import AcceptOrderModal from '../../../modal/AcceptOrderModal';
 import AcceptedOrderModal from '../../../modal/AcceptedOrderModal';
@@ -215,6 +218,48 @@ const HomeMainScreen = ({route}) => {
   const userLocRef = useRef(null);
   const mountedRef = useRef(true);
   const abortRef = useRef(null);
+
+  const backPressCountRef = useRef(0);
+  const backResetTimerRef = useRef(null);
+  const resetBackCounter = () => {
+    if (backResetTimerRef.current) {
+      clearTimeout(backResetTimerRef.current);
+      backResetTimerRef.current = null;
+    }
+    backPressCountRef.current = 0;
+  };
+
+  useFocusEffect(
+    React.useCallback(() => {
+      if (Platform.OS !== 'android') return () => {};
+
+      const onBackPress = () => {
+        backPressCountRef.current += 1;
+        const remaining = 2 - backPressCountRef.current;
+
+        if (remaining > 0) {
+          ToastAndroid.show(
+            remaining === 1 && t?.('pressBackOneMoreTimeToExit'),
+            ToastAndroid.SHORT,
+          );
+
+          if (backResetTimerRef.current)
+            clearTimeout(backResetTimerRef.current);
+          backResetTimerRef.current = setTimeout(resetBackCounter, 4000);
+          return true; // prevent default navigation
+        }
+
+        BackHandler.exitApp(); // 3rd press: exit app
+        return true;
+      };
+
+      BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () => {
+        BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+        resetBackCounter();
+      };
+    }, [t]),
+  );
 
   useEffect(() => {
     cameraRef.current = camera;

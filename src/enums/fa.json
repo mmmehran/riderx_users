@@ -72,5 +72,7 @@
   "fetchRoute": "در حال دریافت مسیر...",
   "googleLogin": "ورود با گوگل",
   "appleLogin": "ورود با اپل",
-  "signUp": "ثبت‌نام"
+  "signUp": "ثبت‌نام",
+  "pressBackTwoMoreTimesToExit": "برای خروج دو بار دیگر بازگشت را فشار دهید",
+  "pressBackOneMoreTimeToExit": "برای خروج یک بار دیگر بازگشت را فشار دهید"
 }
