@@ -228,10 +228,9 @@ const HomeMainScreen = ({route}) => {
     }
     backPressCountRef.current = 0;
   };
-
   useFocusEffect(
     React.useCallback(() => {
-      if (Platform.OS !== 'android') return () => {};
+      if (Platform.OS !== 'android') return undefined;
 
       const onBackPress = () => {
         backPressCountRef.current += 1;
@@ -246,16 +245,22 @@ const HomeMainScreen = ({route}) => {
           if (backResetTimerRef.current)
             clearTimeout(backResetTimerRef.current);
           backResetTimerRef.current = setTimeout(resetBackCounter, 4000);
-          return true; // prevent default navigation
+          return true; // prevent default
         }
 
-        BackHandler.exitApp(); // 3rd press: exit app
+        BackHandler.exitApp(); // third press
         return true;
       };
 
-      BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      // subscribe
+      const sub = BackHandler.addEventListener(
+        'hardwareBackPress',
+        onBackPress,
+      );
+
+      // cleanup
       return () => {
-        BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+        sub?.remove?.(); // ✅ correct in RN 0.65+
         resetBackCounter();
       };
     }, [t]),
@@ -725,60 +730,69 @@ const HomeMainScreen = ({route}) => {
       ? {type: 'Feature', geometry: {type: 'LineString', coordinates: coords}}
       : null;
 
-  const fetchRoute = useCallback(async (from, to) => {
-    if (abortRef.current) abortRef.current.abort();
-    const controller = new AbortController();
-    abortRef.current = controller;
+  const fetchRoute = useCallback(
+    async (from, to) => {
+      if (abortRef.current) abortRef.current.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
 
-    try {
-      showToast(t('fetchRoute'));
-      const url =
-        `https://api.mapbox.com/directions/v5/mapbox/driving/` +
-        `${from[0]},${from[1]};${to[0]},${to[1]}` +
-        `?geometries=geojson&overview=full&steps=true&banner_instructions=true&voice_instructions=false&language=en&access_token=${MAPBOX_TOKEN}`;
+      try {
+        showToast(t('fetchRoute'));
+        const url =
+          `https://api.mapbox.com/directions/v5/mapbox/${
+            config?.selectVehicle?.vehicle_type == 'bicycle' ||
+            config?.selectVehicle?.vehicle_type == 'e_bicycle' ||
+            config?.selectVehicle?.vehicle_type == 'moped'
+              ? 'cycling'
+              : 'driving'
+          }/` +
+          `${from[0]},${from[1]};${to[0]},${to[1]}` +
+          `?geometries=geojson&overview=full&steps=true&banner_instructions=true&voice_instructions=false&language=en&access_token=${MAPBOX_TOKEN}`;
+        const res = await fetch(url, {signal: controller.signal});
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
 
-      const res = await fetch(url, {signal: controller.signal});
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json();
+        const route = json?.routes?.[0];
+        const geom = route?.geometry;
+        const steps = route?.legs?.[0]?.steps || [];
+        const duration = route?.duration || 0;
+        const distance = route?.distance || 0;
 
-      const route = json?.routes?.[0];
-      const geom = route?.geometry;
-      const steps = route?.legs?.[0]?.steps || [];
-      const duration = route?.duration || 0;
-      const distance = route?.distance || 0;
+        if (geom && !controller.signal.aborted) {
+          const coords = (geom.coordinates || [])
+            .map(c => normalizeCoord(c))
+            .filter(Boolean);
 
-      if (geom && !controller.signal.aborted) {
-        const coords = (geom.coordinates || [])
-          .map(c => normalizeCoord(c))
-          .filter(Boolean);
+          setRouteCoords(coords);
+          setRouteSteps(steps);
+          setRouteDurationSec(duration);
+          setRouteDistanceM(distance);
+          setBanner({primary: '', distance: 0});
+          progressIdxRef.current = 0;
 
-        setRouteCoords(coords);
-        setRouteSteps(steps);
-        setRouteDurationSec(duration);
-        setRouteDistanceM(distance);
-        setBanner({primary: '', distance: 0});
-        progressIdxRef.current = 0;
-
-        const userLL = userLocRef.current || normalizeCoord(cameraRef.current);
-        if (userLL) {
-          const {idx, point} = closestOnPolyline(userLL, coords);
-          progressIdxRef.current = idx;
-          const traveled = coords.slice(0, idx + 1);
-          traveled[traveled.length - 1] = point;
-          const remaining = [point, ...coords.slice(idx + 1)];
-          setTraveledFeature(buildLineFeature(traveled));
-          setRemainingFeature(buildLineFeature(remaining));
-        } else {
-          setTraveledFeature(null);
-          setRemainingFeature(buildLineFeature(coords));
+          const userLL =
+            userLocRef.current || normalizeCoord(cameraRef.current);
+          if (userLL) {
+            const {idx, point} = closestOnPolyline(userLL, coords);
+            progressIdxRef.current = idx;
+            const traveled = coords.slice(0, idx + 1);
+            traveled[traveled.length - 1] = point;
+            const remaining = [point, ...coords.slice(idx + 1)];
+            setTraveledFeature(buildLineFeature(traveled));
+            setRemainingFeature(buildLineFeature(remaining));
+          } else {
+            setTraveledFeature(null);
+            setRemainingFeature(buildLineFeature(coords));
+          }
         }
+      } catch (e) {
+        // silent
+      } finally {
+        if (abortRef.current === controller) abortRef.current = null;
       }
-    } catch (e) {
-      // silent
-    } finally {
-      if (abortRef.current === controller) abortRef.current = null;
-    }
-  }, []);
+    },
+    [config?.selectVehicle?.vehicle_type],
+  );
 
   useEffect(() => {
     if (!hasLocPerm) return;
