@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   BackHandler,
   ToastAndroid,
+  Image,
 } from 'react-native';
 import {
   widthPercentageToDP as wp,
@@ -30,7 +31,11 @@ import AcceptOrderModal from '../../../modal/AcceptOrderModal';
 import AcceptedOrderModal from '../../../modal/AcceptedOrderModal';
 import CancelModal from '../../../modal/CancelModal';
 
-import {LocationPin, LocationPin1} from '../../../../assets/svg/index';
+import {
+  LocationPin,
+  LocationPin1,
+  MotorIcon,
+} from '../../../../assets/svg/index';
 import CustomHeader from '../../../components/custom/CustomHeader';
 import CustomBottomTab from '../../../components/custom/CustomBottomTab';
 import {getData, sendData} from '../../../services/common.service';
@@ -784,7 +789,7 @@ const HomeMainScreen = ({route}) => {
       abortRef.current = controller;
 
       try {
-        showToast('fetch Roud...');
+        showToast('fetch route...');
         const profile =
           config?.selectVehicle?.vehicle_type == 'bicycle' ||
           config?.selectVehicle?.vehicle_type == 'e_bicycle' ||
@@ -1168,7 +1173,7 @@ const HomeMainScreen = ({route}) => {
 
               {/* Live user location */}
               <Mapbox.UserLocation
-                visible
+                visible={false}
                 showsUserHeadingIndicator
                 androidRenderMode="compass"
                 onUpdate={onUserLocation}
@@ -1195,7 +1200,27 @@ const HomeMainScreen = ({route}) => {
                 />
               )}
 
-              <Mapbox.MarkerView coordinate={camera} />
+              <Mapbox.MarkerView coordinate={camera}>
+                {config?.selectVehicle?.vehicle_type == 'bicycle' ||
+                config?.selectVehicle?.vehicle_type == 'e_bicycle' ||
+                config?.selectVehicle?.vehicle_type == 'moped' ? (
+                  <Image
+                    style={{
+                      width: wp(8),
+                      height: hp(8),
+                    }}
+                    source={require('../../../../assets/image/motor.png')}
+                  />
+                ) : (
+                  <Image
+                    style={{
+                      width: wp(8),
+                      height: hp(8),
+                    }}
+                    source={require('../../../../assets/image/car.png')}
+                  />
+                )}
+              </Mapbox.MarkerView>
             </Mapbox.MapView>
           ) : (
             <View style={styles.map} />
