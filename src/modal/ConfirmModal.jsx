@@ -54,6 +54,7 @@ const ConfirmActionModal = ({
             <CustomInput
               onChangeText={text => setPin(text)}
               stylesInput={styles.input}
+              keyboardType="numeric"
               inputMainStyle={{
                 width: wp(50),
                 textAlign: 'center',
