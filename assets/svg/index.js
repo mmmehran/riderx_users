@@ -35,3 +35,4 @@ export { default as Google } from "./google.svg";
 export { default as Apple } from "./apple.svg";
 export { default as MotorIcon } from "./motorIcon.svg";
 export { default as CarRiderIcon } from "./carRiderIcon.svg";
+export { default as SplashIcon } from "./splash.svg";
