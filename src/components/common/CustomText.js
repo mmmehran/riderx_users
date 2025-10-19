@@ -20,6 +20,6 @@ const styles = StyleSheet.create({
     default: {
         color: colors.black,
         fontSize: wp(4),
-     //   fontFamily: "Poppins-Regular",
+        fontFamily: "YaldeviJaffna-Medium",
     }
 });

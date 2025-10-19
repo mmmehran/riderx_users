@@ -6,6 +6,7 @@ import { useSelector,useDispatch } from "react-redux";
 import { useNavigation } from "@react-navigation/native";
 
 import SplashScreen from '../screens/Splash/Splash';
+import OnBoardingScreen from '../screens/OnBoarding/OnBoardingScreen';
 import MainNavigator from './MainNavigator';
 import useDidMountEffect from '../utils/customHooks/UseDidMountEffect';
 import {  authenticated} from '../redux/reducers/authenticationReducer';
@@ -80,6 +81,11 @@ const BaseNavigator = () => {
       <Stack.Screen
         name={routes.SPLASH}
         component={SplashScreen}
+        options={{ fullScreenGestureEnabled: false }}
+      />
+      <Stack.Screen
+        name={routes.ONBOARDING}
+        component={OnBoardingScreen}
         options={{ fullScreenGestureEnabled: false }}
       />
       <Stack.Screen

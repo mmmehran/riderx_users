@@ -74,5 +74,12 @@
   "appleLogin": "Login with Apple",
   "signUp": "Sign Up",
   "pressBackTwoMoreTimesToExit": "Press back two more times to exit",
-  "pressBackOneMoreTimeToExit": "Press back one more time to exit"
+  "pressBackOneMoreTimeToExit": "Press back one more time to exit",
+  "onBoardingTitle1": "Hit the Road. Start Earning.",
+  "onBoardingTitle2": "Drive on Your Terms",
+  "onBoardingTitle3": "More Than Just Driving",
+  "onBoardingContent1": "Sign up in minutes, upload your documents, and take your first trip today. No waiting, no hassle.",
+  "onBoardingContent2": "Set your own schedule, pick the routes you like, and earn exactly the way you want.",
+  "onBoardingContent3": "Enjoy exclusive perks. from discounted vehicle insurance to meal deals at partner restaurants, plus many more rewards just for being a driver.",
+  "GetStarted": "Get Started"
 }

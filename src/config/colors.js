@@ -13,6 +13,9 @@ const mainColors = {
     gray300:"#686868",
     gray400:"#636262",
     gray500:"#D9D9D9",
+    neonYellowLight:"#FFFDE7",
+    neonYellow:"#FFE710",
+    neutral900:"#1A1A1A",
 
 
     screenBackGround: "#FEFEFE",
@@ -43,7 +46,6 @@ const mainColors = {
     lightPrimary: "#96E2E2",
     attBox: "#F8F8F8",
     pinkDing: "#F15374",
-    blue: "#2E42A5",
     blueLight: "#D1F9F9",
     pinkDingLight: "#FCDDE3",
     blueLightq: "#C2CAF4",
