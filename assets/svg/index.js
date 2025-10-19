@@ -31,3 +31,7 @@ export { default as EyeOff } from "./eyeOff.svg";
 export { default as PhoneCall } from "./phoneCall.svg";
 export { default as Message } from "./message.svg";
 export { default as LocationPin1 } from "./locationPin1.svg";
+export { default as Google } from "./google.svg";
+export { default as Apple } from "./apple.svg";
+export { default as MotorIcon } from "./motorIcon.svg";
+export { default as CarRiderIcon } from "./carRiderIcon.svg";

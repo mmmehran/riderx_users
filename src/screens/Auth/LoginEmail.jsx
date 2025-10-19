@@ -1,10 +1,11 @@
-import React, {useState, useRef, useCallback} from 'react';
+import React, {useState, useRef, useCallback, useEffect} from 'react';
 import {
   View,
   StyleSheet,
   Keyboard,
   TouchableOpacity,
   Modal,
+  Platform,
 } from 'react-native';
 import {
   widthPercentageToDP as wp,
@@ -16,6 +17,8 @@ import {useTranslation} from 'react-i18next';
 import {useDispatch} from 'react-redux';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useNavigation, useFocusEffect} from '@react-navigation/native';
+import {GoogleSignin} from '@react-native-google-signin/google-signin';
+import {appleAuth} from '@invertase/react-native-apple-authentication';
 
 import CustomScreen from '../../components/common/CustomScreen';
 import {Form, Input, Button} from '../../components/form/index';
@@ -23,12 +26,13 @@ import {postData} from '../../services/common.service';
 import urls from '../../services/urls.json';
 import errorHandler from '../../utils/errorHandler';
 import {showToast, showError} from '../../utils/helpers';
-import {Logo} from '../../../assets/svg/index';
+import {Logo, Google, Apple} from '../../../assets/svg/index';
 import {login} from '../../redux/reducers/authenticationReducer';
 import {setConfigTest, setConfig} from '../../services/defaultAxios';
 import CustomText from '../../components/common/CustomText';
 import colors from '../../config/colors';
 import i18n from '../../utils/i18n';
+import routes from '../../navigation/routes';
 
 const LANGS = [
   {code: 'en', label: 'English', rtl: false},
@@ -87,12 +91,19 @@ const LoginEmail = props => {
   useFocusEffect(
     useCallback(() => {
       loadRemembered();
-    }, []),
+    }, [loadRemembered]),
   );
 
-  const toggleRemember = async () => {
-    setRememberMe(!rememberMe);
-  };
+  const toggleRemember = async () => setRememberMe(v => !v);
+
+  useEffect(() => {
+    GoogleSignin.configure({
+      iosClientId:
+        '224724744593-sshnpoo8igmgi1h5aku239r1f6bikma7.apps.googleusercontent.com',
+      webClientId:
+        '224724744593-h32i8kmlgcj029vv27tmqhh5i815cd8h.apps.googleusercontent.com',
+    });
+  }, []);
 
   const onSubmit = async value => {
     setLoading(true);
@@ -137,13 +148,11 @@ const LoginEmail = props => {
   };
 
   const openLangModal = () => setLangModal(true);
-
   const applyLanguage = async (code, rtl) => {
     setLangModal(false);
     await AsyncStorage.setItem('language', code);
     await i18n.changeLanguage(code);
   };
-
   const currentLabel =
     (LANGS.find(l => l.code === i18n.language) || {})?.label || 'English';
 
@@ -159,6 +168,86 @@ const LoginEmail = props => {
     </TouchableOpacity>
   );
 
+  const handleGoogleLogin = async () => {
+    try {
+      setLoading(true);
+      if (Platform.OS === 'android') {
+        await GoogleSignin.hasPlayServices({
+          showPlayServicesUpdateDialog: true,
+        });
+      }
+      const userInfo = await GoogleSignin.signIn();
+      const token = await GoogleSignin.getTokens();
+
+      setConfig();
+      await new Promise(r => setTimeout(r, 300));
+
+      const response = await postData(
+        urls.SOCIALLOGIN,
+        {
+          access_token: token?.accessToken,
+        },
+        false,
+      );
+
+      if (response?.data?.status) {
+        if (response?.data?.data) {
+          dispatch(login(response?.data?.data));
+        }
+        showToast(response?.data?.message);
+      } else {
+        errorHandler(response);
+      }
+    } catch (error) {
+      showError(error?.message || 'Something went wrong');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAppleLogin = async () => {
+    try {
+      if (Platform.OS !== 'ios' || !appleAuth.isSupported) {
+        showError('Sign in with Apple is not supported.');
+        return;
+      }
+      setLoading(true);
+      const appleResponse = await appleAuth.performRequest({
+        requestedOperation: appleAuth.Operation.LOGIN,
+        requestedScopes: [appleAuth.Scope.FULL_NAME, appleAuth.Scope.EMAIL],
+      });
+      const {user, email, fullName, identityToken, authorizationCode} =
+        appleResponse;
+      setConfig();
+      await new Promise(r => setTimeout(r, 300));
+      const response = await postData(
+        urls.SOCIALLOGINAPPLE,
+        {
+          id_token: identityToken,
+          apple_user: user,
+          email,
+          fullName,
+        },
+        false,
+      );
+      if (response?.data?.status) {
+        if (response?.data?.data) {
+          dispatch(login(response?.data?.data));
+        }
+        showToast(response?.data?.message);
+      } else {
+        errorHandler(response);
+      }
+    } catch (e) {
+      if (e?.code !== appleAuth.Error.CANCELED) {
+        console.log('Apple sign-in error', e);
+        showError(e?.message || 'Apple Sign-In failed');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <CustomScreen>
       <KeyboardAwareScrollView
@@ -167,6 +256,7 @@ const LoginEmail = props => {
         <View style={styles.logoContainer}>
           <Logo width={wp(33)} height={wp(33)} />
         </View>
+
         <View style={styles.formContainer}>
           <Form
             initialValues={{email: prefill.email, password: prefill.password}}
@@ -200,7 +290,32 @@ const LoginEmail = props => {
               </>
             )}
           </Form>
+          <TouchableOpacity
+            style={{marginTop: hp(3), alignSelf: 'center'}}
+            onPress={() => navigation.navigate(routes.SIGNUPSENDER)}>
+            <CustomText style={styles.textSignu}>{t('signUp')}</CustomText>
+          </TouchableOpacity>
 
+          <View style={{alignItems: 'center', marginTop: hp(3)}}>
+            <TouchableOpacity
+              onPress={handleGoogleLogin}
+              style={styles.socialButton}>
+              <Google width={wp(5)} height={wp(5)} />
+              <CustomText style={styles.textButtonSocial}>
+                {t('googleLogin')}
+              </CustomText>
+            </TouchableOpacity>
+            {Platform.OS === 'ios' && appleAuth.isSupported ? (
+              <TouchableOpacity
+                onPress={handleAppleLogin}
+                style={styles.socialButton}>
+                <Apple width={wp(8)} height={wp(8)} />
+                <CustomText style={styles.textButtonSocial}>
+                  {t('appleLogin')}
+                </CustomText>
+              </TouchableOpacity>
+            ) : null}
+          </View>
           <View
             style={{flex: 1, justifyContent: 'flex-end', marginBottom: hp(7)}}>
             <TouchableOpacity onPress={openLangModal}>
@@ -258,8 +373,30 @@ const styles = StyleSheet.create({
     marginTop: hp(2),
     marginLeft: wp(6),
   },
+  textSignu: {
+    textAlign: 'center',
+    color: colors.blue,
+  },
   rememberText: {
     marginLeft: wp(1.5),
+  },
+  socialButton: {
+    width: wp(89),
+    height: hp(6),
+    backgroundColor: 'transparent',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: wp(20),
+    marginTop: hp(1.5),
+    marginHorizontal: wp(5.5),
+    borderWidth: wp(0.3),
+    borderColor: '#9AA0A6',
+    flexDirection: 'row',
+  },
+  textButtonSocial: {
+    color: colors.black,
+    marginLeft: wp(2),
+    fontWeight: 'bold',
   },
   checkbox: {
     width: wp(5.5),
@@ -271,9 +408,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'transparent',
   },
-  checkboxChecked: {
-    borderColor: colors.blue,
-  },
+  checkboxChecked: {borderColor: colors.blue},
   checkboxDot: {
     width: wp(3.6),
     height: wp(3.6),
@@ -300,4 +435,13 @@ const styles = StyleSheet.create({
     borderBottomColor: 'rgba(0,0,0,0.08)',
   },
   optionText: {fontSize: wp(4)},
+  appleRow: {
+    marginTop: hp(3),
+    alignItems: 'center',
+  },
+  appleButton: {
+    width: wp(89),
+    height: hp(6),
+    borderRadius: 8,
+  },
 });

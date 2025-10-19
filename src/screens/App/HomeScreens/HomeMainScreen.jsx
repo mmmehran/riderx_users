@@ -6,6 +6,9 @@ import {
   Platform,
   AppState,
   TouchableOpacity,
+  BackHandler,
+  ToastAndroid,
+  Image,
 } from 'react-native';
 import {
   widthPercentageToDP as wp,
@@ -14,7 +17,7 @@ import {
 import Mapbox from '@rnmapbox/maps';
 import {useDispatch, useSelector} from 'react-redux';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {useNavigation} from '@react-navigation/native';
+import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import {check, request, PERMISSIONS, RESULTS} from 'react-native-permissions';
 import notifee, {
   AndroidImportance,
@@ -28,7 +31,7 @@ import AcceptOrderModal from '../../../modal/AcceptOrderModal';
 import AcceptedOrderModal from '../../../modal/AcceptedOrderModal';
 import CancelModal from '../../../modal/CancelModal';
 
-import {Marker, LocationPin, LocationPin1} from '../../../../assets/svg/index';
+import {LocationPin, LocationPin1} from '../../../../assets/svg/index';
 import CustomHeader from '../../../components/custom/CustomHeader';
 import CustomBottomTab from '../../../components/custom/CustomBottomTab';
 import {getData, sendData} from '../../../services/common.service';
@@ -58,35 +61,28 @@ const LOCATION_UPDATE_MS = 30 * 1000;
 
 const MAPBOX_TOKEN =
   'pk.eyJ1IjoiYnl0ZWJyaWRnZXIiLCJhIjoiY21kZzVoNnU2MGlhcDJpcGVuNGV1amYxdyJ9.YMqlR9OovVOp-pm9yGK7eA';
-
 Mapbox.setAccessToken(MAPBOX_TOKEN);
 
-/* ──────────────────────────────────────────────────────────────────────
-   Utils
-   ────────────────────────────────────────────────────────────────────── */
-const toNum = v => {
-  if (typeof v === 'number' && Number.isFinite(v)) return v;
-  if (typeof v === 'string') {
-    const x = parseFloat(v);
-    return Number.isFinite(x) ? x : null;
-  }
-  return null;
-};
+/* ───────── Utils ───────── */
+const toNum = v =>
+  typeof v === 'number' && Number.isFinite(v)
+    ? v
+    : Number.isFinite(parseFloat(v))
+    ? parseFloat(v)
+    : null;
 const round5 = v => {
   const x = toNum(v);
-  if (x === null) return null;
-  return Math.round(x * 1e5) / 1e5;
+  return x == null ? null : Math.round(x * 1e5) / 1e5;
 };
 const normalizeCoord = coord => {
   if (!Array.isArray(coord) || coord.length < 2) return null;
   const lng = round5(coord[0]);
   const lat = round5(coord[1]);
-  if (lng === null || lat === null) return null;
-  return [lng, lat];
+  return lng == null || lat == null ? null : [lng, lat];
 };
 const haversineMeters = (a, b) => {
-  const toRad = d => (d * Math.PI) / 180;
-  const R = 6371000;
+  const R = 6371000,
+    toRad = d => (d * Math.PI) / 180;
   const dLat = toRad(b[1] - a[1]);
   const dLng = toRad(b[0] - a[0]);
   const lat1 = toRad(a[1]);
@@ -96,72 +92,83 @@ const haversineMeters = (a, b) => {
     Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
   return 2 * R * Math.asin(Math.sqrt(x));
 };
-
-// Approximate planar conversion for small local distances
-const lngLatToXY = ([lng, lat]) => {
-  const x = lng * 111320 * Math.cos((lat * Math.PI) / 180);
-  const y = lat * 110540;
-  return [x, y];
-};
-const dist2 = (a, b) => {
-  const dx = a[0] - b[0];
-  const dy = a[1] - b[1];
-  return dx * dx + dy * dy;
-};
+const lngLatToXY = ([lng, lat]) => [
+  lng * 111320 * Math.cos((lat * Math.PI) / 180),
+  lat * 110540,
+];
 const clamp01 = t => (t < 0 ? 0 : t > 1 ? 1 : t);
-
-/** Find closest segment index and snapped point on polyline */
 const closestOnPolyline = (ptLngLat, coords) => {
   if (!ptLngLat || !coords || coords.length < 2)
-    return {idx: 0, point: coords[0]};
+    return {idx: 0, point: coords?.[0]};
   const p = lngLatToXY(ptLngLat);
-  let bestIdx = 0;
-  let bestT = 0;
-  let bestD2 = Infinity;
-  let bestPoint = coords[0];
-
+  let bestIdx = 0,
+    bestT = 0,
+    bestD2 = Infinity,
+    bestPoint = coords[0];
   for (let i = 0; i < coords.length - 1; i++) {
-    const aLL = coords[i];
-    const bLL = coords[i + 1];
-    const a = lngLatToXY(aLL);
-    const b = lngLatToXY(bLL);
-    const ab = [b[0] - a[0], b[1] - a[1]];
-    const ap = [p[0] - a[0], p[1] - a[1]];
+    const aLL = coords[i],
+      bLL = coords[i + 1];
+    const a = lngLatToXY(aLL),
+      b = lngLatToXY(bLL);
+    const ab = [b[0] - a[0], b[1] - a[1]],
+      ap = [p[0] - a[0], p[1] - a[1]];
     const ab2 = ab[0] * ab[0] + ab[1] * ab[1];
     const t = ab2 === 0 ? 0 : clamp01((ap[0] * ab[0] + ap[1] * ab[1]) / ab2);
     const proj = [a[0] + ab[0] * t, a[1] + ab[1] * t];
-    const d = dist2(p, proj);
-    if (d < bestD2) {
-      bestD2 = d;
+    const d2 = (p[0] - proj[0]) ** 2 + (p[1] - proj[1]) ** 2;
+    if (d2 < bestD2) {
+      bestD2 = d2;
       bestIdx = i;
       bestT = t;
-      const projLng = aLL[0] + (bLL[0] - aLL[0]) * t;
-      const projLat = aLL[1] + (bLL[1] - aLL[1]) * t;
-      bestPoint = [projLng, projLat];
+      bestPoint = [
+        aLL[0] + (bLL[0] - aLL[0]) * t,
+        aLL[1] + (bLL[1] - aLL[1]) * t,
+      ];
     }
   }
   const idx = bestT >= 0.999 ? bestIdx + 1 : bestIdx;
   return {idx: Math.min(idx, coords.length - 2), point: bestPoint};
 };
-
-const stepPrimaryText = step => {
-  const bannerText = step?.bannerInstructions?.[0]?.primary?.text;
-  return bannerText || step?.maneuver?.instruction || '';
+const stepPrimaryText = step =>
+  step?.bannerInstructions?.[0]?.primary?.text ||
+  step?.maneuver?.instruction ||
+  '';
+const normDeg = d => ((d % 360) + 360) % 360;
+const bearingAB = (a, b) => {
+  const toRad = x => (x * Math.PI) / 180,
+    toDeg = x => (x * 180) / Math.PI;
+  const [lng1, lat1] = a,
+    [lng2, lat2] = b;
+  const φ1 = toRad(lat1),
+    φ2 = toRad(lat2),
+    Δλ = toRad(lng2 - lng1);
+  const y = Math.sin(Δλ) * Math.cos(φ2);
+  const x =
+    Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
+  return normDeg(toDeg(Math.atan2(y, x)));
 };
-const stepManeuverLngLat = step => {
-  const loc = step?.maneuver?.location;
-  if (Array.isArray(loc) && loc?.length === 2) {
-    const lng = toNum(loc[0]);
-    const lat = toNum(loc[1]);
-    return lng != null && lat != null ? [lng, lat] : null;
-  }
-  return null;
+const smoothHeading = (prev, next, alpha = 0.25) => {
+  if (prev == null) return next;
+  const diff = ((next - prev + 540) % 360) - 180;
+  return normDeg(prev + alpha * diff);
 };
 
-/* ────────────────────────────────────────────────────────────────────── */
+/* ───────── Reroute constants ───────── */
+const REROUTE_COOLDOWN_MS = 10_000;
+const REROUTE_MIN_MOVE_M = 30;
+const OFFROUTE_DISTANCE_M = 120;
+const OFFROUTE_PERSIST_MS = 4000;
+
+/* Immediate jump threshold */
+const OFFROUTE_JUMP_M = 50;
 
 const HomeMainScreen = ({route}) => {
   const [camera, setCamera] = useState([-74.006, 40.7128]);
+
+  // NEW: track live user position & heading for the vehicle icon
+  const [userCoordState, setUserCoordState] = useState(null);
+  const [userHeadingDeg, setUserHeadingDeg] = useState(0);
+
   const [data, setData] = useState([]);
   const [currentOrderIndex, setCurrentOrderIndex] = useState(null);
   const [showAcceptOrder, setShowAcceptOrder] = useState(false);
@@ -175,16 +182,13 @@ const HomeMainScreen = ({route}) => {
   const [pickUpTimeUpdate, setPickUpTimeUpdate] = useState(null);
   const {t} = useTranslation();
 
-  // Route & live progress
   const [routeSteps, setRouteSteps] = useState([]);
   const [routeDistanceM, setRouteDistanceM] = useState(0);
   const [routeDurationSec, setRouteDurationSec] = useState(0);
   const [banner, setBanner] = useState({primary: '', distance: 0});
-  const [offRoute, setOffRoute] = useState(false);
-
-  const [routeCoords, setRouteCoords] = useState([]); // full route as coord array
-  const [remainingFeature, setRemainingFeature] = useState(null); // blue
-  const [traveledFeature, setTraveledFeature] = useState(null); // gray
+  const [routeCoords, setRouteCoords] = useState([]);
+  const [remainingFeature, setRemainingFeature] = useState(null);
+  const [traveledFeature, setTraveledFeature] = useState(null);
   const progressIdxRef = useRef(0);
 
   const [currentStatus, setCurrentStatus] = useState(null);
@@ -193,12 +197,10 @@ const HomeMainScreen = ({route}) => {
 
   const [hasLocPerm, setHasLocPerm] = useState(false);
   const [mapMountKey, setMapMountKey] = useState('map-0');
-
-  // Map readiness & nav follow
   const [mapReady, setMapReady] = useState(false);
   const [isNavOn, setIsNavOn] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
-  const [followMode, setFollowMode] = useState('course'); // 'course' | 'normal'
+  const [followMode, setFollowMode] = useState('course');
   const [bearing, setBearing] = useState(0);
 
   const insets = useSafeAreaInsets();
@@ -216,6 +218,26 @@ const HomeMainScreen = ({route}) => {
   const mountedRef = useRef(true);
   const abortRef = useRef(null);
 
+  const lastLLRef = useRef(null);
+  const headingRef = useRef(null);
+
+  const lastFetchAtRef = useRef(0);
+  const lastLegRef = useRef({from: null, to: null});
+  const offRouteSinceRef = useRef(null);
+
+  const lastOnRoutePointRef = useRef(null);
+
+  const backPressCountRef = useRef(0);
+  const backResetTimerRef = useRef(null);
+
+  const sameLegClose = (a, b) =>
+    a?.from &&
+    a?.to &&
+    b?.from &&
+    b?.to &&
+    haversineMeters(a.from, b.from) < REROUTE_MIN_MOVE_M &&
+    haversineMeters(a.to, b.to) < REROUTE_MIN_MOVE_M;
+
   useEffect(() => {
     cameraRef.current = camera;
   }, [camera]);
@@ -226,8 +248,8 @@ const HomeMainScreen = ({route}) => {
     };
   }, []);
   useEffect(() => {
-    const sub = AppState.addEventListener('change', state => {
-      appStateRef.current = state;
+    const sub = AppState.addEventListener('change', s => {
+      appStateRef.current = s;
     });
     return () => sub.remove();
   }, []);
@@ -235,16 +257,47 @@ const HomeMainScreen = ({route}) => {
     selectedOrderRef.current = selectedOrder;
   }, [selectedOrder]);
 
-  /* ────────────────────────────────────────────────────────────────────────
-     Sockets
-     ──────────────────────────────────────────────────────────────────────── */
+  const resetBackCounter = () => {
+    if (backResetTimerRef.current) clearTimeout(backResetTimerRef.current);
+    backResetTimerRef.current = null;
+    backPressCountRef.current = 0;
+  };
+  useFocusEffect(
+    React.useCallback(() => {
+      if (Platform.OS !== 'android') return undefined;
+      const onBackPress = () => {
+        backPressCountRef.current += 1;
+        const remaining = 2 - backPressCountRef.current;
+        if (remaining > 0) {
+          ToastAndroid.show(
+            remaining === 1 && t?.('pressBackOneMoreTimeToExit'),
+            ToastAndroid.SHORT,
+          );
+          if (backResetTimerRef.current)
+            clearTimeout(backResetTimerRef.current);
+          backResetTimerRef.current = setTimeout(resetBackCounter, 4000);
+          return true;
+        }
+        BackHandler.exitApp();
+        return true;
+      };
+      const sub = BackHandler.addEventListener(
+        'hardwareBackPress',
+        onBackPress,
+      );
+      return () => {
+        sub?.remove?.();
+        resetBackCounter();
+      };
+    }, [t]),
+  );
+
+  /* ───────── Sockets (unchanged from your version) ───────── */
   useEffect(() => {
     const rawUrl = user?.socketio;
     const {baseUrl, roomId} = parseSocketUrl(rawUrl);
     setSocketConnected(false);
-
     const s = connectSocket({baseUrl, roomId});
-
     const offConnect = on('connect', () => setSocketConnected(true));
     const offDisconnect = on('disconnect', () => setSocketConnected(false));
     const offError = on('connect_error', () => setSocketConnected(false));
@@ -290,7 +343,6 @@ const HomeMainScreen = ({route}) => {
     s.onAny(anyLogger);
 
     if (!user?.authenticated) disconnectSocket();
-
     return () => {
       setSocketConnected(false);
       offConnect && offConnect();
@@ -302,14 +354,12 @@ const HomeMainScreen = ({route}) => {
     };
   }, [user?.socketio, user?.authenticated, t]);
 
-  const removeOrderById = useCallback(id => {
-    if (id == null) return;
-    setData(prev => prev.filter(o => o?.id !== id));
-  }, []);
+  const removeOrderById = useCallback(
+    id => setData(prev => prev.filter(o => o?.id !== id)),
+    [],
+  );
 
-  /* ────────────────────────────────────────────────────────────────────────
-     Notifications / FCM
-     ──────────────────────────────────────────────────────────────────────── */
+  /* ───────── Notifications / FCM ───────── */
   const requestNotifPermission = async () => {
     if (Platform.OS === 'android') {
       if (Platform.Version < 33) return true;
@@ -402,35 +452,32 @@ const HomeMainScreen = ({route}) => {
       });
       const enabled =
         authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-        authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+        messaging.AuthorizationStatus.PROVISIONAL;
       if (!enabled) return null;
       const token = await messaging().getToken();
       try {
         await sendData(urls.SETFCMTOKEN, {fcm_token: token});
-      } catch (e) {}
+      } catch {}
       messaging().onTokenRefresh(async newToken => {
         try {
           await sendData(urls.SETFCMTOKEN, {fcm_token: newToken});
-        } catch (e) {}
+        } catch {}
       });
       return token;
-    } catch (e) {
+    } catch {
       return null;
     }
   };
 
-  /* ────────────────────────────────────────────────────────────────────────
-     Bootstrap
-     ──────────────────────────────────────────────────────────────────────── */
+  /* ───────── Bootstrap ───────── */
   useEffect(() => {
     let live = true;
     (async () => {
       await requestLocationPermission();
       await new Promise(r => setTimeout(r, 200));
       const notifOk = await requestNotifPermission();
-      if (Platform.OS === 'android' && notifOk) {
+      if (Platform.OS === 'android' && notifOk)
         await createNotifChannelOnce(channelIdRef);
-      }
       await ensureFcmPermissionAndToken();
       if (!live) return;
       getUserProfile();
@@ -458,9 +505,9 @@ const HomeMainScreen = ({route}) => {
           Geolocation.getCurrentPosition(
             pos => {
               const {latitude, longitude} = pos.coords;
-              const lng = round5(longitude);
-              const lat = round5(latitude);
-              if (lng !== null && lat !== null) setCamera([lng, lat]);
+              const lng = round5(longitude),
+                lat = round5(latitude);
+              if (lng != null && lat != null) setCamera([lng, lat]);
             },
             () => {},
             {enableHighAccuracy: true, timeout: 15000, maximumAge: 5000},
@@ -485,9 +532,9 @@ const HomeMainScreen = ({route}) => {
         Geolocation.getCurrentPosition(
           pos => {
             const {latitude, longitude} = pos.coords;
-            const lng = round5(longitude);
-            const lat = round5(latitude);
-            if (lng !== null && lat !== null) setCamera([lng, lat]);
+            const lng = round5(longitude),
+              lat = round5(latitude);
+            if (lng != null && lat != null) setCamera([lng, lat]);
           },
           () => {},
           {enableHighAccuracy: true, timeout: 15000, maximumAge: 5000},
@@ -501,9 +548,7 @@ const HomeMainScreen = ({route}) => {
     }
   };
 
-  /* ────────────────────────────────────────────────────────────────────────
-     Data fetchers
-     ──────────────────────────────────────────────────────────────────────── */
+  /* ───────── Data fetchers ───────── */
   const getLastDelivery = async () => {
     const response = await getData(urls.GETLASTDELIVERY);
     if (response?.data?.status) {
@@ -544,16 +589,11 @@ const HomeMainScreen = ({route}) => {
   };
   const getUserProfile = async () => {
     const response = await getData(urls.GETUSER);
-    if (response?.data?.status) {
-      dispatch(setUserProfile(response?.data?.data));
-    } else {
-      errorHandler(response);
-    }
+    if (response?.data?.status) dispatch(setUserProfile(response?.data?.data));
+    else errorHandler(response);
   };
 
-  /* ────────────────────────────────────────────────────────────────────────
-     Accept / advance
-     ──────────────────────────────────────────────────────────────────────── */
+  /* ───────── Accept / advance ───────── */
   const requireVehicleOrToast = useCallback(() => {
     if (!config?.selectVehicle?.id) {
       showToast(t('firstselectVehicle'), 'error');
@@ -596,12 +636,22 @@ const HomeMainScreen = ({route}) => {
 
     if (response?.data?.status) {
       setSelectedOrder(response?.data?.data);
+      if (status === 'accepted') {
+        setIsAccepted(true);
+        setShowAcceptOrder(false);
+        setCurrentOrderIndex(null);
+        setIsNavOn(true);
+        setIsFollowing(true);
+        setFollowMode('course');
+      }
       if (
-        status === 'completed' ||
-        status === 'cancel' ||
-        status === 'request_new_driver' ||
-        status === 'shipment_destroyed' ||
-        status === 'address_not_found'
+        [
+          'completed',
+          'cancel',
+          'request_new_driver',
+          'shipment_destroyed',
+          'address_not_found',
+        ].includes(status)
       ) {
         resetRoute();
         setSelectedOrder(null);
@@ -613,6 +663,7 @@ const HomeMainScreen = ({route}) => {
       }
     } else {
       errorHandler(response);
+      return;
     }
     status !== 'cancel' && setLoadingChangeStatus(false);
   };
@@ -621,23 +672,13 @@ const HomeMainScreen = ({route}) => {
     if (!requireVehicleOrToast()) return;
     const order = data[currentOrderIndex];
     if (!order) return;
-
-    setSelectedOrder(order);
     changeStatusOrderAccept(order, 'accepted');
-    setIsAccepted(true);
-    setShowAcceptOrder(false);
-    setCurrentOrderIndex(null);
-    setIsNavOn(true);
-    setIsFollowing(true);
-    setFollowMode('course');
   }, [data, currentOrderIndex, requireVehicleOrToast]);
 
   const currentOrder =
     currentOrderIndex !== null ? data[currentOrderIndex] : null;
 
-  /* ────────────────────────────────────────────────────────────────────────
-     Destination coordinate
-     ──────────────────────────────────────────────────────────────────────── */
+  /* ───────── Destination ───────── */
   const senderCoordinate = useMemo(() => {
     if (!selectedOrder) return null;
     const lng =
@@ -658,9 +699,7 @@ const HomeMainScreen = ({route}) => {
     selectedOrder?.receiver_latitude,
   ]);
 
-  /* ────────────────────────────────────────────────────────────────────────
-     Route fetching + init progress
-     ──────────────────────────────────────────────────────────────────────── */
+  /* ───────── Route fetching + init progress ───────── */
   const resetRoute = () => {
     setRouteCoords([]);
     setRouteSteps([]);
@@ -670,107 +709,135 @@ const HomeMainScreen = ({route}) => {
     setTraveledFeature(null);
     setRemainingFeature(null);
     progressIdxRef.current = 0;
+    lastOnRoutePointRef.current = null;
     if (abortRef.current) abortRef.current.abort();
   };
-
   const buildLineFeature = coords =>
     coords && coords.length >= 2
       ? {type: 'Feature', geometry: {type: 'LineString', coordinates: coords}}
       : null;
 
-  const fetchRoute = useCallback(async (from, to) => {
-    if (abortRef.current) abortRef.current.abort();
-    const controller = new AbortController();
-    abortRef.current = controller;
+  const fetchRoute = useCallback(
+    async (from, to) => {
+      if (abortRef.current) abortRef.current.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
+      try {
+        showToast('Fetch route....');
+        const profile =
+          config?.selectVehicle?.vehicle_type === 'bicycle' ||
+          config?.selectVehicle?.vehicle_type === 'e_bicycle' ||
+          config?.selectVehicle?.vehicle_type === 'moped'
+            ? 'cycling'
+            : 'driving';
 
-    try {
-      showToast(t('fetchRoute'));
-      const url =
-        `https://api.mapbox.com/directions/v5/mapbox/driving/` +
-        `${from[0]},${from[1]};${to[0]},${to[1]}` +
-        `?geometries=geojson&overview=full&steps=true&banner_instructions=true&voice_instructions=false&language=en&access_token=${MAPBOX_TOKEN}`;
+        const url =
+          `https://api.mapbox.com/directions/v5/mapbox/${profile}/` +
+          `${from[0]},${from[1]};${to[0]},${to[1]}` +
+          `?geometries=geojson&overview=full&steps=true&banner_instructions=true&voice_instructions=false&language=en&access_token=${MAPBOX_TOKEN}`;
 
-      const res = await fetch(url, {signal: controller.signal});
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json();
+        const res = await fetch(url, {signal: controller.signal});
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
 
-      const route = json?.routes?.[0];
-      const geom = route?.geometry;
-      const steps = route?.legs?.[0]?.steps || [];
-      const duration = route?.duration || 0;
-      const distance = route?.distance || 0;
+        const route = json?.routes?.[0];
+        const geom = route?.geometry;
+        const steps = route?.legs?.[0]?.steps || [];
+        const duration = route?.duration || 0;
+        const distance = route?.distance || 0;
 
-      if (geom && !controller.signal.aborted) {
-        const coords = (geom.coordinates || [])
-          .map(c => normalizeCoord(c))
-          .filter(Boolean);
+        if (geom && !controller.signal.aborted) {
+          const coords = (geom.coordinates || [])
+            .map(c => normalizeCoord(c))
+            .filter(Boolean);
 
-        setRouteCoords(coords);
-        setRouteSteps(steps);
-        setRouteDurationSec(duration);
-        setRouteDistanceM(distance);
-        setBanner({primary: '', distance: 0});
-        progressIdxRef.current = 0;
+          setRouteCoords(coords);
+          setRouteSteps(steps);
+          setRouteDurationSec(duration);
+          setRouteDistanceM(distance);
+          setBanner({primary: '', distance: 0});
+          progressIdxRef.current = 0;
 
-        const userLL = userLocRef.current || normalizeCoord(cameraRef.current);
-        if (userLL) {
-          const {idx, point} = closestOnPolyline(userLL, coords);
-          progressIdxRef.current = idx;
-          const traveled = coords.slice(0, idx + 1);
-          traveled[traveled.length - 1] = point;
-          const remaining = [point, ...coords.slice(idx + 1)];
-          setTraveledFeature(buildLineFeature(traveled));
-          setRemainingFeature(buildLineFeature(remaining));
-        } else {
-          setTraveledFeature(null);
-          setRemainingFeature(buildLineFeature(coords));
+          const userLL =
+            userLocRef.current || normalizeCoord(cameraRef.current);
+          if (userLL) {
+            const {idx, point} = closestOnPolyline(userLL, coords);
+            progressIdxRef.current = idx;
+            const traveled = coords.slice(0, idx + 1);
+            traveled[traveled.length - 1] = point;
+            const remaining = [point, ...coords.slice(idx + 1)];
+            setTraveledFeature(buildLineFeature(traveled));
+            setRemainingFeature(buildLineFeature(remaining));
+            lastOnRoutePointRef.current = point;
+          } else {
+            setTraveledFeature(null);
+            setRemainingFeature(buildLineFeature(coords));
+            lastOnRoutePointRef.current = coords[0];
+          }
         }
+      } catch (e) {
+        // silent
+      } finally {
+        if (abortRef.current === controller) abortRef.current = null;
       }
-    } catch (e) {
-      // silent
-    } finally {
-      if (abortRef.current === controller) abortRef.current = null;
-    }
-  }, []);
+    },
+    [config?.selectVehicle?.vehicle_type],
+  );
+
+  const guardedFetchRoute = useCallback(
+    async (from, to) => {
+      if (!isAccepted || !isFollowing) return;
+      const now = Date.now();
+      if (now - (lastFetchAtRef.current || 0) < REROUTE_COOLDOWN_MS) return;
+      const newLeg = {from, to};
+      if (sameLegClose(lastLegRef.current, newLeg)) return;
+      await fetchRoute(from, to);
+      lastFetchAtRef.current = Date.now();
+      lastLegRef.current = newLeg;
+    },
+    [fetchRoute, isAccepted, isFollowing],
+  );
 
   useEffect(() => {
     if (!hasLocPerm) return;
-
     if (!selectedOrder || !isAccepted || !isFollowing) {
       resetRoute();
       return;
     }
-
     const from = normalizeCoord(userLocRef.current || cameraRef.current);
     const to = normalizeCoord(senderCoordinate);
     if (!from || !to) return;
-
-    fetchRoute(from, to);
+    guardedFetchRoute(from, to);
   }, [
     hasLocPerm,
     isAccepted,
-    isFollowing, // follow state gates routing now
+    isFollowing,
     selectedOrder?.id,
     senderCoordinate,
-    fetchRoute,
+    guardedFetchRoute,
   ]);
 
-  /* ────────────────────────────────────────────────────────────────────────
-     Live progress on user updates
-     ──────────────────────────────────────────────────────────────────────── */
+  useEffect(() => {
+    lastLegRef.current = {from: null, to: null};
+    lastFetchAtRef.current = 0;
+  }, [selectedOrder?.id, senderCoordinate?.[0], senderCoordinate?.[1]]);
+
+  /* ───────── Live progress + banner ───────── */
   const updateBannerAndSteps = useCallback(
     userLL => {
       if (!routeSteps.length) return;
       const idx = Math.min(progressIdxRef.current, routeSteps.length - 1);
       const currentStep = routeSteps[idx];
-      const nextPt = stepManeuverLngLat(currentStep);
+      const nextLoc = currentStep?.maneuver?.location;
+      const nextPt =
+        Array.isArray(nextLoc) && nextLoc.length === 2
+          ? normalizeCoord(nextLoc)
+          : null;
       if (!nextPt) return;
       const d = Math.max(0, Math.round(haversineMeters(userLL, nextPt)));
-      if (d < 30 && idx < routeSteps.length - 1) {
+      if (d < 30 && idx < routeSteps.length - 1)
         progressIdxRef.current = idx + 1;
-      }
-      const primary = stepPrimaryText(currentStep);
-      setBanner({primary, distance: d});
+      setBanner({primary: stepPrimaryText(currentStep), distance: d});
     },
     [routeSteps],
   );
@@ -788,78 +855,134 @@ const HomeMainScreen = ({route}) => {
 
       setTraveledFeature(buildLineFeature(traveled));
       setRemainingFeature(buildLineFeature(remaining));
+
+      lastOnRoutePointRef.current = point;
     },
     [routeCoords],
   );
 
+  /* ───────── USER LOCATION: updates icon + immediate 30m jump ───────── */
   const onUserLocation = useCallback(
-    location => {
+    async location => {
       if (!location?.coords) return;
-      const {latitude, longitude} = location.coords;
+      const {latitude, longitude, heading, course} = location.coords;
       const userLL = [round5(longitude), round5(latitude)];
       if (userLL[0] == null || userLL[1] == null) return;
 
+      // keep state for the vehicle icon
+      setUserCoordState(userLL);
+
+      // heading (smoothed) -> rotate vehicle icon
+      let hdg = toNum(heading);
+      if (hdg == null || !Number.isFinite(hdg)) hdg = toNum(course);
+      if ((hdg == null || hdg === 0) && lastLLRef.current) {
+        const dist = haversineMeters(lastLLRef.current, userLL);
+        if (dist > 1) hdg = bearingAB(lastLLRef.current, userLL);
+      }
+      if (hdg != null && Number.isFinite(hdg)) {
+        const smoothed = smoothHeading(
+          headingRef.current ?? normDeg(hdg),
+          normDeg(hdg),
+        );
+        headingRef.current = smoothed;
+        setUserHeadingDeg(smoothed);
+        if (!isFollowing) setBearing(smoothed);
+      }
+      lastLLRef.current = userLL;
       userLocRef.current = userLL;
 
-      // If not following, softly recenter on significant move
       const last = cameraRef.current;
       const movedEnough =
         !last ||
         Math.abs(userLL[0] - last[0]) > 0.0005 ||
         Math.abs(userLL[1] - last[1]) > 0.0005;
-
-      if (!isFollowing && movedEnough) {
-        setCamera(userLL);
-      }
+      if (!isFollowing && movedEnough) setCamera(userLL);
 
       if (isFollowing && routeCoords.length > 1) {
         updateRouteProgress(userLL);
         updateBannerAndSteps(userLL);
       }
+
+      // immediate jump check
+      try {
+        if (isAccepted && senderCoordinate && routeCoords?.length >= 2) {
+          if (!lastOnRoutePointRef.current) {
+            const {point} = closestOnPolyline(userLL, routeCoords);
+            lastOnRoutePointRef.current = point;
+          }
+          const dFromAnchor = haversineMeters(
+            userLL,
+            lastOnRoutePointRef.current,
+          );
+          if (dFromAnchor > OFFROUTE_JUMP_M) {
+            await fetchRoute(userLL, senderCoordinate);
+            lastFetchAtRef.current = Date.now();
+            lastLegRef.current = {from: userLL, to: senderCoordinate};
+          }
+        }
+      } catch {}
     },
     [
       isFollowing,
       routeCoords.length,
       updateRouteProgress,
       updateBannerAndSteps,
+      isAccepted,
+      senderCoordinate,
+      fetchRoute,
     ],
   );
 
-  /* ────────────────────────────────────────────────────────────────────────
-     Off-route & reroute
-     ──────────────────────────────────────────────────────────────────────── */
+  /* ───────── Periodic off-route (safety net) ───────── */
   useEffect(() => {
-    if (!remainingFeature?.geometry || !routeSteps.length) return;
+    if (!routeSteps.length) return;
     const id = setInterval(() => {
-      const userLL = normalizeCoord(cameraRef.current);
+      const userLL = userLocRef.current;
       if (!userLL) return;
-      const idx = Math.min(progressIdxRef.current, routeSteps.length - 1);
-      const nextPt = stepManeuverLngLat(routeSteps[idx]);
-      if (!nextPt) return;
-      const d = haversineMeters(userLL, nextPt);
-      if (d > 60) setOffRoute(true);
-    }, 3000);
-    return () => clearInterval(id);
-  }, [remainingFeature?.geometry, routeSteps]);
+      if (appStateRef.current !== 'active') return;
 
-  useEffect(() => {
-    if (!offRoute || !selectedOrder || !isAccepted || !isFollowing) return;
-    const from = normalizeCoord(cameraRef.current);
-    const to = senderCoordinate;
-    if (from && to) fetchRoute(from, to);
-    setOffRoute(false);
+      let d = Infinity;
+      const anchor = lastOnRoutePointRef.current;
+      if (anchor) {
+        d = haversineMeters(userLL, anchor);
+      } else if (remainingFeature?.geometry?.coordinates?.length >= 2) {
+        const {point} = closestOnPolyline(
+          userLL,
+          remainingFeature.geometry.coordinates,
+        );
+        d = haversineMeters(userLL, point);
+      } else if (routeCoords?.length >= 2) {
+        const {point} = closestOnPolyline(userLL, routeCoords);
+        d = haversineMeters(userLL, point);
+      }
+      if (!Number.isFinite(d)) return;
+
+      if (d > OFFROUTE_DISTANCE_M) {
+        if (!offRouteSinceRef.current) offRouteSinceRef.current = Date.now();
+        const elapsed = Date.now() - offRouteSinceRef.current;
+        if (elapsed >= OFFROUTE_PERSIST_MS) {
+          const to = senderCoordinate;
+          if (to) {
+            lastFetchAtRef.current = 0;
+            lastLegRef.current = {from: null, to: null};
+            guardedFetchRoute(userLL, to);
+          }
+          offRouteSinceRef.current = null;
+        }
+      } else {
+        offRouteSinceRef.current = null;
+      }
+    }, 2000);
+    return () => clearInterval(id);
   }, [
-    offRoute,
-    isAccepted,
-    isFollowing,
-    selectedOrder?.id,
+    routeSteps,
+    remainingFeature?.geometry,
+    routeCoords,
     senderCoordinate,
-    fetchRoute,
+    guardedFetchRoute,
   ]);
 
-  /* ────────────────────────────────────────────────────────────────────────
-     Background location post
-     ──────────────────────────────────────────────────────────────────────── */
+  /* ───────── Background location post ───────── */
   const locationInFlightRef = useRef(false);
   const postLocation = useCallback(async () => {
     if (!config?.selectVehicle?.id) return;
@@ -867,12 +990,14 @@ const HomeMainScreen = ({route}) => {
     const cam = cameraRef.current;
     const norm = normalizeCoord(cam);
     if (!norm) return;
-
+    const dir =
+      headingRef.current != null ? Math.round(headingRef.current) : null;
     locationInFlightRef.current = true;
     try {
       await sendData(urls.UPDATELOCATION, {
         longitude: norm[0],
         latitude: norm[1],
+        heading: dir,
         vehicle_id: config?.selectVehicle?.id,
       });
     } catch {
@@ -880,7 +1005,6 @@ const HomeMainScreen = ({route}) => {
       locationInFlightRef.current = false;
     }
   }, [config?.selectVehicle?.id]);
-
   useEffect(() => {
     const first = setTimeout(postLocation, 3000);
     const id = setInterval(postLocation, LOCATION_UPDATE_MS);
@@ -890,19 +1014,17 @@ const HomeMainScreen = ({route}) => {
     };
   }, [postLocation]);
 
-  /* ────────────────────────────────────────────────────────────────────────
-     Center on my location FAB — robust snap
-     ──────────────────────────────────────────────────────────────────────── */
+  /* ───────── Center-on-me FAB ───────── */
   const getOneShotGPS = () =>
     new Promise(resolve => {
       Geolocation.getCurrentPosition(
         pos => {
           const {latitude, longitude} = pos.coords || {};
-          if (latitude != null && longitude != null) {
-            resolve([round5(longitude), round5(latitude)]);
-          } else {
-            resolve(null);
-          }
+          resolve(
+            latitude != null && longitude != null
+              ? [round5(longitude), round5(latitude)]
+              : null,
+          );
         },
         () => resolve(null),
         {enableHighAccuracy: true, timeout: 5000, maximumAge: 0},
@@ -911,17 +1033,11 @@ const HomeMainScreen = ({route}) => {
 
   const onPressMyLocation = useCallback(async () => {
     if (!mapReady) return;
-
-    let target = userLocRef.current;
-    if (!target) {
-      target = await getOneShotGPS(); // fallback if puck not ready
-    }
+    let target = userCoordState || userLocRef.current;
+    if (!target) target = await getOneShotGPS();
     if (!target) return;
 
-    // 1) turn follow OFF so imperative centering is respected
     setIsFollowing(false);
-
-    // 2) center the camera
     requestAnimationFrame(() => {
       camRef.current?.setCamera({
         followUserLocation: false,
@@ -931,22 +1047,33 @@ const HomeMainScreen = ({route}) => {
         animationDuration: 250,
       });
 
-      // 3) re-enable follow to keep tracking the user
-      setTimeout(() => {
+      setTimeout(async () => {
         setFollowMode('course');
         setIsFollowing(true);
+
+        const to = senderCoordinate;
+        if (to && isAccepted) {
+          lastFetchAtRef.current = 0;
+          lastLegRef.current = {from: null, to: null};
+          const from = normalizeCoord(target);
+          if (from) await guardedFetchRoute(from, to);
+        }
       }, 280);
     });
-  }, [mapReady]);
+  }, [
+    mapReady,
+    isAccepted,
+    senderCoordinate,
+    guardedFetchRoute,
+    userCoordState,
+  ]);
 
   const userCoordMemo = useMemo(
     () => normalizeCoord(camera) ?? camera,
     [camera],
   );
 
-  /* ────────────────────────────────────────────────────────────────────────
-     Render
-     ──────────────────────────────────────────────────────────────────────── */
+  /* ───────── Render ───────── */
   return (
     <>
       {socketConnected && <View style={styles.socketStatusContainer} />}
@@ -970,8 +1097,7 @@ const HomeMainScreen = ({route}) => {
               zoomEnabled
               rotateEnabled
               style={styles.map}
-              onDidFinishLoadingMap={() => setMapReady(true)} // ✅ map ready
-            >
+              onDidFinishLoadingMap={() => setMapReady(true)}>
               {/* Remaining route (blue) */}
               {remainingFeature && (
                 <Mapbox.ShapeSource
@@ -981,7 +1107,7 @@ const HomeMainScreen = ({route}) => {
                     id="remainingLine"
                     style={{
                       lineColor: '#008CFF',
-                      lineWidth: 14,
+                      lineWidth: 15,
                       lineJoin: 'round',
                       lineCap: 'round',
                     }}
@@ -996,7 +1122,7 @@ const HomeMainScreen = ({route}) => {
                     id="traveledLine"
                     style={{
                       lineColor: '#A0A4AA',
-                      lineWidth: 10,
+                      lineWidth: 13,
                       lineJoin: 'round',
                       lineCap: 'round',
                     }}
@@ -1011,24 +1137,22 @@ const HomeMainScreen = ({route}) => {
                 </Mapbox.MarkerView>
               )}
 
-              {/* Live user location → updates progress */}
               <Mapbox.UserLocation
-                visible
+                visible={false}
                 showsUserHeadingIndicator
-                androidRenderMode="compass"
+                androidRenderMode="gps"
                 onUpdate={onUserLocation}
               />
 
-              {/* Camera now follows ONLY when isFollowing is true */}
               {isFollowing ? (
                 <Mapbox.Camera
                   ref={camRef}
                   followUserLocation
                   followUserMode={followMode}
-                  followZoomLevel={isNavOn ? 20 : 16}
-                  followPitch={isNavOn ? 55 : 0}
+                  followZoomLevel={isNavOn ? 17 : 15}
+                  followPitch={isNavOn ? 65 : 0}
                   animationMode="flyTo"
-                  animationDuration={500}
+                  animationDuration={1000}
                 />
               ) : (
                 <Mapbox.Camera
@@ -1041,8 +1165,29 @@ const HomeMainScreen = ({route}) => {
                 />
               )}
 
-              {/* Optional marker at camera center (no icon to avoid double marker) */}
-              <Mapbox.MarkerView coordinate={camera} />
+              {userCoordState && (
+                <Mapbox.MarkerView coordinate={userCoordState}>
+                  {config?.selectVehicle?.vehicle_type == 'bicycle' ||
+                  config?.selectVehicle?.vehicle_type == 'e_bicycle' ||
+                  config?.selectVehicle?.vehicle_type == 'moped' ? (
+                    <Image
+                      source={require('../../../../assets/image/motor.png')}
+                      style={{
+                        width: wp(8),
+                        height: hp(8),
+                      }}
+                    />
+                  ) : (
+                    <Image
+                      source={require('../../../../assets/image/car.png')}
+                      style={{
+                        width: wp(8),
+                        height: hp(8),
+                      }}
+                    />
+                  )}
+                </Mapbox.MarkerView>
+              )}
             </Mapbox.MapView>
           ) : (
             <View style={styles.map} />
@@ -1177,16 +1322,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     position: 'absolute',
   },
-  text: {
-    fontWeight: 'bold',
-    color: colors.white,
-    fontSize: wp(7),
-  },
-  mapWrap: {
-    flex: 1,
-    width: wp(100),
-    position: 'relative',
-  },
+  text: {fontWeight: 'bold', color: colors.white, fontSize: wp(7)},
+  mapWrap: {flex: 1, width: wp(100), position: 'relative'},
   map: {flex: 1, width: wp(100)},
   overlay: {
     position: 'absolute',

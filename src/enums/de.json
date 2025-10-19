@@ -69,5 +69,10 @@
   "emailNotVerify": "E-Mail nicht verifiziert",
   "rememberMe": "Angemeldet bleiben",
   "vat": "MwSt",
-  "fetchRoute": "Route wird abgerufen..."
+  "fetchRoute": "Route wird abgerufen...",
+  "googleLogin": "Mit Google anmelden",
+  "appleLogin": "Mit Apple anmelden",
+  "signUp": "Registrieren",
+  "pressBackTwoMoreTimesToExit": "Drücken Sie zweimal zurück, um zu beenden",
+  "pressBackOneMoreTimeToExit": "Drücken Sie einmal zurück, um zu beenden"
 }

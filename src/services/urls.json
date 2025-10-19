@@ -15,6 +15,8 @@
   "UPDATELOCATION": "rider/locations/update_location",
   "RIDERDETAIL": "rider/details",
   "UPDATEPACKAGESTATUS": "rider/status/update_delivery_to_person_status",
+  "SOCIALLOGIN": "user/social/auth/allauth/google/callback/app/",
+  "SOCIALLOGINAPPLE": "user/social/auth/allauth/apple/callback/app/",
 
   "SIGNUP": "Account/Add",
   "PROFILE": "Account/Get",

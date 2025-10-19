@@ -69,5 +69,10 @@
   "emailNotVerify": "ایمیل تأیید نشده است",
   "rememberMe": "مرا به خاطر بسپار",
   "vat": "مالیات",
-  "fetchRoute": "در حال دریافت مسیر..."
+  "fetchRoute": "در حال دریافت مسیر...",
+  "googleLogin": "ورود با گوگل",
+  "appleLogin": "ورود با اپل",
+  "signUp": "ثبت‌نام",
+  "pressBackTwoMoreTimesToExit": "برای خروج دو بار دیگر بازگشت را فشار دهید",
+  "pressBackOneMoreTimeToExit": "برای خروج یک بار دیگر بازگشت را فشار دهید"
 }

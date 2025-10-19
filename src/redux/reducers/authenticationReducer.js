@@ -32,8 +32,8 @@ export const authenticationSlice = createSlice({
             socketio: action.payload?.socketio,
             profile_image: action.payload?.profile_image,
             email_verified: action.payload?.email_verified,
-            is_rider: action.payload?.is_rider,
-            sender_panel_direct_login_url: action.payload?.sender_panel_direct_login_url,
+            is_rider: action.payload?.is_rider ? action.payload?.is_rider : false,
+            sender_panel_direct_login_url: action.payload?.sender_panel_direct_login_url ? action.payload?.sender_panel_direct_login_url :  `https://s.riderx.me/direct_login?token=${action.payload?.token}`,
          };
       },
       setUserProfile: (state, action) => {

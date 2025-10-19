@@ -69,5 +69,10 @@
   "emailNotVerify": "Email not verified",
   "rememberMe": "Remember me",
   "vat": "vat",
-  "fetchRoute": "Fetching route..."
+  "fetchRoute": "Fetching route...",
+  "googleLogin": "Login with Google",
+  "appleLogin": "Login with Apple",
+  "signUp": "Sign Up",
+  "pressBackTwoMoreTimesToExit": "Press back two more times to exit",
+  "pressBackOneMoreTimeToExit": "Press back one more time to exit"
 }
