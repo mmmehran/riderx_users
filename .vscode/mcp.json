@@ -1,0 +1,8 @@
+{
+  "servers": {
+    "Sentry": {
+      "url": "https://mcp.sentry.dev/mcp/peaktowertech/riderx_mobile_app",
+      "type": "http"
+    }
+  }
+}

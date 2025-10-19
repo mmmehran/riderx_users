@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "224724744593",
+    "project_id": "riderx-8a327",
+    "storage_bucket": "riderx-8a327.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:224724744593:android:ee0eb553ed73b1bccac230",
+        "android_client_info": {
+          "package_name": "com.riderx"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAnqLYc0aNs3vk_ZNRWal1Et7owQbKWlNg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
