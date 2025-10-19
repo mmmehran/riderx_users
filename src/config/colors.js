@@ -16,6 +16,9 @@ const mainColors = {
     neonYellowLight:"#FFFDE7",
     neonYellow:"#FFE710",
     neutral900:"#1A1A1A",
+    neutral200:"#E1E1E1",
+    neutral400:"#9B9B9B",
+    neonTeal400:"#00CDB5",
 
 
     screenBackGround: "#FEFEFE",

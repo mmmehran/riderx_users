@@ -26,6 +26,7 @@ import notifee, {
 import Geolocation from '@react-native-community/geolocation';
 import messaging from '@react-native-firebase/messaging';
 import {useTranslation} from 'react-i18next';
+import LinearGradient from 'react-native-linear-gradient';
 
 import AcceptOrderModal from '../../../modal/AcceptOrderModal';
 import AcceptedOrderModal from '../../../modal/AcceptedOrderModal';
@@ -33,7 +34,7 @@ import CancelModal from '../../../modal/CancelModal';
 
 import {LocationPin, LocationPin1} from '../../../../assets/svg/index';
 import CustomHeader from '../../../components/custom/CustomHeader';
-import CustomBottomTab from '../../../components/custom/CustomBottomTab';
+import CustomAvailableRider from '../../../components/custom/CustomAvailableRider';
 import {getData, sendData} from '../../../services/common.service';
 import urls from '../../../services/urls.json';
 import errorHandler from '../../../utils/errorHandler';
@@ -49,7 +50,10 @@ import {
   authenticated,
 } from '../../../redux/reducers/authenticationReducer';
 import {connectSocket, on, disconnectSocket} from '../../../services/socket';
-import {selectConfig} from '../../../redux/reducers/configReducer';
+import {
+  selectConfig,
+  setSelectVehicle,
+} from '../../../redux/reducers/configReducer';
 import ConfirmModal from '../../../modal/ConfirmModal';
 import ConfirmCancelDeliveryModal from '../../../modal/ConfirmCancelDeliveryModal';
 import routes from '../../../navigation/routes';
@@ -1073,6 +1077,37 @@ const HomeMainScreen = ({route}) => {
     [camera],
   );
 
+  const updateVehicleStatus = async () => {
+    const response = await sendData(urls.UPDATESTATUSVEHICLE, {
+      id: config?.selectVehicle?.id,
+      on_status: config?.selectVehicle?.on_status == 'on' ? 'off' : 'on',
+    });
+    if (response?.data?.status) {
+      getVehicleStatus();
+    } else {
+      errorHandler(response);
+    }
+  };
+
+  const getVehicleStatus = async () => {
+    const response = await getData(
+      `${urls.GETVEHICLEDETAIL}?id=${config?.selectVehicle?.id}`,
+    );
+    if (response?.data?.status) {
+      dispatch(setSelectVehicle(response?.data?.data));
+    } else {
+      errorHandler(response);
+    }
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      if (config?.selectVehicle) {
+        getVehicleStatus();
+      }
+    }, []),
+  );
+
   /* ───────── Render ───────── */
   return (
     <>
@@ -1082,113 +1117,120 @@ const HomeMainScreen = ({route}) => {
           styles.container,
           isAndroid15Plus && {marginBottom: hp(insets.bottom * 0.11)},
         ]}>
-        <CustomHeader
-          onRefreshPress={() => {
-            if (selectedOrder || showAcceptOrder) return;
-            getDeliveryLists();
-          }}
-        />
+        <CustomHeader onRefreshPress={onPressMyLocation} />
 
         <View style={styles.mapWrap}>
           {hasLocPerm ? (
-            <Mapbox.MapView
-              key={mapMountKey}
-              styleURL="mapbox://styles/mapbox/streets-v12"
-              zoomEnabled
-              rotateEnabled
-              style={styles.map}
-              onDidFinishLoadingMap={() => setMapReady(true)}>
-              {/* Remaining route (blue) */}
-              {remainingFeature && (
-                <Mapbox.ShapeSource
-                  id="remainingSource"
-                  shape={remainingFeature}>
-                  <Mapbox.LineLayer
-                    id="remainingLine"
-                    style={{
-                      lineColor: '#008CFF',
-                      lineWidth: 15,
-                      lineJoin: 'round',
-                      lineCap: 'round',
-                    }}
+            <>
+              <Mapbox.MapView
+                key={mapMountKey}
+                styleURL={Mapbox.StyleURL.TrafficDay}
+                zoomEnabled
+                rotateEnabled
+                style={styles.map}
+                onDidFinishLoadingMap={() => setMapReady(true)}>
+                {/* Remaining route (blue) */}
+                {remainingFeature && (
+                  <Mapbox.ShapeSource
+                    id="remainingSource"
+                    shape={remainingFeature}>
+                    <Mapbox.LineLayer
+                      id="remainingLine"
+                      style={{
+                        lineColor: '#008CFF',
+                        lineWidth: 15,
+                        lineJoin: 'round',
+                        lineCap: 'round',
+                      }}
+                    />
+                  </Mapbox.ShapeSource>
+                )}
+
+                {/* Traveled route (gray) */}
+                {traveledFeature && (
+                  <Mapbox.ShapeSource
+                    id="traveledSource"
+                    shape={traveledFeature}>
+                    <Mapbox.LineLayer
+                      id="traveledLine"
+                      style={{
+                        lineColor: '#A0A4AA',
+                        lineWidth: 13,
+                        lineJoin: 'round',
+                        lineCap: 'round',
+                      }}
+                    />
+                  </Mapbox.ShapeSource>
+                )}
+
+                {/* Destination pin */}
+                {senderCoordinate && (
+                  <Mapbox.MarkerView coordinate={senderCoordinate}>
+                    <LocationPin width={wp(8)} height={wp(8)} />
+                  </Mapbox.MarkerView>
+                )}
+
+                <Mapbox.UserLocation
+                  visible={false}
+                  showsUserHeadingIndicator
+                  androidRenderMode="gps"
+                  onUpdate={onUserLocation}
+                />
+
+                {isFollowing ? (
+                  <Mapbox.Camera
+                    ref={camRef}
+                    followUserLocation
+                    followUserMode={followMode}
+                    followZoomLevel={isNavOn ? 17 : 15}
+                    followPitch={isNavOn ? 65 : 0}
+                    animationMode="flyTo"
+                    animationDuration={1000}
                   />
-                </Mapbox.ShapeSource>
-              )}
-
-              {/* Traveled route (gray) */}
-              {traveledFeature && (
-                <Mapbox.ShapeSource id="traveledSource" shape={traveledFeature}>
-                  <Mapbox.LineLayer
-                    id="traveledLine"
-                    style={{
-                      lineColor: '#A0A4AA',
-                      lineWidth: 13,
-                      lineJoin: 'round',
-                      lineCap: 'round',
-                    }}
+                ) : (
+                  <Mapbox.Camera
+                    ref={camRef}
+                    centerCoordinate={camera}
+                    zoomLevel={13}
+                    bearing={bearing}
+                    animationMode="flyTo"
+                    animationDuration={800}
                   />
-                </Mapbox.ShapeSource>
-              )}
+                )}
 
-              {/* Destination pin */}
-              {senderCoordinate && (
-                <Mapbox.MarkerView coordinate={senderCoordinate}>
-                  <LocationPin width={wp(8)} height={wp(8)} />
-                </Mapbox.MarkerView>
-              )}
-
-              <Mapbox.UserLocation
-                visible={false}
-                showsUserHeadingIndicator
-                androidRenderMode="gps"
-                onUpdate={onUserLocation}
+                {userCoordState && (
+                  <Mapbox.MarkerView coordinate={userCoordState}>
+                    {config?.selectVehicle?.vehicle_type == 'bicycle' ||
+                    config?.selectVehicle?.vehicle_type == 'e_bicycle' ||
+                    config?.selectVehicle?.vehicle_type == 'moped' ? (
+                      <Image
+                        source={require('../../../../assets/image/motor.png')}
+                        style={{
+                          width: wp(8),
+                          height: hp(8),
+                        }}
+                      />
+                    ) : (
+                      <Image
+                        source={require('../../../../assets/image/car.png')}
+                        style={{
+                          width: wp(8),
+                          height: hp(8),
+                        }}
+                      />
+                    )}
+                  </Mapbox.MarkerView>
+                )}
+              </Mapbox.MapView>
+              <LinearGradient
+                pointerEvents="none"
+                colors={['#fff', 'transparent']}
+                locations={[0, 0.6, 1]}
+                start={{x: 0.5, y: 0}}
+                end={{x: 0.5, y: 2}}
+                style={styles.topFade}
               />
-
-              {isFollowing ? (
-                <Mapbox.Camera
-                  ref={camRef}
-                  followUserLocation
-                  followUserMode={followMode}
-                  followZoomLevel={isNavOn ? 17 : 15}
-                  followPitch={isNavOn ? 65 : 0}
-                  animationMode="flyTo"
-                  animationDuration={1000}
-                />
-              ) : (
-                <Mapbox.Camera
-                  ref={camRef}
-                  centerCoordinate={camera}
-                  zoomLevel={13}
-                  bearing={bearing}
-                  animationMode="flyTo"
-                  animationDuration={800}
-                />
-              )}
-
-              {userCoordState && (
-                <Mapbox.MarkerView coordinate={userCoordState}>
-                  {config?.selectVehicle?.vehicle_type == 'bicycle' ||
-                  config?.selectVehicle?.vehicle_type == 'e_bicycle' ||
-                  config?.selectVehicle?.vehicle_type == 'moped' ? (
-                    <Image
-                      source={require('../../../../assets/image/motor.png')}
-                      style={{
-                        width: wp(8),
-                        height: hp(8),
-                      }}
-                    />
-                  ) : (
-                    <Image
-                      source={require('../../../../assets/image/car.png')}
-                      style={{
-                        width: wp(8),
-                        height: hp(8),
-                      }}
-                    />
-                  )}
-                </Mapbox.MarkerView>
-              )}
-            </Mapbox.MapView>
+            </>
           ) : (
             <View style={styles.map} />
           )}
@@ -1208,11 +1250,6 @@ const HomeMainScreen = ({route}) => {
               </View>
             ) : null}
           </View>
-
-          {/* Center-on-me */}
-          <TouchableOpacity onPress={onPressMyLocation} style={styles.fab}>
-            <LocationPin1 width={wp(6)} height={wp(6)} />
-          </TouchableOpacity>
         </View>
 
         {config?.selectVehicle?.on_status == 'off' && (
@@ -1220,7 +1257,10 @@ const HomeMainScreen = ({route}) => {
             <CustomText style={styles.text}>{t('vehicleOff')}</CustomText>
           </View>
         )}
-        <CustomBottomTab />
+        <CustomAvailableRider
+          onAvailabilityChange={updateVehicleStatus}
+          toggleValue={config?.selectVehicle?.on_status == 'on'}
+        />
       </View>
 
       {/* Accept modal */}
@@ -1334,6 +1374,15 @@ const styles = StyleSheet.create({
     zIndex: 9999,
     pointerEvents: 'box-none',
   },
+  topFade: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: hp(10), // your requested fade height
+    zIndex: 10,
+  },
+
   banner: {
     position: 'absolute',
     top: hp(2.5),

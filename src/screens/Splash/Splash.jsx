@@ -13,8 +13,8 @@ const Splash = props => {
 
   useEffect(() => {
     setTimeout(() => {
-      // navigation.navigate(routes.MAINNAVIGATOR);
-      navigation.navigate(routes.ONBOARDING);
+      navigation.navigate(routes.MAINNAVIGATOR);
+      //navigation.navigate(routes.ONBOARDING);
     }, 4000);
   }, []);
 

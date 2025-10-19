@@ -81,5 +81,7 @@
   "onBoardingContent1": "Sign up in minutes, upload your documents, and take your first trip today. No waiting, no hassle.",
   "onBoardingContent2": "Set your own schedule, pick the routes you like, and earn exactly the way you want.",
   "onBoardingContent3": "Enjoy exclusive perks. from discounted vehicle insurance to meal deals at partner restaurants, plus many more rewards just for being a driver.",
-  "GetStarted": "Get Started"
+  "GetStarted": "Get Started",
+  "Unavailable": "Unavailable",
+  "Available": "Available"
 }

@@ -15,23 +15,7 @@ const CustomBottomTab = ({style}) => {
 
     return (
         <View style={[styles.container,style]}>
-            <View style={styles.left}>
-                <TouchableOpacity 
-                onPress={() => navigation.navigate(routes.CHOOSESERVICE)}
-                style={styles.button}>
-                   <ChooseService width={wp(20)} height={wp(20)} fill={colors.primary} />
-                </TouchableOpacity>
-            </View>
-            <View style={styles.center}>
-                <CustomText style={styles.text}>{t("findRide")}</CustomText>
-            </View>
-            <View style={styles.left}>
-                 <TouchableOpacity
-                    onPress={() => navigation.navigate(routes.CHOOSEVEHICLE)}
-                 style={styles.button}>
-                  <CarIcon width={wp(8)} height={wp(8)} fill={colors.primary} />
-                </TouchableOpacity>
-            </View>
+         
         </View>
     )
 }

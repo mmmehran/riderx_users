@@ -4,7 +4,7 @@ import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-nat
 import { useNavigation } from "@react-navigation/native";
 
 import colors from '../../config/colors';
-import { RefreshIcon,Menu } from '../../../assets/svg';
+import { RefreshIcon,Menu ,LocationPin1} from '../../../assets/svg';
 
 const CustomHeader = ({onRefreshPress}) => {
    const navigation = useNavigation();
@@ -13,16 +13,18 @@ const CustomHeader = ({onRefreshPress}) => {
         <View style={styles.container}>
             <View style={styles.left}>
                 <TouchableOpacity 
+                activeOpacity={0.6}
                 onPress={() => navigation.openDrawer()}
                 style={styles.button}>
-                   <Menu width={wp(6)} height={wp(6)} fill={colors.primary} />
+                   <Menu width={wp(5.5)} height={wp(5.5)}/>
                 </TouchableOpacity>
             </View>
             <View style={styles.left}>
                  <TouchableOpacity
+                                 activeOpacity={0.6}
                  onPress={onRefreshPress}
                  style={styles.button}>
-                  <RefreshIcon width={wp(6)} height={wp(6)} fill={colors.primary} />
+                  <LocationPin1 width={wp(5.5)} height={wp(5.5)} />
                 </TouchableOpacity>
             </View>
         </View>
@@ -38,20 +40,22 @@ const styles = StyleSheet.create({
         height: hp(6),
         marginVertical:hp(1),
         position: 'absolute',
-        top: hp(5),
+        top: hp(3.5),
         zIndex:9999
     },
     left: {
         justifyContent: 'center',
         alignItems: 'center',
-        marginHorizontal: wp(33),
+        marginHorizontal: wp(35),
     },
     button: {
-       width: wp(12),
-        height:wp(12),
+       width: wp(10.5),
+        height:wp(10.5),
         justifyContent: 'center',
         alignItems: 'center',
-        borderRadius: wp(20),
+        borderRadius: wp(2),
         backgroundColor: colors.white,
+        borderColor:colors.neutral200,
+        borderWidth:wp(0.4)
     },
 });
