@@ -4,7 +4,9 @@ import { createSlice } from "@reduxjs/toolkit";
 const initialStateObject = {
    allTypes: null,
    userProfile: null,
-   selectVehicle:null
+   selectVehicle:null,
+   socketStatus:false,
+   seeOnboarding:false
 
 };
 
@@ -20,6 +22,12 @@ export const configSlice = createSlice({
             allTypes: action.payload,
          };
       },
+      setSocketStatus: (state, action) => {
+         return {
+            ...state,
+            socketStatus: action.payload,
+         };
+      },
       setUserProfile: (state, action) => {
          return {
             ...state,
@@ -32,8 +40,20 @@ export const configSlice = createSlice({
             selectVehicle: action.payload,
          };
       },
+      setSeeOnboarding: (state) => {
+         return {
+            ...state,
+            seeOnboarding: true
+         };
+      },
       logouConfig: () => {
-         return initialStateObject
+           return {
+           allTypes: null,
+           userProfile: null,
+           selectVehicle:null,
+           socketStatus:false,
+           seeOnboarding:true
+         };
       },
    },
 });
@@ -42,7 +62,9 @@ export const {
    setAllTypes,
    logouConfig,
    setUserProfile,
-   setSelectVehicle
+   setSelectVehicle,
+   setSocketStatus,
+   setSeeOnboarding
 } = configSlice.actions;
 
 export default configSlice.reducer;

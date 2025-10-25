@@ -19,6 +19,11 @@ const mainColors = {
     neutral200:"#E1E1E1",
     neutral400:"#9B9B9B",
     neonTeal400:"#00CDB5",
+    neonTeal300:"#00E0C6",
+    contentSecondary:"#414141",
+    successBase:"#1FC16B",
+    success900:"#2D912E",
+    strong900:"#0E121B",
 
 
     screenBackGround: "#FEFEFE",

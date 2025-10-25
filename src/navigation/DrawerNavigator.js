@@ -24,7 +24,7 @@ const DrawerNavigator = () => {
             screenOptions={{
                 headerShown: false,
                 drawerStyle: {
-                    width: wp(80),
+                    width: wp(90),
                     backgroundColor: colors.screen
                 },
                 drawerPosition: "left",

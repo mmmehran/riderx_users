@@ -13,6 +13,7 @@ import {
 } from 'react-native-responsive-screen';
 import {useNavigation} from '@react-navigation/native';
 import {useTranslation} from 'react-i18next';
+import {useDispatch} from 'react-redux';
 
 import routes from '../../navigation/routes';
 import colors from '../../config/colors';
@@ -23,6 +24,7 @@ import {
   ArrowRight,
 } from '../../../assets/svg/index';
 import CustomText from '../../components/common/CustomText';
+import {setSeeOnboarding} from '../../redux/reducers/configReducer';
 
 const OnBoardingScreen = () => {
   const navigation = useNavigation();
@@ -51,6 +53,7 @@ const OnBoardingScreen = () => {
 
   const [index, setIndex] = useState(0);
   const progress = useRef(new Animated.Value(0)).current;
+  const dispatch = useDispatch();
 
   const goTo = next => {
     Animated.timing(progress, {
@@ -65,7 +68,10 @@ const OnBoardingScreen = () => {
   const onNext = () => {
     const next = index + 1;
     if (next < data.length) goTo(next);
-    else navigation.replace(routes.HOMEMAIN ?? routes.LOGIN ?? routes.AUTHMAIN);
+    else {
+      navigation.replace(routes.HOMEMAIN ?? routes.LOGIN ?? routes.AUTHMAIN);
+      dispatch(setSeeOnboarding());
+    }
   };
 
   const PAGE = wp(100);

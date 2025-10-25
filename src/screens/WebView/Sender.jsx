@@ -32,11 +32,11 @@ export default function Sender({route}) {
     <View style={styles.container}>
       <SafeAreaView style={styles.screen}>
         <View style={{flex: 1}}>
-          {user?.sender_panel_direct_login_url && (
+          {user?.social_auth_callback_url && (
             <WebView
               key="only-web"
               style={{flex: 1}}
-              source={{uri: user?.sender_panel_direct_login_url}}
+              source={{uri: user?.social_auth_callback_url}}
               javaScriptEnabled
               onMessage={onMessage}
               domStorageEnabled

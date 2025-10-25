@@ -5,16 +5,23 @@ import {
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
 import {useNavigation} from '@react-navigation/native';
+import {useSelector} from 'react-redux';
+
 import routes from '../../navigation/routes';
 import colors from '../../config/colors';
+import {selectConfig} from '../../redux/reducers/configReducer';
 
 const Splash = props => {
   const navigation = useNavigation();
+  const config = useSelector(selectConfig);
 
   useEffect(() => {
     setTimeout(() => {
-      navigation.navigate(routes.MAINNAVIGATOR);
-      //navigation.navigate(routes.ONBOARDING);
+      if (config?.seeOnboarding) {
+        navigation.navigate(routes.MAINNAVIGATOR);
+      } else {
+        navigation.navigate(routes.ONBOARDING);
+      }
     }, 4000);
   }, []);
 

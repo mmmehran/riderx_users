@@ -40,3 +40,8 @@ export { default as Onboarding1 } from "./onboarding1.svg";
 export { default as Onboarding2 } from "./onboarding2.svg";
 export { default as Onboarding3 } from "./onboarding3.svg";
 export { default as ArrowRight } from "./arrowRight.svg";
+export { default as ArrowLeft1 } from "./arrowLeft1.svg";
+export { default as TickYellow } from "./tickYellow.svg";
+export { default as Star2 } from "./star2.svg";
+export { default as WalletIcon } from "./walletIcon.svg";
+export { default as ArrowRightWhite } from "./arrowRightWhite.svg";

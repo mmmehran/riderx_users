@@ -35,6 +35,13 @@ import {
 } from '../../redux/reducers/configReducer';
 import i18n from '../../utils/i18n';
 import {version} from '../../../package.json';
+import {
+  ArrowLeft1,
+  TickYellow,
+  Star2,
+  WalletIcon,
+  ArrowRightWhite,
+} from '../../../assets/svg/index';
 
 const LANGS = [
   {code: 'en', label: 'English', rtl: false},
@@ -50,6 +57,7 @@ const LoginEmail = props => {
   const user = useSelector(authenticated);
   const config = useSelector(selectConfig);
 
+  console.log(config?.socketStatus);
   const [langModal, setLangModal] = useState(false);
 
   useFocusEffect(
@@ -136,51 +144,52 @@ const LoginEmail = props => {
 
   return (
     <CustomScreen>
+      <View style={styles.left}>
+        <TouchableOpacity
+          activeOpacity={0.6}
+          onPress={() => props?.navigation.closeDrawer()}
+          style={styles.button}>
+          <ArrowLeft1 width={wp(3.5)} height={wp(3.5)}></ArrowLeft1>
+        </TouchableOpacity>
+        <CustomText style={styles.backText}>{t('back')}</CustomText>
+      </View>
       <View style={styles.container}>
         <View style={styles.profileContainer}>
           <View style={styles.imageContainer}>
             <Image
               source={{uri: user?.profile_image}}
-              style={{width: wp(15), height: wp(15)}}
+              style={{width: wp(15), height: wp(15), borderRadius: wp(50)}}
             />
-          </View>
-          <View style={styles.textContainer}>
-            <CustomText numberOfLines={2} style={styles.text}>
-              {user?.userProfile?.first_name} {user?.userProfile?.last_name}
-            </CustomText>
-            <View style={styles.row}>
-              <CustomText
-                numberOfLines={1}
-                style={[
-                  styles.text,
-                  {
-                    marginLeft: wp(0),
-                    marginTop: hp(-0.5),
-                    fontSize: wp(3.6),
-                    width: wp(35),
-                  },
-                ]}>
-                {user?.email}
+            <View style={styles.tickContainer}>
+              <TickYellow width={wp(8)} height={wp(8)}></TickYellow>
+            </View>
+            <View style={styles.rowStatus}>
+              <View style={styles.statusContainer}></View>
+              <CustomText style={styles.textStatus}>
+                {config?.socketStatus ? t('online') : t('offline')}
               </CustomText>
             </View>
           </View>
-
-          <TouchableOpacity
-            onPress={updateVehicleStatus}
-            style={[
-              styles.stopButton,
-              config?.selectVehicle?.on_status !== 'on'
-                ? {backgroundColor: colors.success}
-                : {backgroundColor: '#CD2C2C'},
-            ]}>
-            <CustomText style={styles.textButton}>
-              {config?.selectVehicle?.on_status == 'on'
-                ? t('stop')
-                : t('start')}
-            </CustomText>
-          </TouchableOpacity>
         </View>
-
+        <View style={styles.textContainer}>
+          <CustomText numberOfLines={1} style={styles.text}>
+            {user?.userProfile?.first_name} {user?.userProfile?.last_name}
+          </CustomText>
+          <View style={styles.rowStar}>
+            <Star2 width={wp(5)} height={wp(5)}></Star2>
+            <CustomText style={styles.starText}>4.5</CustomText>
+          </View>
+        </View>
+        <View style={styles.walletContainer}>
+          <WalletIcon width={wp(8)} height={wp(8)}></WalletIcon>
+          <View>
+            <CustomText style={styles.priceText}>$39.00</CustomText>
+            <CustomText style={styles.walletText}>{t('yourWallet')}</CustomText>
+          </View>
+          <View style={styles.iconWallet}>
+            <ArrowRightWhite></ArrowRightWhite>
+          </View>
+        </View>
         <View style={styles.rowContainer}>
           {data.map(item => (
             <TouchableOpacity
@@ -251,6 +260,80 @@ const styles = StyleSheet.create({
     height: hp(7.5),
     marginVertical: hp(1),
   },
+  walletContainer: {
+    width: wp(80),
+    height: hp(6.5),
+    backgroundColor: colors.neutral900,
+    marginLeft: wp(5),
+    borderRadius: wp(2),
+    marginTop: hp(1),
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingLeft: wp(2.5),
+  },
+  iconWallet: {
+    flex: 1,
+    alignItems: 'flex-end',
+    marginRight: wp(3),
+  },
+  tickContainer: {
+    position: 'absolute',
+    right: wp(-2.5),
+    top: 0,
+  },
+  statusContainer: {
+    width: wp(4.2),
+    height: wp(4.2),
+    backgroundColor: colors.successBase,
+    borderRadius: wp(20),
+    borderWidth: wp(0.8),
+    borderColor: colors.white,
+  },
+  rowStatus: {
+    position: 'absolute',
+    right: wp(-12),
+    top: hp(4.5),
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  backText: {
+    fontFamily: 'YaldeviJaffna-Bold',
+    color: colors.contentSecondary,
+    marginLeft: wp(2),
+    fontSize: wp(4.8),
+  },
+  priceText: {
+    fontFamily: 'YaldeviJaffna-Bold',
+    color: colors.neonTeal300,
+    marginLeft: wp(2),
+    fontSize: wp(4.5),
+  },
+  walletText: {
+    color: colors.white,
+    marginLeft: wp(2),
+    fontSize: wp(3),
+  },
+  textStatus: {
+    fontFamily: 'YaldeviJaffna-Bold',
+    color: colors.success900,
+    marginLeft: wp(0.5),
+    fontSize: wp(4),
+  },
+  left: {
+    flexDirection: 'row',
+    marginLeft: wp(5),
+    alignItems: 'center',
+  },
+  button: {
+    width: wp(7.5),
+    height: wp(7.5),
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: wp(2),
+    backgroundColor: colors.white,
+    borderColor: colors.neutral200,
+    borderWidth: wp(0.4),
+  },
   buttonBottom: {
     width: wp(35),
     height: wp(35),
@@ -276,19 +359,22 @@ const styles = StyleSheet.create({
     width: wp(15),
     height: wp(15),
     backgroundColor: colors.grayLight,
-    borderRadius: wp(50),
     marginRight: wp(2),
-    overflow: 'hidden',
+    borderRadius: wp(50),
   },
-  container: {overflow: 'hidden', flex: 1},
+  container: {flex: 1},
   profileContainer: {
-    marginTop: hp(4),
+    marginTop: hp(2),
     alignItems: 'center',
-    marginHorizontal: wp(4),
+    marginLeft: wp(5),
     flexDirection: 'row',
   },
   row: {flexDirection: 'row-reverse', alignItems: 'center', marginTop: hp(1)},
-  text: {fontSize: wp(5), color: colors.black, fontWeight: '800'},
+  text: {
+    fontSize: wp(7),
+    color: colors.black,
+    fontFamily: 'YaldeviJaffna-Bold',
+  },
   stopButton: {
     width: wp(18),
     height: wp(11),
@@ -296,7 +382,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  textContainer: {width: wp(36), alignItems: 'flex-start', marginRight: wp(2)},
+  textContainer: {
+    width: wp(70),
+    alignItems: 'center',
+    marginRight: wp(2),
+    marginLeft: wp(5),
+    marginTop: hp(1),
+    flexDirection: 'row',
+  },
+  rowStar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: wp(1.5),
+  },
+  starText: {
+    color: colors.strong900,
+    marginLeft: wp(0.5),
+  },
   textButton: {fontSize: wp(4.5), color: colors.black, fontWeight: '900'},
   langContainer: {
     flex: 1,

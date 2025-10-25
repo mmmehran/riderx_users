@@ -53,6 +53,7 @@ import {connectSocket, on, disconnectSocket} from '../../../services/socket';
 import {
   selectConfig,
   setSelectVehicle,
+  setSocketStatus,
 } from '../../../redux/reducers/configReducer';
 import ConfirmModal from '../../../modal/ConfirmModal';
 import ConfirmCancelDeliveryModal from '../../../modal/ConfirmCancelDeliveryModal';
@@ -295,6 +296,10 @@ const HomeMainScreen = ({route}) => {
       };
     }, [t]),
   );
+
+  useEffect(() => {
+    dispatch(setSocketStatus(socketConnected));
+  }, [socketConnected]);
 
   /* ───────── Sockets (unchanged from your version) ───────── */
   useEffect(() => {
@@ -1111,7 +1116,6 @@ const HomeMainScreen = ({route}) => {
   /* ───────── Render ───────── */
   return (
     <>
-      {socketConnected && <View style={styles.socketStatusContainer} />}
       <View
         style={[
           styles.container,
@@ -1124,7 +1128,7 @@ const HomeMainScreen = ({route}) => {
             <>
               <Mapbox.MapView
                 key={mapMountKey}
-                styleURL={Mapbox.StyleURL.TrafficDay}
+                styleURL={Mapbox.StyleURL.Light}
                 zoomEnabled
                 rotateEnabled
                 style={styles.map}
