@@ -70,7 +70,6 @@ const OnBoardingScreen = () => {
     if (next < data.length) goTo(next);
     else {
       navigation.replace(routes.HOMEMAIN ?? routes.LOGIN ?? routes.AUTHMAIN);
-      dispatch(setSeeOnboarding());
     }
   };
 
@@ -105,6 +104,7 @@ const OnBoardingScreen = () => {
   };
 
   const onDone = () => {
+    dispatch(setSeeOnboarding());
     navigation.navigate(routes.MAINNAVIGATOR);
   };
 

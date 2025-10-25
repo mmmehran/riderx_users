@@ -24,8 +24,8 @@ const styles = StyleSheet.create({
     },
     text: {
         fontSize: wp(2.9),
-        color: colors.red,
+        color: colors.error900,
         lineHeight: hp(1.7),
-        fontFamily: "Poppins-Medium",
+    fontFamily: 'YaldeviJaffna-Bold',
     }
 });

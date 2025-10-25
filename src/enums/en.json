@@ -87,5 +87,14 @@
   "back": "Back",
   "online": "Online",
   "offline": "Offline",
-  "yourWallet": "Your Wallet"
+  "yourWallet": "Your Wallet",
+  "enterYourPhoneOrEmail": "Enter your phone number or Email",
+  "enterYourPassword": "Enter your password",
+  "enterPhoneOrEmail": "Enter phone number or Email",
+  "Continue": "Continue",
+  "forgetPassword": "Forget password?",
+  "or": "OR",
+  "dontAccount": "Don't have an account?",
+  "register": "Register",
+  "appVersion": "App version:"
 }

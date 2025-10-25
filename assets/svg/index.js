@@ -45,3 +45,5 @@ export { default as TickYellow } from "./tickYellow.svg";
 export { default as Star2 } from "./star2.svg";
 export { default as WalletIcon } from "./walletIcon.svg";
 export { default as ArrowRightWhite } from "./arrowRightWhite.svg";
+export { default as PersonIcon } from "./personIcon.svg";
+export { default as KeyboardIcon } from "./keyboardIcon.svg";
