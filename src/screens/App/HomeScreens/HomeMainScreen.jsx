@@ -32,7 +32,7 @@ import AcceptOrderModal from '../../../modal/AcceptOrderModal';
 import AcceptedOrderModal from '../../../modal/AcceptedOrderModal';
 import CancelModal from '../../../modal/CancelModal';
 
-import {LocationPin, LocationPin1} from '../../../../assets/svg/index';
+import {LocationPin, Update} from '../../../../assets/svg/index';
 import CustomHeader from '../../../components/custom/CustomHeader';
 import CustomAvailableRider from '../../../components/custom/CustomAvailableRider';
 import {getData, sendData} from '../../../services/common.service';
@@ -1105,13 +1105,11 @@ const HomeMainScreen = ({route}) => {
     }
   };
 
-  useFocusEffect(
-    useCallback(() => {
-      if (config?.selectVehicle) {
-        getVehicleStatus();
-      }
-    }, []),
-  );
+  useEffect(() => {
+    if (config?.selectVehicle) {
+      getVehicleStatus();
+    }
+  }, []);
 
   /* ───────── Render ───────── */
   return (
@@ -1261,6 +1259,12 @@ const HomeMainScreen = ({route}) => {
             <CustomText style={styles.text}>{t('vehicleOff')}</CustomText>
           </View>
         )}
+        <TouchableOpacity
+          activeOpacity={0.6}
+          onPress={getLastDelivery}
+          style={styles.button1}>
+          <Update width={wp(5)} height={wp(5)}></Update>
+        </TouchableOpacity>
         <CustomAvailableRider
           onAvailabilityChange={updateVehicleStatus}
           toggleValue={config?.selectVehicle?.on_status == 'on'}
@@ -1356,6 +1360,19 @@ const styles = StyleSheet.create({
     backgroundColor: colors.success,
     zIndex: 9999,
     borderRadius: wp(20),
+  },
+  button1: {
+    width: wp(10.5),
+    height: wp(10.5),
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: wp(2),
+    backgroundColor: colors.white,
+    borderColor: colors.neutral200,
+    borderWidth: wp(0.4),
+    position: 'absolute',
+    right: wp(4),
+    bottom: hp(9),
   },
   vehicleStatus: {
     backgroundColor: colors.red,

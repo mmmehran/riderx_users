@@ -46,6 +46,15 @@ const ChooseVehicle = props => {
     setLoading(false);
   };
 
+  const getVehicleStatus = async value => {
+    const response = await getData(`${urls.GETVEHICLEDETAIL}?id=${value}`);
+    if (response?.data?.status) {
+      dispatch(setSelectVehicle(response?.data?.data));
+    } else {
+      errorHandler(response);
+    }
+  };
+
   useFocusEffect(
     useCallback(() => {
       getVehicle();
@@ -58,7 +67,7 @@ const ChooseVehicle = props => {
       on_status: 'off',
     });
     if (response?.data?.status) {
-      dispatch(setSelectVehicle(value));
+      getVehicleStatus(value?.id);
     } else {
       errorHandler(response);
     }

@@ -96,5 +96,16 @@
   "or": "OR",
   "dontAccount": "Don't have an account?",
   "register": "Register",
-  "appVersion": "App version:"
+  "appVersion": "App version:",
+  "currenctVehicle": "Current Vehicle:",
+  "MyAccount": "My Account",
+  "InviteFriends": "Invite Friends",
+  "tripHistory": "Trip History",
+  "VehicleInfo": "Vehicle Info",
+  "FindRide": "Find Ride",
+  "Services": "Services",
+  "DriverClub": "Driver Club",
+  "FAQ&AboutUs": "FAQ & About Us",
+  "DriverApp": "Driver app",
+  "UserApp": "User app"
 }
