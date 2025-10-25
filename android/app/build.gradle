@@ -83,9 +83,10 @@ android {
         applicationId "com.riderx"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 39
-        versionName "1.2.7"
+        versionCode 42
+        versionName "1.2.9"
     }
+    
     signingConfigs {
         debug {
             storeFile file('debug.keystore')
@@ -104,6 +105,13 @@ android {
             signingConfig signingConfigs.debug
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
+        }
+    }
+
+      packaging {
+        jniLibs {
+            // keep .so uncompressed so 16 KB alignment is preserved
+            useLegacyPackaging = false
         }
     }
 }
