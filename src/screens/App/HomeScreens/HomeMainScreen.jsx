@@ -1274,11 +1274,8 @@ const HomeMainScreen = ({route}) => {
       {/* Accept modal */}
       {currentOrder?.status === 'created' && showAcceptOrder && !isAccepted && (
         <AcceptOrderModal
-          insets={insets}
           key={currentOrder?.id ?? currentOrderIndex}
-          isVisible={showAcceptOrder}
           order={currentOrder}
-          onClose={handleNextOrder}
           onAccept={handleAcceptOrder}
           userCoord={userCoordMemo}
           pickUpTime={value => setPickUpTimeUpdate(value)}

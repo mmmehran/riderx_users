@@ -60,3 +60,6 @@ export { default as Services } from "./services.svg";
 export { default as DriverClub } from "./driverClub.svg";
 export { default as Faq } from "./faq.svg";
 export { default as Update } from "./update.svg";
+export { default as AddressLine } from "./addressLine.svg";
+export { default as BlueCircle } from "./blueCircle.svg";
+export { default as IconButton } from "./iconButton.svg";
