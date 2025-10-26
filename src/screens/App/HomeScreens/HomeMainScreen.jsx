@@ -31,6 +31,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import AcceptOrderModal from '../../../modal/AcceptOrderModal';
 import AcceptedOrderModal from '../../../modal/AcceptedOrderModal';
 import CancelModal from '../../../modal/CancelModal';
+import TinderCarousel from '../../../components/custom/TinderCarousel'; // << add this
 
 import {LocationPin, Update} from '../../../../assets/svg/index';
 import CustomHeader from '../../../components/custom/CustomHeader';
@@ -185,6 +186,7 @@ const HomeMainScreen = ({route}) => {
   const [isAccepted, setIsAccepted] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [pickUpTimeUpdate, setPickUpTimeUpdate] = useState(null);
+  const pickUpTimesRef = useRef(new Map()); // orderId -> mins (for Accept)
   const {t} = useTranslation();
 
   const [routeSteps, setRouteSteps] = useState([]);
@@ -301,7 +303,7 @@ const HomeMainScreen = ({route}) => {
     dispatch(setSocketStatus(socketConnected));
   }, [socketConnected]);
 
-  /* ───────── Sockets (unchanged from your version) ───────── */
+  /* ───────── Sockets (same as yours) ───────── */
   useEffect(() => {
     const rawUrl = user?.socketio;
     const {baseUrl, roomId} = parseSocketUrl(rawUrl);
@@ -612,6 +614,18 @@ const HomeMainScreen = ({route}) => {
     return true;
   }, [config?.selectVehicle?.id, navigation, t]);
 
+  // accept now takes an ORDER (from card)
+  const handleAcceptOrder = useCallback(
+    order => {
+      if (!requireVehicleOrToast()) return;
+      if (!order) return;
+      const mins = pickUpTimesRef.current.get(order.id);
+      if (mins != null) setPickUpTimeUpdate(mins);
+      changeStatusOrderAccept(order, 'accepted');
+    },
+    [requireVehicleOrToast],
+  );
+
   const handleNextOrder = useCallback(() => {
     if (isAccepted) {
       setShowAcceptOrder(false);
@@ -676,13 +690,6 @@ const HomeMainScreen = ({route}) => {
     }
     status !== 'cancel' && setLoadingChangeStatus(false);
   };
-
-  const handleAcceptOrder = useCallback(() => {
-    if (!requireVehicleOrToast()) return;
-    const order = data[currentOrderIndex];
-    if (!order) return;
-    changeStatusOrderAccept(order, 'accepted');
-  }, [data, currentOrderIndex, requireVehicleOrToast]);
 
   const currentOrder =
     currentOrderIndex !== null ? data[currentOrderIndex] : null;
@@ -870,7 +877,7 @@ const HomeMainScreen = ({route}) => {
     [routeCoords],
   );
 
-  /* ───────── USER LOCATION: updates icon + immediate 30m jump ───────── */
+  /* ───────── USER LOCATION updates ───────── */
   const onUserLocation = useCallback(
     async location => {
       if (!location?.coords) return;
@@ -878,10 +885,8 @@ const HomeMainScreen = ({route}) => {
       const userLL = [round5(longitude), round5(latitude)];
       if (userLL[0] == null || userLL[1] == null) return;
 
-      // keep state for the vehicle icon
       setUserCoordState(userLL);
 
-      // heading (smoothed) -> rotate vehicle icon
       let hdg = toNum(heading);
       if (hdg == null || !Number.isFinite(hdg)) hdg = toNum(course);
       if ((hdg == null || hdg === 0) && lastLLRef.current) {
@@ -912,7 +917,6 @@ const HomeMainScreen = ({route}) => {
         updateBannerAndSteps(userLL);
       }
 
-      // immediate jump check
       try {
         if (isAccepted && senderCoordinate && routeCoords?.length >= 2) {
           if (!lastOnRoutePointRef.current) {
@@ -942,7 +946,7 @@ const HomeMainScreen = ({route}) => {
     ],
   );
 
-  /* ───────── Periodic off-route (safety net) ───────── */
+  /* ───────── Off-route safety net ───────── */
   useEffect(() => {
     if (!routeSteps.length) return;
     const id = setInterval(() => {
@@ -1269,18 +1273,39 @@ const HomeMainScreen = ({route}) => {
           onAvailabilityChange={updateVehicleStatus}
           toggleValue={config?.selectVehicle?.on_status == 'on'}
         />
-      </View>
 
-      {/* Accept modal */}
-      {currentOrder?.status === 'created' && showAcceptOrder && !isAccepted && (
-        <AcceptOrderModal
-          key={currentOrder?.id ?? currentOrderIndex}
-          order={currentOrder}
-          onAccept={handleAcceptOrder}
-          userCoord={userCoordMemo}
-          pickUpTime={value => setPickUpTimeUpdate(value)}
-        />
-      )}
+        {/* Tinder-style Accept stack (only when not in active order) */}
+        {!isAccepted && data?.length > 0 && (
+          <View style={styles.tinderWrap} pointerEvents="box-none">
+            <TinderCarousel
+              data={data}
+              renderItem={({item}) => (
+                <AcceptOrderModal
+                  order={item}
+                  userCoord={userCoordMemo}
+                  onAccept={() => handleAcceptOrder(item)}
+                  pickUpTime={mins => pickUpTimesRef.current.set(item.id, mins)}
+                />
+              )}
+              // sizing & stack vibe
+              cardWidth={wp(100)}
+              cardHeight={hp(29)}
+              stackCount={2}
+              stackScale={0.94}
+              stackOffset={14}
+              // swiping: right = accept, left = dismiss (next)
+
+              onIndexChange={i => {
+                // when all cards gone, clear
+                if (i >= data.length) {
+                  setShowAcceptOrder(false);
+                  setCurrentOrderIndex(null);
+                }
+              }}
+            />
+          </View>
+        )}
+      </View>
 
       {/* Active order modal */}
       {selectedOrder && (
@@ -1397,7 +1422,7 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: hp(10), // your requested fade height
+    height: hp(10),
     zIndex: 10,
   },
 
@@ -1422,6 +1447,14 @@ const styles = StyleSheet.create({
     borderRadius: wp(6),
     backgroundColor: colors.white,
     justifyContent: 'center',
+    alignItems: 'center',
+  },
+  // Tinder deck container (sticks to bottom like your modal)
+  tinderWrap: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
     alignItems: 'center',
   },
 });
