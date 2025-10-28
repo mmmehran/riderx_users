@@ -1290,7 +1290,7 @@ const HomeMainScreen = ({route}) => {
               // sizing & stack vibe
               cardWidth={wp(100)}
               cardHeight={hp(29)}
-              stackCount={2}
+              stackCount={data?.length <= 4 ? Number(data?.length) : 4 ?? 0}
               stackScale={0.94}
               stackOffset={14}
               // swiping: right = accept, left = dismiss (next)
@@ -1372,7 +1372,12 @@ const HomeMainScreen = ({route}) => {
 export default HomeMainScreen;
 
 const styles = StyleSheet.create({
-  container: {flex: 1, justifyContent: 'center', alignItems: 'center'},
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: Platform.OS == 'android' ? hp(6) : hp(0),
+  },
   socketStatusContainer: {
     position: 'absolute',
     top: hp(3),
