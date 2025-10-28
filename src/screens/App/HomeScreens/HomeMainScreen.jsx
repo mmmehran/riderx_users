@@ -1274,10 +1274,21 @@ const HomeMainScreen = ({route}) => {
           toggleValue={config?.selectVehicle?.on_status == 'on'}
         />
 
-        {/* Tinder-style Accept stack (only when not in active order) */}
-        {!isAccepted && data?.length > 0 && (
+        {/* map overlay fade — colors & locations lengths must match */}
+        <LinearGradient
+          pointerEvents="none"
+          colors={['#fff', 'transparent']}
+          locations={[0, 1]} // ← fixed (2 values)
+          start={{x: 0.5, y: 0}}
+          end={{x: 0.5, y: 1}}
+          style={styles.topFade}
+        />
+
+        {/* Tinder-style Accept stack */}
+        {!isAccepted && showAcceptOrder && data.length > 0 && (
           <View style={styles.tinderWrap} pointerEvents="box-none">
             <TinderCarousel
+              key={`deck-${data[0]?.id ?? 'x'}-${data.length}`} // ← force remount
               data={data}
               renderItem={({item}) => (
                 <AcceptOrderModal
@@ -1287,16 +1298,12 @@ const HomeMainScreen = ({route}) => {
                   pickUpTime={mins => pickUpTimesRef.current.set(item.id, mins)}
                 />
               )}
-              // sizing & stack vibe
               cardWidth={wp(100)}
               cardHeight={hp(29)}
-              stackCount={data?.length <= 4 ? Number(data?.length) : 4 ?? 0}
+              stackCount={Math.min(4, data.length)}
               stackScale={0.94}
               stackOffset={14}
-              // swiping: right = accept, left = dismiss (next)
-
               onIndexChange={i => {
-                // when all cards gone, clear
                 if (i >= data.length) {
                   setShowAcceptOrder(false);
                   setCurrentOrderIndex(null);

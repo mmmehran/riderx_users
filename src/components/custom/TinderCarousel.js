@@ -1,5 +1,5 @@
 // components/TinderCarousel.js
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState, useEffect } from 'react';
 import { View, StyleSheet, Dimensions } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -13,7 +13,6 @@ import Animated, {
 } from 'react-native-reanimated';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
-
 const SWIPE_THRESHOLD = SCREEN_W * 0.28;
 const OFFSCREEN_X = SCREEN_W * 1.2;
 
@@ -22,7 +21,6 @@ function CardLayer({
   idx,
   layer,
   isTop,
-  cardWidth,
   cardHeight,
   tx,
   ty,
@@ -32,7 +30,6 @@ function CardLayer({
   swipeGesture,
   renderItem,
 }) {
-  // ✅ Recompute when isTop/layer/stackScale/stackOffset change
   const style = useAnimatedStyle(
     () => {
       if (isTop) {
@@ -54,13 +51,11 @@ function CardLayer({
           [0, -stackOffset * 0.2 * layer, -stackOffset * 0.35 * layer],
           Extrapolate.CLAMP
         );
-
       return {
         transform: [{ translateY: y }, { scale: s }],
         opacity: interpolate(Math.abs(tx.value), [0, SWIPE_THRESHOLD], [1, 0.96]),
       };
     },
-    // ← dependencies that are normal JS values used inside the worklet
     [isTop, layer, stackScale, stackOffset]
   );
 
@@ -68,7 +63,6 @@ function CardLayer({
     <Animated.View
       style={[
         styles.card,
-        // deck container controls width; card stretches to 100%
         { height: cardHeight, zIndex: 100 - layer },
         style,
       ]}
@@ -77,11 +71,7 @@ function CardLayer({
     </Animated.View>
   );
 
-  return isTop ? (
-    <GestureDetector gesture={swipeGesture}>{body}</GestureDetector>
-  ) : (
-    body
-  );
+  return isTop ? <GestureDetector gesture={swipeGesture}>{body}</GestureDetector> : body;
 }
 
 export default function TinderCarousel({
@@ -99,6 +89,14 @@ export default function TinderCarousel({
   const tx = useSharedValue(0);
   const ty = useSharedValue(0);
   const rot = useSharedValue(0);
+
+  // hard reset whenever the deck (length or first id) changes
+  useEffect(() => {
+    index.value = 0;
+    tx.value = 0;
+    ty.value = 0;
+    rot.value = 0;
+  }, [data.length, data?.[0]?.id]);
 
   const [, setTick] = useState(0);
   const bump = () => setTick(t => t + 1);
@@ -138,7 +136,6 @@ export default function TinderCarousel({
     .onEnd(() => {
       const dir = tx.value > 0 ? 'right' : 'left';
       const absX = Math.abs(tx.value);
-
       if (absX > SWIPE_THRESHOLD) {
         const finalX = dir === 'right' ? OFFSCREEN_X : -OFFSCREEN_X;
         tx.value = withTiming(finalX, { duration: 180 }, finished => {
@@ -165,7 +162,6 @@ export default function TinderCarousel({
   }, [data, stackCount, index.value]);
 
   return (
-    // ✅ Container sets exact width; cards stretch to 100%
     <View style={[styles.root, { height: cardHeight, width: cardWidth }]}>
       {stackItems
         .slice()
@@ -177,7 +173,6 @@ export default function TinderCarousel({
             idx={idx}
             layer={layer}
             isTop={layer === 0}
-            cardWidth={cardWidth}
             cardHeight={cardHeight}
             tx={tx}
             ty={ty}
@@ -195,7 +190,6 @@ export default function TinderCarousel({
 const styles = StyleSheet.create({
   root: {
     alignSelf: 'center',
-    // Important: let children stretch horizontally to container width
     alignItems: 'stretch',
     justifyContent: 'flex-start',
     overflow: 'visible',
@@ -203,7 +197,7 @@ const styles = StyleSheet.create({
   card: {
     position: 'absolute',
     left: 0,
-    right: 0,        // <-- width = 100% of container
+    right: 0, // stretch to container width
     borderRadius: 18,
     overflow: 'hidden',
     backgroundColor: '#42424291',
