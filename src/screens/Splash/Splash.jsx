@@ -1,5 +1,5 @@
 import React, {useEffect} from 'react';
-import {View, StyleSheet, ImageBackground} from 'react-native';
+import {View, StyleSheet, ImageBackground, Platform} from 'react-native';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
@@ -45,5 +45,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     color: colors.black,
+    marginBottom: Platform.OS == 'android' ? hp(12) : 0,
   },
 });
