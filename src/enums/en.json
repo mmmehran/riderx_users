@@ -110,5 +110,12 @@
   "UserApp": "User app",
   "price": "Price",
   "isSecure": "Secure pin",
-  "Accept": "Accept"
+  "Accept": "Accept",
+  "titleCancel": "Ride Cancelled by Passenger",
+  "gotIt": "Got it!",
+  "cancelContent": "The rider has cancelled the trip. No action is needed you will not be charged.",
+  "completeTrip": "Trip Completed!",
+  "goOnline": "Go Online",
+  "anamount": "An amount of",
+  "hasBeen": "has been added to your wallet."
 }

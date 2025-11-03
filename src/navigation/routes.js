@@ -13,7 +13,8 @@ export default Object.freeze({
     SENDER:"sender",
     CHOOSEVEHICLE:"chooseVehicle",
     SIGNUPSENDER:"signUpSender",
-    ONBOARDING:"onBoarding"
+    ONBOARDING:"onBoarding",
+    ORDERSTATUS:"orderStatus"
    
 
  

@@ -25,6 +25,42 @@ export const showToastWarning = (message, type = "warning") => {
     });
 }
 
+
+export const timeAgoShort = (isoString, now = new Date()) => {
+  // "2025-10-28T14:13:51.774352+01:00" -> "11 min ago"
+  // Normalize fractional seconds to max 3 digits so Date() parses reliably
+  const safe = isoString.replace(/(\.\d{3})\d+/, '$1');
+
+  const then = new Date(safe);
+  if (isNaN(then)) return ''; // invalid input
+
+  let diffMs = now - then; // positive => past, negative => future
+  const past = diffMs >= 0;
+  diffMs = Math.abs(diffMs);
+
+  const sec = Math.floor(diffMs / 1000);
+  if (sec < 60) return past ? `${sec}s ago` : `in ${sec}s`;
+
+  const min = Math.floor(sec / 60);
+  if (min < 60) return past ? `${min} min ago` : `in ${min} min`;
+
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return past ? `${hr} h ago` : `in ${hr} h`;
+
+  const day = Math.floor(hr / 24);
+  if (day < 7) return past ? `${day} d ago` : `in ${day} d`;
+
+  const wk = Math.floor(day / 7);
+  if (wk < 5) return past ? `${wk} wk ago` : `in ${wk} wk`;
+
+  const mo = Math.floor(day / 30);
+  if (mo < 12) return past ? `${mo} mo ago` : `in ${mo} mo`;
+
+  const yr = Math.floor(day / 365);
+  return past ? `${yr} yr ago` : `in ${yr} yr`;
+
+}
+
 export const isoWithOffsetPlusMinutes = (minutes = 0) => {
      const d = new Date(Date.now() + minutes * 60_000);
 

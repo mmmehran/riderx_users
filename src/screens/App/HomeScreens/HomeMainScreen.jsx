@@ -181,6 +181,8 @@ const HomeMainScreen = ({route}) => {
   const [confirmModalVisible, setConfirmModalVisible] = useState(false);
   const [confirmCancelModalVisible, setConfirmCancelModalVisible] =
     useState(false);
+  const [confirmCompleteModalVisible, setConfirmCompleteModalVisible] =
+    useState(false);
   const [cancelModalVisible, setCancelModalVisible] = useState(false);
   const [loadingChangeStatus, setLoadingChangeStatus] = useState(false);
   const [isAccepted, setIsAccepted] = useState(false);
@@ -209,6 +211,7 @@ const HomeMainScreen = ({route}) => {
   const [isFollowing, setIsFollowing] = useState(false);
   const [followMode, setFollowMode] = useState('course');
   const [bearing, setBearing] = useState(0);
+  const [completeOrderPrice, setCompleteOrderPrice] = useState(0);
 
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
@@ -314,6 +317,8 @@ const HomeMainScreen = ({route}) => {
     const offError = on('connect_error', () => setSocketConnected(false));
 
     const anyLogger = async (event, payload) => {
+      console.log(event);
+      console.log(payload);
       if (event === 'delivery_create_by_sender') {
         if (selectedOrderRef.current != null) return;
         const orders = [payload?.message].filter(Boolean);
@@ -676,13 +681,13 @@ const HomeMainScreen = ({route}) => {
           'address_not_found',
         ].includes(status)
       ) {
+        status === 'completed' && setCompleteOrderPrice(order?.rider_fee || 0);
         resetRoute();
         setSelectedOrder(null);
         setIsNavOn(false);
         setIsFollowing(false);
-        showToast(
-          status === 'completed' ? t('completeOrder') : t('cancelOrder'),
-        );
+        status !== 'completed' && showToast(t('cancelOrder'));
+        status === 'completed' && setConfirmCompleteModalVisible(true);
       }
     } else {
       errorHandler(response);
@@ -1140,7 +1145,7 @@ const HomeMainScreen = ({route}) => {
                     <Mapbox.LineLayer
                       id="remainingLine"
                       style={{
-                        lineColor: '#008CFF',
+                        lineColor: '#000',
                         lineWidth: 15,
                         lineJoin: 'round',
                         lineCap: 'round',
@@ -1157,7 +1162,7 @@ const HomeMainScreen = ({route}) => {
                     <Mapbox.LineLayer
                       id="traveledLine"
                       style={{
-                        lineColor: '#A0A4AA',
+                        lineColor: '#FFE710',
                         lineWidth: 13,
                         lineJoin: 'round',
                         lineCap: 'round',
@@ -1363,11 +1368,23 @@ const HomeMainScreen = ({route}) => {
 
       {/* Cancel delivery confirmation */}
       <ConfirmCancelDeliveryModal
-        title={t('cancelOrderContent')}
-        confirmText={t('confirmText')}
+        title={t('titleCancel')}
+        content={t('cancelContent')}
+        confirmText={t('gotIt')}
+        type={false}
         isVisible={confirmCancelModalVisible}
         onCancel={() => setConfirmCancelModalVisible(false)}
         onConfirm={() => setConfirmCancelModalVisible(false)}
+      />
+
+      <ConfirmCancelDeliveryModal
+        title={t('completeTrip')}
+        type={true}
+        content={`${t('anamount')} €${completeOrderPrice} ${t('hasBeen')}`}
+        confirmText={t('goOnline')}
+        isVisible={confirmCompleteModalVisible}
+        onCancel={() => setConfirmCompleteModalVisible(false)}
+        onConfirm={() => setConfirmCompleteModalVisible(false)}
       />
     </>
   );

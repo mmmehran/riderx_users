@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
     borderTopLeftRadius: wp(5),
     borderTopRightRadius: wp(5),
-    paddingBottom: hp(2.5),
+    paddingBottom: hp(1),
   },
   tagContainer: {
     flexDirection: 'row',
