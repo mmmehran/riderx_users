@@ -109,5 +109,6 @@
   "DriverApp": "Driver app",
   "UserApp": "User app",
   "price": "Price",
+  "isSecure": "Secure pin",
   "Accept": "Accept"
 }

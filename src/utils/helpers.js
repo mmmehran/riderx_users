@@ -67,6 +67,23 @@ export const formatDdMon = (iso) => {
   return `${String(d.getDate()).padStart(2,"0")} ${months[d.getMonth()]}`;
 }
 
+export const  normalizeLabel = (s = "") => {
+  // drop a leading boolean-y "is"/"has" (isSecure -> Secure, hasGPS -> GPS)
+  const dropped = s.replace(/^(is|has)(?=[A-Z_-\s])/i, "");
+
+  // split camelCase into words
+  const splitCamel = dropped.replace(/([a-z])([A-Z])/g, "$1 $2");
+
+  // unify separators to space
+  const spaced = splitCamel.replace(/[_-]+/g, " ").trim();
+
+  // title-case words, but keep all-caps (e.g., GPS) as-is
+  return spaced
+    .split(/\s+/)
+    .map(w => (/[A-Z]{2,}/.test(w) ? w : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()))
+    .join(" ");
+}
+
 
 export const convertDate = (isoString) => {
 

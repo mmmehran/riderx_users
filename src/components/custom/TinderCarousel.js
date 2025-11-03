@@ -200,6 +200,6 @@ const styles = StyleSheet.create({
     right: 0, // stretch to container width
     borderRadius: 18,
     overflow: 'hidden',
-    backgroundColor: '#42424291',
+    backgroundColor: '#424242da',
   },
 });

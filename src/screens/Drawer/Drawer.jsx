@@ -127,8 +127,16 @@ const LoginEmail = props => {
               <TickYellow width={wp(8)} height={wp(8)}></TickYellow>
             </View>
             <View style={styles.rowStatus}>
-              <View style={styles.statusContainer}></View>
-              <CustomText style={styles.textStatus}>
+              <View
+                style={[
+                  styles.statusContainer,
+                  !config?.socketStatus && {backgroundColor: colors.neutral400},
+                ]}></View>
+              <CustomText
+                style={[
+                  styles.textStatus,
+                  !config?.socketStatus && {color: colors.neutral300},
+                ]}>
                 {config?.socketStatus ? t('online') : t('offline')}
               </CustomText>
             </View>

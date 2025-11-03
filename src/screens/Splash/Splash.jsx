@@ -10,6 +10,7 @@ import {useSelector} from 'react-redux';
 import routes from '../../navigation/routes';
 import colors from '../../config/colors';
 import {selectConfig} from '../../redux/reducers/configReducer';
+import {isAndroid15Plus} from '../../utils/helpers';
 
 const Splash = props => {
   const navigation = useNavigation();
@@ -26,7 +27,7 @@ const Splash = props => {
   }, []);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, isAndroid15Plus && {marginBottom: hp(12)}]}>
       <ImageBackground
         style={{
           width: wp(100),
@@ -45,6 +46,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     color: colors.black,
-    marginBottom: Platform.OS == 'android' ? hp(12) : 0,
   },
 });

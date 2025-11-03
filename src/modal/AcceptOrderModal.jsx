@@ -11,7 +11,7 @@ import SwipeButton from 'rn-swipe-button';
 import colors from '../config/colors';
 import CustomText from '../components/common/CustomText';
 import {IconButton, AddressLine, BlueCircle} from '../../assets/svg/index';
-import {isAndroid15Plus} from '../utils/helpers';
+import {normalizeLabel} from '../utils/helpers';
 
 const MAPBOX_TOKEN =
   'pk.eyJ1IjoiYnl0ZWJyaWRnZXIiLCJhIjoiY21kZzVoNnU2MGlhcDJpcGVuNGV1amYxdyJ9.YMqlR9OovVOp-pm9yGK7eA';
@@ -140,7 +140,29 @@ const AcceptOrderModal = ({
           </View>
         </View>
         <View style={styles.line} />
-
+        <View style={styles.tagContainer}>
+          {order?.tags?.map(item => {
+            return (
+              <View style={styles.tagBox}>
+                <CustomText style={styles.textTag}>
+                  {normalizeLabel(item)}
+                </CustomText>
+              </View>
+            );
+          })}
+          {order?.need_special_equipment && (
+            <View style={styles.tagBox}>
+              <CustomText style={styles.textTag}>
+                {normalizeLabel(order?.need_special_equipment)}
+              </CustomText>
+            </View>
+          )}
+          {order?.is_secure && (
+            <View style={styles.tagBox}>
+              <CustomText style={styles.textTag}>{t('isSecure')}</CustomText>
+            </View>
+          )}
+        </View>
         <View style={styles.buttonWrapper}>
           <View style={{width: wp(21), alignItems: 'center'}}>
             <CustomText style={styles.textPrice} numberOfLines={1}>
@@ -181,10 +203,31 @@ export default memo(AcceptOrderModal);
 const styles = StyleSheet.create({
   container: {
     width: wp(100),
+    height: hp(25),
     backgroundColor: colors.white,
     borderTopLeftRadius: wp(5),
     borderTopRightRadius: wp(5),
     paddingBottom: hp(2.5),
+  },
+  tagContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginHorizontal: wp(4),
+    marginTop: hp(1),
+    height: hp(3.5),
+  },
+  textTag: {
+    color: colors.neutral700,
+    fontSize: wp(3.5),
+  },
+  tagBox: {
+    height: hp(3.5),
+    backgroundColor: colors.neutral100,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: wp(2),
+    paddingHorizontal: wp(2),
+    marginRight: wp(2),
   },
   buttonContainer: {
     borderRadius: wp(3),
@@ -202,7 +245,6 @@ const styles = StyleSheet.create({
     fontFamily: 'YaldeviJaffna-Bold',
     color: colors.black,
     width: wp(57),
-    fontSize: wp(3.5),
     marginTop: hp(0.54),
   },
   textTime: {
@@ -241,7 +283,7 @@ const styles = StyleSheet.create({
   },
   buttonWrapper: {
     marginHorizontal: wp(2),
-    marginTop: hp(1),
+    marginTop: hp(0.2),
     flexDirection: 'row',
     alignItems: 'center',
   },

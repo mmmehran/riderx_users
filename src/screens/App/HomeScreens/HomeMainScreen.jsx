@@ -1119,10 +1119,7 @@ const HomeMainScreen = ({route}) => {
   return (
     <>
       <View
-        style={[
-          styles.container,
-          isAndroid15Plus && {marginBottom: hp(insets.bottom * 0.11)},
-        ]}>
+        style={[styles.container, isAndroid15Plus && {marginBottom: hp(6)}]}>
         <CustomHeader onRefreshPress={onPressMyLocation} />
 
         <View style={styles.mapWrap}>
@@ -1299,7 +1296,7 @@ const HomeMainScreen = ({route}) => {
                 />
               )}
               cardWidth={wp(100)}
-              cardHeight={hp(29)}
+              cardHeight={hp(31.2)}
               stackCount={Math.min(4, data.length)}
               stackScale={0.94}
               stackOffset={14}
@@ -1383,7 +1380,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: Platform.OS == 'android' ? hp(6) : hp(0),
   },
   socketStatusContainer: {
     position: 'absolute',

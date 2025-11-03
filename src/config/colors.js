@@ -22,6 +22,7 @@ const mainColors = {
     neutral400:"#9B9B9B",
     neutral600:"#525252",
     neutral500:"#707070",
+    neutral700:"#3D3D3D",
     neonTeal500:"#00B49F",
     neonTeal400:"#00CDB5",
     neonTeal300:"#00E0C6",
