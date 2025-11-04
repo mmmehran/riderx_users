@@ -263,7 +263,7 @@ const styles = StyleSheet.create({
     width: wp(80),
     height: hp(5.5),
     backgroundColor: colors.neutral100,
-    marginBottom: hp(6),
+    marginBottom: hp(2),
     marginLeft: wp(4),
     borderRadius: wp(3),
     flexDirection: 'row',

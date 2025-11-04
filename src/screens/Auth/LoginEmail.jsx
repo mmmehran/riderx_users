@@ -408,7 +408,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: hp(5),
+    marginBottom: hp(1),
   },
   line: {
     height: wp(0.3),

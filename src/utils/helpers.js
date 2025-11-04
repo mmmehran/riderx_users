@@ -5,7 +5,7 @@ import { Platform } from 'react-native';
 
 export const isAndroid = Platform.OS === 'android';
 export const apiLevel = isAndroid ? Number(Platform.Version) : 0;
-export const isAndroid15Plus = isAndroid && apiLevel === 35;
+export const isAndroid15Plus = isAndroid && apiLevel >= 35;
 
 
 export const showError = (text) => {
