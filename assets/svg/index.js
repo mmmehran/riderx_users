@@ -71,3 +71,4 @@ export { default as PinLocation } from "./pinLocation.svg";
 export { default as ClockIcon } from "./clockIcon.svg";
 export { default as CancelIcon1 } from "./cancelIcon1.svg";
 export { default as TickIcon } from "./tickIcon.svg";
+export { default as CancelIcon2 } from "./cancelIcon2.svg";

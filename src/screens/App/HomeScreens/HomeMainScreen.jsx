@@ -191,7 +191,6 @@ const HomeMainScreen = ({route}) => {
   const pickUpTimesRef = useRef(new Map()); // orderId -> mins (for Accept)
   const {t} = useTranslation();
 
-  console.log(showAcceptOrder);
   const [routeSteps, setRouteSteps] = useState([]);
   const [routeDistanceM, setRouteDistanceM] = useState(0);
   const [routeDurationSec, setRouteDurationSec] = useState(0);
@@ -652,7 +651,7 @@ const HomeMainScreen = ({route}) => {
     }
   }, [isAccepted, currentOrderIndex, data.length]);
 
-  const changeStatusOrderAccept = async (order, status, pin) => {
+  const changeStatusOrderAccept = async (order, status, pin, valueResoan) => {
     status !== 'cancel' && setLoadingChangeStatus(true);
     const response = await sendData(urls.CHANGESTATUSORDER, {
       vehicle_id: config?.selectVehicle?.id,
@@ -663,6 +662,7 @@ const HomeMainScreen = ({route}) => {
         status == 'accepted'
           ? isoWithOffsetPlusMinutes(pickUpTimeUpdate)
           : null,
+      description: valueResoan,
     });
 
     if (response?.data?.status) {
@@ -1347,8 +1347,8 @@ const HomeMainScreen = ({route}) => {
       {/* Cancel reasons modal */}
       <CancelModal
         isVisible={cancelModalVisible}
-        onSelectReason={reasonKey => {
-          changeStatusOrderAccept(selectedOrder, reasonKey);
+        onSelectReason={(reasonKey, text) => {
+          changeStatusOrderAccept(selectedOrder, reasonKey, null, text);
           setCancelModalVisible(false);
         }}
         onClose={() => setCancelModalVisible(false)}

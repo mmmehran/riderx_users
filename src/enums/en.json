@@ -117,5 +117,9 @@
   "completeTrip": "Trip Completed!",
   "goOnline": "Go Online",
   "anamount": "An amount of",
-  "hasBeen": "has been added to your wallet."
+  "hasBeen": "has been added to your wallet.",
+  "cancelRide": "Cancel Ride",
+  "cancelContent1": "This job is already accepted. Provide a clear reason (required). Canceling now may result in a 1–80% fee refund, deducted from your earnings.",
+  "NextStep": "Next Step",
+  "tellUs": "Tell us why!"
 }
