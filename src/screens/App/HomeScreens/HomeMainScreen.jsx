@@ -191,6 +191,7 @@ const HomeMainScreen = ({route}) => {
   const pickUpTimesRef = useRef(new Map()); // orderId -> mins (for Accept)
   const {t} = useTranslation();
 
+  console.log(showAcceptOrder);
   const [routeSteps, setRouteSteps] = useState([]);
   const [routeDistanceM, setRouteDistanceM] = useState(0);
   const [routeDurationSec, setRouteDurationSec] = useState(0);
@@ -317,10 +318,10 @@ const HomeMainScreen = ({route}) => {
     const offError = on('connect_error', () => setSocketConnected(false));
 
     const anyLogger = async (event, payload) => {
-      console.log(event);
-      console.log(payload);
       if (event === 'delivery_create_by_sender') {
         if (selectedOrderRef.current != null) return;
+        setCurrentOrderIndex(null);
+        setShowAcceptOrder(false);
         const orders = [payload?.message].filter(Boolean);
         setData(orders);
         if (orders.length > 0) {
@@ -584,6 +585,8 @@ const HomeMainScreen = ({route}) => {
     }
   };
   const getDeliveryLists = async () => {
+    setCurrentOrderIndex(null);
+    setShowAcceptOrder(false);
     const response = await getData(
       `${urls.GETLISTDELIVERY}?page=1&status=created`,
     );
@@ -1267,7 +1270,7 @@ const HomeMainScreen = ({route}) => {
         )}
         <TouchableOpacity
           activeOpacity={0.6}
-          onPress={getLastDelivery}
+          onPress={getDeliveryLists}
           style={styles.button1}>
           <Update width={wp(5)} height={wp(5)}></Update>
         </TouchableOpacity>

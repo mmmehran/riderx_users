@@ -24,7 +24,7 @@ import {
   MessageIcon1,
 } from '../../assets/svg/index';
 import {openGoogleMaps} from '../utils/googleMapsNavigator';
-import {normalizeLabel, timeAgoShort} from '../utils/helpers';
+import {normalizeLabel, timeAgoShort, isAndroid15Plus} from '../utils/helpers';
 
 const AcceptedOrderModal = ({order, changeOrder, loading, insets}) => {
   const {t} = useTranslation();
@@ -69,7 +69,8 @@ const AcceptedOrderModal = ({order, changeOrder, loading, insets}) => {
 
   return (
     <View style={styles.modal}>
-      <View style={[styles.container]}>
+      <View
+        style={[styles.container, isAndroid15Plus && {marginBottom: hp(6)}]}>
         <View style={styles.userContainer}>
           <View style={styles.imageContainer}></View>
           <View>
