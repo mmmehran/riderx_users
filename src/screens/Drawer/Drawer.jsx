@@ -154,7 +154,8 @@ const LoginEmail = props => {
         <View style={styles.rowVehicle}>
           <TouchableOpacity
             activeOpacity={0.6}
-            onPress={() => props?.navigation.closeDrawer()}
+            //  onPress={() => props?.navigation.closeDrawer()}
+            onPress={() => logOutUser()}
             style={[
               styles.button,
               {

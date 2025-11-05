@@ -29,6 +29,10 @@ export const addContentTypeJson = () => {
    instanceWithAuthorization.defaults.headers.post["Content-Type"] = "application/json"
 };
 
+export const addContentTypeJsonAuth = () => {
+   instance.defaults.headers.post["Accept"] = "application/json"
+};
+
 
 
 //updates authorization token in request header, this function is called whenever we refresh access token

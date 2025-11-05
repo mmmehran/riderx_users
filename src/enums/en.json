@@ -89,7 +89,9 @@
   "offline": "Offline",
   "yourWallet": "Your Wallet",
   "enterYourPhoneOrEmail": "Enter your phone number or Email",
+  "enterYourNewPassword": "Enter your new password",
   "enterYourPassword": "Enter your password",
+  "enterYourConfirmPassword": "Enter your confirm password",
   "enterPhoneOrEmail": "Enter phone number or Email",
   "Continue": "Continue",
   "forgetPassword": "Forget password?",
@@ -121,5 +123,10 @@
   "cancelRide": "Cancel Ride",
   "cancelContent1": "This job is already accepted. Provide a clear reason (required). Canceling now may result in a 1–80% fee refund, deducted from your earnings.",
   "NextStep": "Next Step",
-  "tellUs": "Tell us why!"
+  "tellUs": "Tell us why!",
+  "verificationContnet": "Hay, We had send you code number by",
+  "Verification": "Verification",
+  "dontrecieve": "Don't receive a code?",
+  "resend": "Resend",
+  "reset": "Reset"
 }

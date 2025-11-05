@@ -72,3 +72,4 @@ export { default as ClockIcon } from "./clockIcon.svg";
 export { default as CancelIcon1 } from "./cancelIcon1.svg";
 export { default as TickIcon } from "./tickIcon.svg";
 export { default as CancelIcon2 } from "./cancelIcon2.svg";
+export { default as ArrowLeft2 } from "./arrowLeft2.svg";

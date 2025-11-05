@@ -14,7 +14,10 @@ export default Object.freeze({
     CHOOSEVEHICLE:"chooseVehicle",
     SIGNUPSENDER:"signUpSender",
     ONBOARDING:"onBoarding",
-    ORDERSTATUS:"orderStatus"
+    ORDERSTATUS:"orderStatus",
+    RESETPASSWORDEMAIL:"resetPasswordEmail",
+    RESETPASSWORDOTP:"resetPasswordOtp",
+    RESETPASSWORD:"resetPassword",
    
 
  

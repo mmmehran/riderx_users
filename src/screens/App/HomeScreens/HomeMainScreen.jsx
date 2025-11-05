@@ -662,7 +662,7 @@ const HomeMainScreen = ({route}) => {
         status == 'accepted'
           ? isoWithOffsetPlusMinutes(pickUpTimeUpdate)
           : null,
-      description: valueResoan,
+      description: valueResoan ? valueResoan : null,
     });
 
     if (response?.data?.status) {

@@ -33,6 +33,7 @@ const mainColors = {
     success900:"#2D912E",
     strong900:"#0E121B",
     error900:"#CD1C18",
+    white11:"#F5F5F4",
 
 
     screenBackGround: "#fff",

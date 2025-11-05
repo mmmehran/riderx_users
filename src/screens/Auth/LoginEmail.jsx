@@ -300,7 +300,9 @@ const LoginEmail = props => {
               </>
             )}
           </Form>
-          <TouchableOpacity style={{marginTop: hp(2.5)}}>
+          <TouchableOpacity
+            onPress={() => navigation.navigate(routes.RESETPASSWORDEMAIL)}
+            style={{marginTop: hp(2.5)}}>
             <CustomText style={styles.textSignu}>
               {t('forgetPassword')}
             </CustomText>
