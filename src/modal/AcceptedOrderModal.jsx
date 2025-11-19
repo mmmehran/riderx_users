@@ -10,11 +10,7 @@ import {useTranslation} from 'react-i18next';
 import colors from '../config/colors';
 import CustomText from '../components/common/CustomText';
 import {
-  MessageIcon,
-  CallIcon,
-  OpenMap,
-  Message,
-  PhoneCall,
+  ArrowUp,
   CancelIcon,
   IconButton,
   TinyProfile,
@@ -23,11 +19,11 @@ import {
   ClockIcon,
   MessageIcon1,
 } from '../../assets/svg/index';
-import {openGoogleMaps} from '../utils/googleMapsNavigator';
 import {normalizeLabel, timeAgoShort, isAndroid15Plus} from '../utils/helpers';
 
 const AcceptedOrderModal = ({order, changeOrder, loading, insets}) => {
   const {t} = useTranslation();
+  const [less, setLess] = useState(false);
 
   const phoneNumber = `tel:${
     order?.status !== 'pickup'
@@ -96,75 +92,82 @@ const AcceptedOrderModal = ({order, changeOrder, loading, insets}) => {
             <PhoneIcon width={wp(5)} height={wp(5)}></PhoneIcon>
           </TouchableOpacity>
         </View>
-        <View style={styles.addressContainer}>
-          <View style={styles.rowStreet}>
-            <PinLocation width={wp(4)} height={wp(4)}></PinLocation>
-            <View style={[styles.rowText, {marginLeft: wp(0.9)}]}>
-              <CustomText style={styles.textInfo1}>{t('address')}:</CustomText>
-              <CustomText style={styles.textInfo} numberOfLines={10}>
-                {(order?.status !== 'pickup'
-                  ? order?.sender_address_json?.street
-                  : order?.receiver_address_json?.street) ?? '-'}
-              </CustomText>
-            </View>
+        <View style={styles.rowStreet}>
+          <PinLocation width={wp(4)} height={wp(4)}></PinLocation>
+          <View style={[styles.rowText, {marginLeft: wp(0.9)}]}>
+            <CustomText style={styles.textInfo1}>{t('address')}:</CustomText>
+            <CustomText style={styles.textInfo} numberOfLines={10}>
+              {(order?.status !== 'pickup'
+                ? order?.sender_address_json?.street
+                : order?.receiver_address_json?.street) ?? '-'}
+            </CustomText>
           </View>
-          <View style={styles.rowTextContainer}>
-            <View style={styles.rowText}>
-              <CustomText style={styles.textInfo1}>
-                {t('postalCode')}:
-              </CustomText>
-              <CustomText style={styles.textInfo}>
-                {(order?.status !== 'pickup'
-                  ? order?.sender_address_json?.postal_code
-                  : order?.receiver_address_json?.postal_code) ?? '-'}
-              </CustomText>
-            </View>
-            <View style={styles.rowText}>
-              <CustomText style={styles.textInfo1}>
-                {t('houseNumber')}:
-              </CustomText>
-              <CustomText style={styles.textInfo}>
-                {(order?.status !== 'pickup'
-                  ? order?.sender_address_json?.house_number
-                  : order?.receiver_address_json?.house_number) ?? '-'}
-              </CustomText>
-            </View>
-            <View style={styles.rowText}>
-              <CustomText style={styles.textInfo1}>{t('Entrance')}:</CustomText>
-              <CustomText style={styles.textInfo}>
-                {(order?.status !== 'pickup'
-                  ? order?.sender_address_json?.entrance
-                  : order?.receiver_address_json?.entrance) ?? '-'}
-              </CustomText>
-            </View>
-            <View style={styles.rowText}>
-              <CustomText style={styles.textInfo1}>{t('Floor')}:</CustomText>
-              <CustomText style={styles.textInfo}>
-                {(order?.status !== 'pickup'
-                  ? order?.sender_address_json?.floor
-                  : order?.receiver_address_json?.floor) ?? '-'}
-              </CustomText>
-            </View>
-            <View style={styles.rowText}>
-              <CustomText style={styles.textInfo1}>{t('Door')}:</CustomText>
-              <CustomText style={styles.textInfo}>
-                {(order?.status !== 'pickup'
-                  ? order?.sender_address_json?.apartment_door
-                  : order?.receiver_address_json?.apartment_door) ?? '-'}
-              </CustomText>
-            </View>
-            <View style={styles.rowText}>
-              <CustomText style={styles.textInfo1}>
-                {t('Extradetails')}:
-              </CustomText>
-              <CustomText style={styles.textInfo}>
-                {(order?.status !== 'pickup'
-                  ? order?.sender_address_json?.address_extra_details
-                  : order?.receiver_address_json?.address_extra_details) ?? '-'}
-              </CustomText>
-            </View>
-          </View>
-          {/* <View style={styles.iconContainer}>
+        </View>
+        {!less && (
+          <>
+            <View style={styles.addressContainer}>
+              <View style={styles.rowTextContainer}>
+                <View style={styles.rowText}>
+                  <CustomText style={styles.textInfo1}>
+                    {t('postalCode')}:
+                  </CustomText>
+                  <CustomText style={styles.textInfo}>
+                    {(order?.status !== 'pickup'
+                      ? order?.sender_address_json?.postal_code
+                      : order?.receiver_address_json?.postal_code) ?? '-'}
+                  </CustomText>
+                </View>
+                <View style={styles.rowText}>
+                  <CustomText style={styles.textInfo1}>
+                    {t('houseNumber')}:
+                  </CustomText>
+                  <CustomText style={styles.textInfo}>
+                    {(order?.status !== 'pickup'
+                      ? order?.sender_address_json?.house_number
+                      : order?.receiver_address_json?.house_number) ?? '-'}
+                  </CustomText>
+                </View>
+                <View style={styles.rowText}>
+                  <CustomText style={styles.textInfo1}>
+                    {t('Entrance')}:
+                  </CustomText>
+                  <CustomText style={styles.textInfo}>
+                    {(order?.status !== 'pickup'
+                      ? order?.sender_address_json?.entrance
+                      : order?.receiver_address_json?.entrance) ?? '-'}
+                  </CustomText>
+                </View>
+                <View style={styles.rowText}>
+                  <CustomText style={styles.textInfo1}>
+                    {t('Floor')}:
+                  </CustomText>
+                  <CustomText style={styles.textInfo}>
+                    {(order?.status !== 'pickup'
+                      ? order?.sender_address_json?.floor
+                      : order?.receiver_address_json?.floor) ?? '-'}
+                  </CustomText>
+                </View>
+                <View style={styles.rowText}>
+                  <CustomText style={styles.textInfo1}>{t('Door')}:</CustomText>
+                  <CustomText style={styles.textInfo}>
+                    {(order?.status !== 'pickup'
+                      ? order?.sender_address_json?.apartment_door
+                      : order?.receiver_address_json?.apartment_door) ?? '-'}
+                  </CustomText>
+                </View>
+                <View style={styles.rowText}>
+                  <CustomText style={styles.textInfo1}>
+                    {t('Extradetails')}:
+                  </CustomText>
+                  <CustomText style={styles.textInfo}>
+                    {(order?.status !== 'pickup'
+                      ? order?.sender_address_json?.address_extra_details
+                      : order?.receiver_address_json?.address_extra_details) ??
+                      '-'}
+                  </CustomText>
+                </View>
+              </View>
+              {/* <View style={styles.iconContainer}>
                 {order?.status == 'pickup' && order?.receiver_phone?.number && (
                   <>
                     <TouchableOpacity
@@ -212,34 +215,44 @@ const AcceptedOrderModal = ({order, changeOrder, loading, insets}) => {
                   <OpenMap width={wp(8.5)} height={wp(8.5)} />
                 </TouchableOpacity>
               </View> */}
-        </View>
-        {order?.status == 'accepted' && order?.sender_phone?.number && (
-          <View style={styles.row}>
-            <View style={[styles.row, {marginBottom: 0}]}>
-              <TinyProfile width={wp(4.5)} height={wp(4.5)}></TinyProfile>
-              <CustomText style={styles.textReciever} numberOfLines={1}>
-                {order?.sender_full_name}
-              </CustomText>
             </View>
-            <TouchableOpacity onPress={makeCall} style={styles.buttonCall}>
-              <PhoneIcon></PhoneIcon>
-            </TouchableOpacity>
-          </View>
-        )}
-        {order?.status == 'pickup' && order?.receiver_phone?.number && (
-          <View style={styles.row}>
-            <View style={[styles.row, {marginBottom: 0}]}>
-              <TinyProfile width={wp(4.5)} height={wp(4.5)}></TinyProfile>
-              <CustomText style={styles.textReciever} numberOfLines={1}>
-                {order?.receiver_full_name}
-              </CustomText>
-            </View>
-            <TouchableOpacity onPress={makeCall} style={styles.buttonCall}>
-              <PhoneIcon></PhoneIcon>
-            </TouchableOpacity>
-          </View>
+            {order?.status == 'accepted' && order?.sender_phone?.number && (
+              <View style={styles.row}>
+                <View style={[styles.row, {marginBottom: 0}]}>
+                  <TinyProfile width={wp(4.5)} height={wp(4.5)}></TinyProfile>
+                  <CustomText style={styles.textReciever} numberOfLines={1}>
+                    {order?.sender_full_name}
+                  </CustomText>
+                </View>
+                <TouchableOpacity onPress={makeCall} style={styles.buttonCall}>
+                  <PhoneIcon></PhoneIcon>
+                </TouchableOpacity>
+              </View>
+            )}
+            {order?.status == 'pickup' && order?.receiver_phone?.number && (
+              <View style={styles.row}>
+                <View style={[styles.row, {marginBottom: 0}]}>
+                  <TinyProfile width={wp(4.5)} height={wp(4.5)}></TinyProfile>
+                  <CustomText style={styles.textReciever} numberOfLines={1}>
+                    {order?.receiver_full_name}
+                  </CustomText>
+                </View>
+                <TouchableOpacity onPress={makeCall} style={styles.buttonCall}>
+                  <PhoneIcon></PhoneIcon>
+                </TouchableOpacity>
+              </View>
+            )}
+          </>
         )}
 
+        <TouchableOpacity
+          onPress={() => setLess(!less)}
+          style={styles.lessContainer}>
+          <CustomText style={styles.textLess}>
+            {less ? t('moreInfo') : t('lessInfo')}
+          </CustomText>
+          <ArrowUp width={wp(5.5)} height={wp(5.5)}></ArrowUp>
+        </TouchableOpacity>
         <View
           style={[
             styles.line,
@@ -284,10 +297,13 @@ const AcceptedOrderModal = ({order, changeOrder, loading, insets}) => {
                 fontWeight: 'bold',
               }}
               titleColor={colors.black}
-              height={hp(3.8)}
+              height={hp(4.9)}
               titleFontSize={wp(4)}
               onSwipeSuccess={() => changeOrder('pickup', false)}
-              railStyles={{borderRadius: wp(3), left: wp(0)}}
+              railStyles={{
+                borderRadius: wp(3),
+                left: wp(0),
+              }}
               railBorderColor={colors.black}
               railFillBackgroundColor="#cccccc46"
               railFillBorderColor="#transparent"
@@ -308,7 +324,7 @@ const AcceptedOrderModal = ({order, changeOrder, loading, insets}) => {
                 fontWeight: 'bold',
               }}
               titleColor={colors.black}
-              height={hp(3.8)}
+              height={hp(4.9)}
               titleFontSize={wp(4)}
               onSwipeSuccess={() => {
                 if (order?.is_secure) {
@@ -317,7 +333,10 @@ const AcceptedOrderModal = ({order, changeOrder, loading, insets}) => {
                   changeOrder('completed', false);
                 }
               }}
-              railStyles={{borderRadius: wp(3), left: wp(0)}}
+              railStyles={{
+                borderRadius: wp(3),
+                left: wp(0),
+              }}
               railBorderColor={colors.black}
               railFillBackgroundColor="#cccccc46"
               railFillBorderColor="#transparent"
@@ -353,9 +372,27 @@ const styles = StyleSheet.create({
     paddingBottom: hp(1),
     position: 'absolute',
   },
+  lessContainer: {
+    width: wp(91),
+    height: hp(4.5),
+    borderRadius: wp(2.5),
+    backgroundColor: colors.neutral100,
+    marginHorizontal: wp(4.5),
+    marginBottom: hp(1.5),
+    marginTop: hp(1),
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: wp(3),
+  },
   rowTime: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  textLess: {
+    fontFamily: 'YaldeviJaffna-Bold',
+    color: colors.black,
+    fontSize: wp(4.5),
   },
   textTime: {
     color: colors.neutral400,
@@ -374,10 +411,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginLeft: wp(4),
     alignItems: 'center',
+    marginTop: hp(2),
   },
   addressContainer: {
     marginBottom: hp(1),
-    marginTop: hp(2),
   },
   rowTextContainer: {
     flexDirection: 'row',
@@ -482,7 +519,7 @@ const styles = StyleSheet.create({
   modal: {
     alignItems: 'center',
     justifyContent: 'flex-end',
-    bottom: hp(7),
+    bottom: hp(0),
   },
   userContainer: {
     flexDirection: 'row',

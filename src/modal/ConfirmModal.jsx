@@ -16,21 +16,15 @@ import CustomModal from '../components/common/CustomModal'; // same wrapper you 
 import CustomText from '../components/common/CustomText';
 import colors from '../config/colors';
 import CustomInput from '../components/common/CustomInput';
+import {CancelIcon2} from '../../assets/svg/index';
 
-const PRIMARY = colors?.primary || '#0B5FFF';
-const DANGER = colors?.danger || '#D32F2F';
-const BLACK = colors?.black || '#1A1A1A';
 const WHITE = colors?.white || '#FFFFFF';
-const GRAY = '#6B7280';
 const BORDER = '#E5E7EB';
 
 const ConfirmActionModal = ({
   isVisible,
-  title = 'Are you sure?',
-  message,
   onConfirm,
   onCancel,
-  danger = false,
   loading = false,
   securePinShow,
 }) => {
@@ -40,12 +34,18 @@ const ConfirmActionModal = ({
   return (
     <CustomModal
       isVisible={isVisible}
-      backdropOpacity={0}
-      onBackdropPress={onCancel}
-      onBackButtonPress={onCancel}>
+      style={styles.modal}
+      backdropOpacity={0.5}
+      onBackdropPress={onCancel}>
       <View style={styles.container}>
-        <CustomText style={styles.title}>{title}</CustomText>
-        {!!message && <CustomText style={styles.message}>{message}</CustomText>}
+        <View style={styles.rowHeader}>
+          <TouchableOpacity onPress={onCancel}>
+            <CancelIcon2 width={wp(6.5)} height={wp(6.5)}></CancelIcon2>
+          </TouchableOpacity>
+          <CustomText style={styles.title}>{t('sureCancel')}</CustomText>
+        </View>
+        <View style={styles.line}> </View>
+        <CustomText style={styles.message}>{t('areYouSureCancel')}</CustomText>
         {securePinShow && (
           <View>
             <CustomText style={[styles.title, {marginTop: hp(2)}]}>
@@ -61,36 +61,21 @@ const ConfirmActionModal = ({
               }}></CustomInput>
           </View>
         )}
-        <View style={styles.row}>
+        <View style={styles.buttonContainer}>
           <TouchableOpacity
-            style={[styles.btn, styles.btnGhost]}
-            onPress={onCancel}
-            disabled={loading}
-            activeOpacity={0.8}>
-            <CustomText style={styles.btnGhostText}>{t('close')}</CustomText>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.btn,
-              styles.btnSolid,
-              securePinShow && pin?.length !== 5 && styles.btnDisabled,
-            ]}
+            style={[styles.closeButton]}
+            disabled={securePinShow && pin?.length !== 5}
             onPress={() => {
               if (securePinShow) {
                 onConfirm(pin);
               } else {
                 onConfirm();
               }
-            }}
-            disabled={securePinShow && pin?.length !== 5}
-            activeOpacity={0.8}>
+            }}>
             {loading ? (
               <ActivityIndicator color={WHITE} />
             ) : (
-              <CustomText style={styles.btnSolidText}>
-                {t('confirmText')}
-              </CustomText>
+              <CustomText style={styles.closeText}>{t('yesCancel')}</CustomText>
             )}
           </TouchableOpacity>
         </View>
@@ -103,12 +88,14 @@ export default memo(ConfirmActionModal);
 
 const styles = StyleSheet.create({
   container: {
-    width: wp(82),
-    backgroundColor: WHITE,
-    borderRadius: wp(2),
-    paddingVertical: hp(2.2),
-    paddingHorizontal: wp(5),
-    alignItems: 'center',
+    width: wp(100),
+    backgroundColor: colors.white,
+    borderTopLeftRadius: wp(3),
+    borderTopRightRadius: wp(3),
+    paddingVertical: hp(2),
+    paddingHorizontal: wp(4),
+    height: hp(22),
+    //  bottom: hp(-2.5),
   },
   input: {
     width: wp(60),
@@ -116,17 +103,25 @@ const styles = StyleSheet.create({
     marginTop: hp(1),
     marginBottom: hp(2),
   },
+  rowHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: hp(0.5),
+  },
+  line: {
+    backgroundColor: colors.neutral200,
+    width: wp(92),
+    height: wp(0.3),
+    marginVertical: hp(2),
+  },
   title: {
-    fontSize: wp(4),
-    color: colors.black,
-    textAlign: 'center',
-    marginBottom: hp(1),
+    fontSize: wp(4.5),
+    fontFamily: 'YaldeviJaffna-Bold',
+    color: colors.neutral900,
+    marginLeft: wp(1.5),
   },
   message: {
-    marginTop: hp(1.2),
-    fontSize: wp(3.8),
-    color: GRAY,
-    textAlign: 'center',
+    color: colors.neutral600,
   },
   row: {
     flexDirection: 'row',
@@ -160,5 +155,23 @@ const styles = StyleSheet.create({
   },
   btnDisabled: {
     opacity: 0.6,
+  },
+  closeButton: {
+    marginTop: hp(2),
+    borderRadius: wp(2.3),
+    backgroundColor: colors.black,
+    width: wp(92),
+    height: hp(5),
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  closeText: {
+    fontSize: wp(4),
+    color: colors.white,
+    fontFamily: 'YaldeviJaffna-Bold',
+  },
+  modal: {
+    justifyContent: 'flex-end',
+    alignItems: 'center',
   },
 });

@@ -176,7 +176,7 @@ const AcceptOrderModal = ({
               fontWeight: 'bold',
             }}
             titleColor="#fff"
-            height={hp(3.8)}
+            height={hp(4.9)}
             titleFontSize={wp(4)}
             onSwipeSuccess={handleAccept}
             railStyles={{borderRadius: wp(3), left: wp(0)}}

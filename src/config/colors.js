@@ -5,6 +5,8 @@ const mainColors = {
     text:"#61758A",
     blue:"#0A78ED",
     blue2:"#C0D5FF",
+    soft200:"#E1E4EA",
+    errorBase:"#FB3748",
     yellowLight:"#D5B65A",
     black:"#000",
     green: "#13ED55",
@@ -32,6 +34,7 @@ const mainColors = {
     successBase:"#1FC16B",
     success900:"#2D912E",
     strong900:"#0E121B",
+    error50:"#FFEBEC",
     error900:"#CD1C18",
     white11:"#F5F5F4",
 

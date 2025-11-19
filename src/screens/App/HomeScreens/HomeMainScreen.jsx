@@ -31,6 +31,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import AcceptOrderModal from '../../../modal/AcceptOrderModal';
 import AcceptedOrderModal from '../../../modal/AcceptedOrderModal';
 import CancelModal from '../../../modal/CancelModal';
+import SelectVehicleModal from '../../../modal/SelectVehicleModal';
 import TinderCarousel from '../../../components/custom/TinderCarousel'; // << add this
 
 import {LocationPin, Update} from '../../../../assets/svg/index';
@@ -55,6 +56,7 @@ import {
   selectConfig,
   setSelectVehicle,
   setSocketStatus,
+  setSelectVehicleVisible,
 } from '../../../redux/reducers/configReducer';
 import ConfirmModal from '../../../modal/ConfirmModal';
 import ConfirmCancelDeliveryModal from '../../../modal/ConfirmCancelDeliveryModal';
@@ -589,6 +591,8 @@ const HomeMainScreen = ({route}) => {
     const response = await getData(
       `${urls.GETLISTDELIVERY}?page=1&status=created`,
     );
+    console.log(response?.data);
+    console.log('enter');
     if (response?.data?.status) {
       const orders = response?.data?.data?.items || [];
       setData(orders);
@@ -1123,6 +1127,7 @@ const HomeMainScreen = ({route}) => {
     }
   }, []);
 
+  console.log(!isAccepted && showAcceptOrder && data.length > 0);
   /* ───────── Render ───────── */
   return (
     <>
@@ -1274,10 +1279,12 @@ const HomeMainScreen = ({route}) => {
           style={styles.button1}>
           <Update width={wp(5)} height={wp(5)}></Update>
         </TouchableOpacity>
-        <CustomAvailableRider
-          onAvailabilityChange={updateVehicleStatus}
-          toggleValue={config?.selectVehicle?.on_status == 'on'}
-        />
+        {!selectedOrder && (
+          <CustomAvailableRider
+            onAvailabilityChange={updateVehicleStatus}
+            toggleValue={config?.selectVehicle?.on_status == 'on'}
+          />
+        )}
 
         {/* map overlay fade — colors & locations lengths must match */}
         <LinearGradient
@@ -1352,6 +1359,15 @@ const HomeMainScreen = ({route}) => {
           setCancelModalVisible(false);
         }}
         onClose={() => setCancelModalVisible(false)}
+      />
+      <SelectVehicleModal
+        isVisible={config?.selectVehicleVisible}
+        onSelectReason={(reasonKey, text) => {
+          dispatch(setSelectVehicleVisible(!config?.selectVehicleVisible));
+        }}
+        onClose={() =>
+          dispatch(setSelectVehicleVisible(!config?.selectVehicleVisible))
+        }
       />
 
       {/* Confirm modal */}

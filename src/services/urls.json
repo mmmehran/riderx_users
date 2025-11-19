@@ -17,6 +17,7 @@
   "UPDATELANGUAGE": "user/profile_language/",
   "RESETPASSWORD": "user/reset_password/verification/",
   "UPDATEPASSWORD": "user/reset_password/update/",
+  "UPDATEOLDPASSWORD": "user/update_password/",
   "UPDATEPACKAGESTATUS": "rider/status/update_delivery_to_person_status",
   "SOCIALLOGIN": "user/social/auth/allauth/google/callback/app/",
   "SOCIALLOGINAPPLE": "user/social/auth/allauth/apple/callback/app/",

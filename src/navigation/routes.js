@@ -18,6 +18,9 @@ export default Object.freeze({
     RESETPASSWORDEMAIL:"resetPasswordEmail",
     RESETPASSWORDOTP:"resetPasswordOtp",
     RESETPASSWORD:"resetPassword",
+    MYACCOUNT:"myAccount",
+    CHANGELANGUAGE:"changeLanguage",
+    CHANGEPASSWORD:"changePassword"
    
 
  

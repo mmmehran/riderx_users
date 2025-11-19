@@ -6,7 +6,9 @@ const initialStateObject = {
    userProfile: null,
    selectVehicle:null,
    socketStatus:false,
-   seeOnboarding:false
+   seeOnboarding:false,
+   selectVehicleVisible:false,
+   vehicleData:null
 
 };
 
@@ -26,6 +28,18 @@ export const configSlice = createSlice({
          return {
             ...state,
             socketStatus: action.payload,
+         };
+      },
+      setVehicleData: (state, action) => {
+         return {
+            ...state,
+            vehicleData: action.payload,
+         };
+      },
+      setSelectVehicleVisible: (state, action) => {
+         return {
+            ...state,
+            selectVehicleVisible: action.payload,
          };
       },
       setUserProfile: (state, action) => {
@@ -52,7 +66,9 @@ export const configSlice = createSlice({
            userProfile: null,
            selectVehicle:null,
            socketStatus:false,
-           seeOnboarding:true
+           seeOnboarding:true,
+           selectVehicleVisible:false,
+           vehicleData:null
          };
       },
    },
@@ -64,7 +80,9 @@ export const {
    setUserProfile,
    setSelectVehicle,
    setSocketStatus,
-   setSeeOnboarding
+   setSeeOnboarding,
+   setSelectVehicleVisible,
+   setVehicleData
 } = configSlice.actions;
 
 export default configSlice.reducer;

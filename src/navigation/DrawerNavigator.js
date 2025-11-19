@@ -9,8 +9,11 @@ import HomeMainScreen from '../screens/App/HomeScreens/HomeMainScreen'
 import ChooseTheService from '../screens/App/ChooseService/ChooseTheService'
 import ChooseVehicle from '../screens/App/ChooseVehicle/ChooseVehicle'
 import DrawerScreen from '../screens/Drawer/Drawer'
+import ChangeLanguage from '../screens/Drawer/ChangeLanguage'
 import Report from '../screens/Drawer/Report'
 import Wallet from '../screens/Drawer/Wallet'
+import ResetPassword from '../screens/Drawer/ResetPassword'
+import MyAccount from '../screens/Drawer/MyAccount'
 import {selectConfig} from '../redux/reducers/configReducer'
 import Sender from '../screens/WebView/Sender'
 
@@ -62,6 +65,21 @@ const DrawerNavigator = () => {
             <Drawer.Screen
                 name={routes.SENDER}
                 component={Sender}
+                options={{ fullScreenGestureEnabled: false }}
+            />
+            <Drawer.Screen
+                name={routes.MYACCOUNT}
+                component={MyAccount}
+                options={{ fullScreenGestureEnabled: false }}
+            />
+            <Drawer.Screen
+                name={routes.CHANGELANGUAGE}
+                component={ChangeLanguage}
+                options={{ fullScreenGestureEnabled: false }}
+            />
+            <Drawer.Screen
+                name={routes.CHANGEPASSWORD}
+                component={ResetPassword}
                 options={{ fullScreenGestureEnabled: false }}
             />
         </Drawer.Navigator>

@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
     paddingVertical: hp(2),
     paddingHorizontal: wp(4),
     height: hp(75),
-    bottom: hp(-2.5),
+    // bottom: hp(-2.5),
   },
   input: {
     height: hp(12),

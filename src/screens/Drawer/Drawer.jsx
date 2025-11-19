@@ -6,20 +6,16 @@ import {
 } from 'react-native-responsive-screen';
 import {useTranslation} from 'react-i18next';
 import {useDispatch, useSelector} from 'react-redux';
-import {KeyboardAwareScrollView} from 'react-native-keyboard-aware-scroll-view';
 
 import CustomScreen from '../../components/common/CustomScreen';
 import routes from '../../navigation/routes';
 import colors from '../../config/colors';
 import CustomText from '../../components/common/CustomText';
+import {authenticated} from '../../redux/reducers/authenticationReducer';
 import {
-  logout,
-  authenticated,
-} from '../../redux/reducers/authenticationReducer';
-import {postData} from '../../services/common.service';
-import urls from '../../services/urls.json';
-import errorHandler from '../../utils/errorHandler';
-import {selectConfig, logouConfig} from '../../redux/reducers/configReducer';
+  selectConfig,
+  setSelectVehicleVisible,
+} from '../../redux/reducers/configReducer';
 import {
   ArrowLeft1,
   TickYellow,
@@ -46,22 +42,12 @@ const LoginEmail = props => {
   const user = useSelector(authenticated);
   const config = useSelector(selectConfig);
 
-  const logOutUser = async () => {
-    const response = await postData(urls.LOGOUT);
-    if (response?.data?.status) {
-      dispatch(logout());
-      dispatch(logouConfig());
-    } else {
-      errorHandler(response);
-    }
-  };
-
   const data = [
     {
       id: 1,
       name: t('MyAccount'),
       icon: <MyAccount width={wp(6)} height={wp(6)}></MyAccount>,
-      //onPress: () => props?.navigation.navigate(routes.WALLET),
+      onPress: () => props?.navigation.navigate(routes.MYACCOUNT),
     },
     // {
     //   id: 2,
@@ -154,8 +140,10 @@ const LoginEmail = props => {
         <View style={styles.rowVehicle}>
           <TouchableOpacity
             activeOpacity={0.6}
-            //  onPress={() => props?.navigation.closeDrawer()}
-            onPress={() => logOutUser()}
+            onPress={() => {
+              props?.navigation.closeDrawer();
+              dispatch(setSelectVehicleVisible(!config?.selectVehicleVisible));
+            }}
             style={[
               styles.button,
               {
