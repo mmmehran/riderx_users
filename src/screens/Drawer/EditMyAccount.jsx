@@ -149,8 +149,8 @@ const EditMyAccount = () => {
     const profileResponse = await uploadFile(urls.GETUSER, data);
     if (profileResponse?.data) {
       showToast(t('imageChanged'));
-      await getUserData();
       setImages(null);
+      await getUserData();
     } else {
       errorHandler(profileResponse);
     }
@@ -176,7 +176,7 @@ const EditMyAccount = () => {
               source={{
                 uri: images?.assets[0]?.uri
                   ? images?.assets[0]?.uri
-                  : user?.profile_image,
+                  : user?.userProfile?.profile_image,
               }}
               style={{width: wp(30), height: wp(30), borderRadius: wp(50)}}
             />

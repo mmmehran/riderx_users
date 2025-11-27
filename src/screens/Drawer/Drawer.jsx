@@ -106,7 +106,7 @@ const LoginEmail = props => {
         <View style={styles.profileContainer}>
           <View style={styles.imageContainer}>
             <Image
-              source={{uri: user?.profile_image}}
+              source={{uri: user?.userProfile?.profile_image}}
               style={{width: wp(15), height: wp(15), borderRadius: wp(50)}}
             />
             <View style={styles.tickContainer}>

@@ -99,7 +99,7 @@ const MyAccount = () => {
       <View style={styles.rowHeader}>
         <View style={styles.imageContainer}>
           <Image
-            source={{uri: user?.profile_image}}
+            source={{uri: user?.userProfile?.profile_image}}
             style={{width: wp(17), height: wp(17), borderRadius: wp(50)}}
           />
           <View style={styles.tickContainer}>
