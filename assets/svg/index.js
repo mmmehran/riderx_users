@@ -86,3 +86,8 @@ export { default as LogoutIcon } from "./logoutIcon.svg";
 export { default as PassSuc } from "./passSuc.svg";
 export { default as PassCancel } from "./passCancel.svg";
 export { default as ArrowUp } from "./arrowUp.svg";
+export { default as UserNameIcon } from "./userNameIcon.svg";
+export { default as CallUserIcon } from "./callUserIcon.svg";
+export { default as MessageUserIcon } from "./messageUserIcon.svg";
+export { default as CameraIcon2 } from "./cameraIcon2.svg";
+export { default as AboutusIcon } from "./aboutusIcon.svg";

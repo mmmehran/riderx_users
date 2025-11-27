@@ -114,9 +114,11 @@ const MyAccount = () => {
             <CustomText style={styles.phoneText}>{user?.phone}</CustomText>
           </View>
         </View>
-        <View style={styles.iconContainer}>
+        <TouchableOpacity
+          onPress={() => navigation.navigate(routes.EDITMYACCOUNT)}
+          style={styles.iconContainer}>
           <EditIcon width={wp(6.5)} height={wp(6.5)}></EditIcon>
-        </View>
+        </TouchableOpacity>
       </View>
       <View style={styles.rowStatus}>
         {data?.map(item => {

@@ -149,5 +149,14 @@
   "mustContainAtLeast": "Must contain at least;",
   "atLeastOneUpper": "At least 1 uppercase",
   "atLeastOneNumber": "At least 1 number",
-  "min8Chars": "At least 8 characters"
+  "min8Chars": "At least 8 characters",
+  "editMyAccount": "Edit My Account",
+  "enterYourFullName": "Enter your full name",
+  "enterYourPhone": "Enter your phone number",
+  "enterYourEmail": "Enter your email address",
+  "saveChanges": "Save changes",
+  "Take_photo": " Take photo",
+  "Choose_from_library": " Choose from library",
+  "profilePhotoTitle": "Profile Photo",
+  "imageChanged": "Image changed successfully"
 }

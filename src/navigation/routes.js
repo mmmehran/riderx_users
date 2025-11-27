@@ -20,7 +20,8 @@ export default Object.freeze({
     RESETPASSWORD:"resetPassword",
     MYACCOUNT:"myAccount",
     CHANGELANGUAGE:"changeLanguage",
-    CHANGEPASSWORD:"changePassword"
+    CHANGEPASSWORD:"changePassword",
+    EDITMYACCOUNT:"editMyAccount",
    
 
  

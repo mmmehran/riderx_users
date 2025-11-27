@@ -16,6 +16,7 @@ import ResetPassword from '../screens/Drawer/ResetPassword'
 import MyAccount from '../screens/Drawer/MyAccount'
 import {selectConfig} from '../redux/reducers/configReducer'
 import Sender from '../screens/WebView/Sender'
+import EditMyAccount from '../screens/Drawer/EditMyAccount'
 
 const Drawer = createDrawerNavigator();
 
@@ -80,6 +81,11 @@ const DrawerNavigator = () => {
             <Drawer.Screen
                 name={routes.CHANGEPASSWORD}
                 component={ResetPassword}
+                options={{ fullScreenGestureEnabled: false }}
+            />
+            <Drawer.Screen
+                name={routes.EDITMYACCOUNT}
+                component={EditMyAccount}
                 options={{ fullScreenGestureEnabled: false }}
             />
         </Drawer.Navigator>

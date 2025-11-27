@@ -1127,7 +1127,6 @@ const HomeMainScreen = ({route}) => {
     }
   }, []);
 
-  console.log(!isAccepted && showAcceptOrder && data.length > 0);
   /* ───────── Render ───────── */
   return (
     <>
