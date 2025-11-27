@@ -591,8 +591,6 @@ const HomeMainScreen = ({route}) => {
     const response = await getData(
       `${urls.GETLISTDELIVERY}?page=1&status=created`,
     );
-    console.log(response?.data);
-    console.log('enter');
     if (response?.data?.status) {
       const orders = response?.data?.data?.items || [];
       setData(orders);
@@ -1025,6 +1023,7 @@ const HomeMainScreen = ({route}) => {
         heading: dir,
         vehicle_id: config?.selectVehicle?.id,
       });
+      showToast('Location updated' + `: ${norm[1]}, ${norm[0]}`);
     } catch {
     } finally {
       locationInFlightRef.current = false;
