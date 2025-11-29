@@ -126,18 +126,18 @@ const ChooseVehicle = props => {
                   {(item?.vehicle_type == 'van_1t' ||
                     item?.vehicle_type == 'van_2t' ||
                     item?.vehicle_type == 'van_3.5t') && (
-                    <VanIcon width={wp(14)} height={hp(4)}></VanIcon>
+                    <VanIcon width={wp(30)} height={wp(30)}></VanIcon>
                   )}
                   {(item?.vehicle_type == 'motorcycle' ||
                     item?.vehicle_type == 'bicycle' ||
                     item?.vehicle_type == 'e_bicycle') && (
-                    <MotorIcon1 width={wp(14)} height={hp(4)}></MotorIcon1>
+                    <MotorIcon1 width={wp(30)} height={wp(30)}></MotorIcon1>
                   )}
                   {item?.vehicle_type == 'car' && (
-                    <CarIcon1 width={wp(14)} height={hp(4)}></CarIcon1>
+                    <CarIcon1 width={wp(30)} height={wp(30)}></CarIcon1>
                   )}
                   {item?.vehicle_type == 'moped' && (
-                    <ScoterIcon width={wp(14)} height={hp(4)}></ScoterIcon>
+                    <ScoterIcon width={wp(30)} height={wp(30)}></ScoterIcon>
                   )}
                 </TouchableOpacity>
               ))}
@@ -242,6 +242,7 @@ const styles = StyleSheet.create({
   },
   reasonButton: {
     width: '100%',
+    height: hp(11),
     paddingVertical: hp(0.5),
     paddingHorizontal: wp(3),
     borderRadius: wp(3),
