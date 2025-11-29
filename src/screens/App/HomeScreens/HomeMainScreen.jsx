@@ -1239,14 +1239,7 @@ const HomeMainScreen = ({route}) => {
                   </Mapbox.MarkerView>
                 )}
               </Mapbox.MapView>
-              <LinearGradient
-                pointerEvents="none"
-                colors={['#fff', 'transparent']}
-                locations={[0, 0.6, 1]}
-                start={{x: 0.5, y: 0}}
-                end={{x: 0.5, y: 2}}
-                style={styles.topFade}
-              />
+              
             </>
           ) : (
             <View style={styles.map} />
@@ -1287,15 +1280,6 @@ const HomeMainScreen = ({route}) => {
           />
         )}
 
-        {/* map overlay fade */}
-        <LinearGradient
-          pointerEvents="none"
-          colors={['#fff', 'transparent']}
-          locations={[0, 1]}
-          start={{x: 0.5, y: 0}}
-          end={{x: 0.5, y: 1}}
-          style={styles.topFade}
-        />
 
         {/* Tinder-style Accept stack */}
         {!isAccepted && showAcceptOrder && data.length > 0 && (
