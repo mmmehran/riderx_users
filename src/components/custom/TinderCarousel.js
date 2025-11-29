@@ -128,6 +128,7 @@ export default function TinderCarousel({
   );
 
   const pan = Gesture.Pan()
+    .activeOffsetX([-10, 10])
     .onChange(e => {
       tx.value += e.changeX;
       ty.value += e.changeY;
