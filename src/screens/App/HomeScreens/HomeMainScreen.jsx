@@ -1025,8 +1025,6 @@ const HomeMainScreen = ({route}) => {
         heading: dir,
         vehicle_id: config?.selectVehicle?.id,
       });
-      // You can keep or remove this toast
-      showToast('Location updated: ' + `${norm[1]}, ${norm[0]}`);
     } catch (e) {
       // optional: console.log('UPDATELOCATION error', e);
     } finally {

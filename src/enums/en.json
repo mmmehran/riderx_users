@@ -158,5 +158,8 @@
   "Take_photo": " Take photo",
   "Choose_from_library": " Choose from library",
   "profilePhotoTitle": "Profile Photo",
-  "imageChanged": "Image changed successfully"
+  "imageChanged": "Image changed successfully",
+  "enterDeliveryPin": "Enter delivery pin",
+  "pinContent": "Please enter the 4-digit code shared by the recipient to confirm delivery.",
+  "confimedDelivery": "Confirm Delivery"
 }
