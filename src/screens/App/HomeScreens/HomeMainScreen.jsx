@@ -32,7 +32,7 @@ import AcceptOrderModal from '../../../modal/AcceptOrderModal';
 import AcceptedOrderModal from '../../../modal/AcceptedOrderModal';
 import CancelModal from '../../../modal/CancelModal';
 import SelectVehicleModal from '../../../modal/SelectVehicleModal';
-import TinderCarousel from '../../../components/custom/TinderCarousel'; // << add this
+import TinderCarousel from '../../../components/custom/TinderCarousel';
 
 import {LocationPin, Update} from '../../../../assets/svg/index';
 import CustomHeader from '../../../components/custom/CustomHeader';
@@ -166,8 +166,6 @@ const REROUTE_COOLDOWN_MS = 10_000;
 const REROUTE_MIN_MOVE_M = 30;
 const OFFROUTE_DISTANCE_M = 120;
 const OFFROUTE_PERSIST_MS = 4000;
-
-/* Immediate jump threshold */
 const OFFROUTE_JUMP_M = 50;
 
 const HomeMainScreen = ({route}) => {
@@ -308,7 +306,7 @@ const HomeMainScreen = ({route}) => {
     dispatch(setSocketStatus(socketConnected));
   }, [socketConnected]);
 
-  /* ───────── Sockets (same as yours) ───────── */
+  /* ───────── Sockets ───────── */
   useEffect(() => {
     const rawUrl = user?.socketio;
     const {baseUrl, roomId} = parseSocketUrl(rawUrl);
@@ -623,7 +621,6 @@ const HomeMainScreen = ({route}) => {
     return true;
   }, [config?.selectVehicle?.id, navigation, t]);
 
-  // accept now takes an ORDER (from card)
   const handleAcceptOrder = useCallback(
     order => {
       if (!requireVehicleOrToast()) return;
@@ -1005,16 +1002,21 @@ const HomeMainScreen = ({route}) => {
     guardedFetchRoute,
   ]);
 
-  /* ───────── Background location post ───────── */
+  /* ───────── Background location post (SEND TO API) ───────── */
   const locationInFlightRef = useRef(false);
+
   const postLocation = useCallback(async () => {
     if (!config?.selectVehicle?.id) return;
     if (locationInFlightRef.current) return;
-    const cam = cameraRef.current;
-    const norm = normalizeCoord(cam);
+
+    // ✅ Use real GPS location; fallback to camera if GPS not ready yet
+    const loc = userLocRef.current || cameraRef.current;
+    const norm = normalizeCoord(loc);
     if (!norm) return;
+
     const dir =
       headingRef.current != null ? Math.round(headingRef.current) : null;
+
     locationInFlightRef.current = true;
     try {
       await sendData(urls.UPDATELOCATION, {
@@ -1023,12 +1025,15 @@ const HomeMainScreen = ({route}) => {
         heading: dir,
         vehicle_id: config?.selectVehicle?.id,
       });
-      showToast('Location updated' + `: ${norm[1]}, ${norm[0]}`);
-    } catch {
+      // You can keep or remove this toast
+      showToast('Location updated: ' + `${norm[1]}, ${norm[0]}`);
+    } catch (e) {
+      // optional: console.log('UPDATELOCATION error', e);
     } finally {
       locationInFlightRef.current = false;
     }
   }, [config?.selectVehicle?.id]);
+
   useEffect(() => {
     const first = setTimeout(postLocation, 3000);
     const id = setInterval(postLocation, LOCATION_UPDATE_MS);
@@ -1143,7 +1148,7 @@ const HomeMainScreen = ({route}) => {
                 rotateEnabled
                 style={styles.map}
                 onDidFinishLoadingMap={() => setMapReady(true)}>
-                {/* Remaining route (blue) */}
+                {/* Remaining route (black) */}
                 {remainingFeature && (
                   <Mapbox.ShapeSource
                     id="remainingSource"
@@ -1160,7 +1165,7 @@ const HomeMainScreen = ({route}) => {
                   </Mapbox.ShapeSource>
                 )}
 
-                {/* Traveled route (gray) */}
+                {/* Traveled route (yellow) */}
                 {traveledFeature && (
                   <Mapbox.ShapeSource
                     id="traveledSource"
@@ -1275,7 +1280,7 @@ const HomeMainScreen = ({route}) => {
           activeOpacity={0.6}
           onPress={getDeliveryLists}
           style={styles.button1}>
-          <Update width={wp(5)} height={wp(5)}></Update>
+          <Update width={wp(5)} height={wp(5)} />
         </TouchableOpacity>
         {!selectedOrder && (
           <CustomAvailableRider
@@ -1284,11 +1289,11 @@ const HomeMainScreen = ({route}) => {
           />
         )}
 
-        {/* map overlay fade — colors & locations lengths must match */}
+        {/* map overlay fade */}
         <LinearGradient
           pointerEvents="none"
           colors={['#fff', 'transparent']}
-          locations={[0, 1]} // ← fixed (2 values)
+          locations={[0, 1]}
           start={{x: 0.5, y: 0}}
           end={{x: 0.5, y: 1}}
           style={styles.topFade}
@@ -1298,7 +1303,7 @@ const HomeMainScreen = ({route}) => {
         {!isAccepted && showAcceptOrder && data.length > 0 && (
           <View style={styles.tinderWrap} pointerEvents="box-none">
             <TinderCarousel
-              key={`deck-${data[0]?.id ?? 'x'}-${data.length}`} // ← force remount
+              key={`deck-${data[0]?.id ?? 'x'}-${data.length}`}
               data={data}
               renderItem={({item}) => (
                 <AcceptOrderModal
@@ -1501,7 +1506,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  // Tinder deck container (sticks to bottom like your modal)
   tinderWrap: {
     position: 'absolute',
     left: 0,
