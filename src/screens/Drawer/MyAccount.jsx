@@ -45,19 +45,19 @@ const MyAccount = () => {
       id: 1,
       name: t('totalRide'),
       icon: <FileGray width={wp(4)} height={wp(4)}></FileGray>,
-      value: 0,
+      value: "-",
     },
     {
       id: 2,
       name: t('complete'),
       icon: <FileGreen width={wp(4)} height={wp(4)}></FileGreen>,
-      value: 0,
+      value: "-",
     },
     {
       id: 3,
       name: t('cancel'),
       icon: <FileRed width={wp(4)} height={wp(4)}></FileRed>,
-      value: 0,
+      value: "-",
     },
   ];
 

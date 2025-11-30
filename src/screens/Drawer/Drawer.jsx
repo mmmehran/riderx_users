@@ -61,24 +61,24 @@ const LoginEmail = props => {
       icon: <FindRide width={wp(6)} height={wp(6)}></FindRide>,
       onPress: () => props?.navigation.navigate(routes.REPORT),
     },
-    {
-      id: 4,
-      name: t('VehicleInfo'),
-      icon: <VehicleInfo width={wp(6)} height={wp(6)}></VehicleInfo>,
-      onPress: () => props?.navigation.navigate(routes.CHOOSEVEHICLE),
-    },
-    {
-      id: 5,
-      name: t('FindRide'),
-      icon: <FindRide width={wp(6)} height={wp(6)}></FindRide>,
-      //  onPress: () => props?.navigation.navigate(routes.CHOOSEVEHICLE),
-    },
-    {
-      id: 6,
-      name: t('Services'),
-      icon: <Services width={wp(6)} height={wp(6)}></Services>,
-      onPress: () => props?.navigation.navigate(routes.CHOOSESERVICE),
-    },
+    
+    //   id: 4,
+    //   name: t('VehicleInfo'),
+    //   icon: <VehicleInfo width={wp(6)} height={wp(6)}></VehicleInfo>,
+    //   onPress: () => props?.navigation.navigate(routes.CHOOSEVEHICLE),
+    // },
+    // {
+    //   id: 5,
+    //   name: t('FindRide'),
+    //   icon: <FindRide width={wp(6)} height={wp(6)}></FindRide>,
+    //   //  onPress: () => props?.navigation.navigate(routes.CHOOSEVEHICLE),
+    // },
+    // {
+    //   id: 6,
+    //   name: t('Services'),
+    //   icon: <Services width={wp(6)} height={wp(6)}></Services>,
+    //   onPress: () => props?.navigation.navigate(routes.CHOOSESERVICE),
+    // },
     // {
     //   id: 7,
     //   name: t('DriverClub'),
