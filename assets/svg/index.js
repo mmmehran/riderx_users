@@ -91,3 +91,6 @@ export { default as CallUserIcon } from "./callUserIcon.svg";
 export { default as MessageUserIcon } from "./messageUserIcon.svg";
 export { default as CameraIcon2 } from "./cameraIcon2.svg";
 export { default as AboutusIcon } from "./aboutusIcon.svg";
+export { default as WalletCartIcon } from "./walletCart.svg";
+export { default as DepositIcon } from "./depositIcon.svg";
+export { default as CashOutIcon } from "./cashOutIcon.svg";

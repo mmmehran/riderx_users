@@ -161,5 +161,7 @@
   "imageChanged": "عکس با موفقیت تغییر کرد",
   "enterDeliveryPin": "رمز تحویل سفارش را وارد کنید",
   "pinContent": "لطفاً کد ۴ رقمی که گیرنده برای تأیید تحویل با شما به اشتراک گذاشته است وارد کنید.",
-  "confimedDelivery": "تأیید تحویل"
+  "confimedDelivery": "تأیید تحویل",
+  "SavingsCard": "کارت تخفیف",
+  "history": "تاریخچه"
 }

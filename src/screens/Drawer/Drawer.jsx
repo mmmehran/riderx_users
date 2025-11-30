@@ -185,7 +185,7 @@ const LoginEmail = props => {
           style={styles.walletContainer}>
           <WalletIcon width={wp(8)} height={wp(8)}></WalletIcon>
           <View>
-            <CustomText style={styles.priceText}>$39.00</CustomText>
+            <CustomText style={styles.priceText}>€ {user?.wallet && user?.wallet[0]?.balance}</CustomText>
             <CustomText style={styles.walletText}>{t('yourWallet')}</CustomText>
           </View>
           <View style={styles.iconWallet}>

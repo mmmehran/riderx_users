@@ -13,6 +13,7 @@ const initialStateObject = {
    email_verified:null,
    is_rider:null,
    social_auth_callback_url:null,
+   wallet:null
 };
 
 export const selectAuthenticated = (state) => state.auth.authenticated;
@@ -42,6 +43,12 @@ export const authenticationSlice = createSlice({
             userProfile: action.payload,
          };
       },
+      setUserWallet: (state, action) => {
+         return {
+           ...state,
+            wallet: action.payload,
+         };
+      },
       logout: () => {
          return initialStateObject
       },
@@ -51,7 +58,8 @@ export const authenticationSlice = createSlice({
 export const {
    login,
    logout,
-   setUserProfile
+   setUserProfile,
+   setUserWallet
 } = authenticationSlice.actions;
 
 export default authenticationSlice.reducer;

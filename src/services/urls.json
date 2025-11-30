@@ -3,7 +3,7 @@
   "SETFCMTOKEN": "user/set_fcm_token/",
   "GETLISTDELIVERY": "delivery/list",
   "GETWALLET": "user/wallet/",
-  "GETWALLETTRANSACTION": "user/wallet_transaction_list/",
+  "GETWALLETTRANSACTION": "user/wallet_transaction_list",
   "CHANGESTATUSORDER": "delivery/rider/update_status_by_rider",
   "GETLASTDELIVERY": "delivery/rider/open_list",
   "GETRIDERHISTORY": "delivery/rider/list",

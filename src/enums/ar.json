@@ -161,5 +161,8 @@
   "imageChanged": "تم تغيير الصورة بنجاح",
   "enterDeliveryPin": "أدخل رمز توصيل الطلب",
   "pinContent": "يرجى إدخال الرمز المكون من 4 أرقام الذي شاركه المستلم لتأكيد التوصيل.",
-  "confimedDelivery": "تأكيد التوصيل"
+  "confimedDelivery": "تأكيد التوصيل",
+ "SavingsCard": "بطاقة التوفير",
+"history": "السجل"
+
 }

@@ -161,5 +161,8 @@
   "imageChanged": "Fotoğraf başarıyla güncellendi",
   "enterDeliveryPin": "Teslimat PIN’ini gir",
   "pinContent": "Teslimatı onaylamak için alıcının seninle paylaştığı 4 haneli kodu gir.",
-  "confimedDelivery": "Teslimatı onayla"
+  "confimedDelivery": "Teslimatı onayla",
+  "SavingsCard": "Birikim kartı",
+"history": "Geçmiş"
+
 }

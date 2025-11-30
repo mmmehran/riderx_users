@@ -50,6 +50,7 @@ import {
 import {
   setUserProfile,
   authenticated,
+  setUserWallet
 } from '../../../redux/reducers/authenticationReducer';
 import {connectSocket, on, disconnectSocket} from '../../../services/socket';
 import {
@@ -1099,6 +1100,23 @@ const HomeMainScreen = ({route}) => {
     () => normalizeCoord(camera) ?? camera,
     [camera],
   );
+
+    const getWallet = async () => {
+        const response = await getData(urls.GETWALLET);
+        if (response?.data?.status) {
+          dispatch(setUserWallet(response?.data?.data))
+        } else {
+          errorHandler(response);
+        }
+  };
+
+
+   useFocusEffect(
+      useCallback(() => {
+        getWallet();
+      }, []),
+    );
+
 
   const updateVehicleStatus = async () => {
     const response = await sendData(urls.UPDATESTATUSVEHICLE, {

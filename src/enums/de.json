@@ -161,5 +161,8 @@
   "imageChanged": "Bild erfolgreich aktualisiert",
   "enterDeliveryPin": "Liefer-PIN eingeben",
   "pinContent": "Bitte gib den 4-stelligen Code ein, den der Empfänger zur Bestätigung der Lieferung mit dir geteilt hat.",
-  "confimedDelivery": "Lieferung bestätigen"
+  "confimedDelivery": "Lieferung bestätigen",
+  "SavingsCard": "Sparkarte",
+  "history": "Verlauf"
+
 }
