@@ -28,7 +28,7 @@ export const authenticationSlice = createSlice({
             token: action.payload?.token,
             user_id: action.payload?.user_id,
             email: action.payload?.email,
-            phone: `${action.payload?.phone?.country_code}${action.payload?.phone?.number}`,
+            phone: action.payload?.phone ? `${action.payload?.phone?.country_code}${action.payload?.phone?.number}` : null,
             socketio: action.payload?.socketio,
             profile_image: action.payload?.profile_image,
             email_verified: action.payload?.email_verified,

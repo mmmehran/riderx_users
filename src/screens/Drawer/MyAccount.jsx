@@ -93,6 +93,7 @@ const MyAccount = () => {
     }
   };
 
+
   return (
     <CustomScreen>
       <CustomHeaderApp title={t('myAccount')} />
@@ -111,7 +112,7 @@ const MyAccount = () => {
             <CustomText style={styles.nameUser}>
               {user?.userProfile?.first_name} {user?.userProfile?.last_name}
             </CustomText>
-            <CustomText style={styles.phoneText}>{user?.phone}</CustomText>
+            <CustomText style={styles.phoneText}>{user?.phone ? `+${user?.phone}` : "-"}</CustomText>
           </View>
         </View>
         <TouchableOpacity
