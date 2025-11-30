@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   Image,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import {
   widthPercentageToDP as wp,
@@ -286,7 +287,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.neonYellow,
     position: 'absolute',
     overflow: 'hidden',
-    top: hp(18),
+    top: Platform.OS == 'ios'  ? hp(24)  : hp(18),
     right: wp(33),
   },
   formContainer: {
