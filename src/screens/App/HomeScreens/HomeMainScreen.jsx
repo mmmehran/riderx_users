@@ -1110,10 +1110,22 @@ const HomeMainScreen = ({route}) => {
         }
   };
 
+    const getVehicle = async () => {
+    setLoading(true);
+    const response = await getData(`${urls.GETVEHICLE}?page=1`);
+    if (response?.data?.status) {
+      dispatch(setVehicleData(response?.data?.data?.items));
+    } else {
+      errorHandler(response);
+    }
+    setLoading(false);
+  };
+
 
    useFocusEffect(
       useCallback(() => {
         getWallet();
+        getVehicle();
       }, []),
     );
 
@@ -1402,7 +1414,9 @@ const HomeMainScreen = ({route}) => {
       <ConfirmCancelDeliveryModal
         title={t('completeTrip')}
         type={true}
-        content={`${t('anamount')} €${completeOrderPrice} ${t('hasBeen')}`}
+        content1={t('anamount')}
+        content2={t('hasBeen')}
+        price={completeOrderPrice}
         confirmText={t('goOnline')}
         isVisible={confirmCompleteModalVisible}
         onCancel={() => setConfirmCompleteModalVisible(false)}

@@ -48,7 +48,7 @@ const styles = StyleSheet.create({
     title:{
         fontSize: wp(4.5),
         color: colors.contentSecondary,
-        fontFamily: 'YaldeviJaffna-Bold',
+    fontFamily: 'arial',
         marginLeft:wp(2.5)
     },
     timeText:{

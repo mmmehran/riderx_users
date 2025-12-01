@@ -203,7 +203,7 @@ const LoginEmail = props => {
             </TouchableOpacity>
           ))}
         </View>
-        <View style={styles.bottomContainer}>
+        {/* <View style={styles.bottomContainer}>
           <View style={styles.switchAccountContainer}>
             <TouchableOpacity style={styles.buttonSwitch}>
               <CustomText style={styles.textButtonSwitch}>
@@ -219,7 +219,7 @@ const LoginEmail = props => {
               </CustomText>
             </TouchableOpacity>
           </View>
-        </View>
+        </View> */}
       </View>
     </CustomScreen>
   );
@@ -323,7 +323,7 @@ const styles = StyleSheet.create({
     fontSize: wp(4.8),
   },
   priceText: {
-    fontFamily: 'YaldeviJaffna-Bold',
+    fontFamily: 'arial',
     color: colors.neonTeal300,
     marginLeft: wp(2),
     fontSize: wp(4.5),

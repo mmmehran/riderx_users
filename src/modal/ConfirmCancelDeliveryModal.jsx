@@ -23,6 +23,8 @@ const ConfirmCancelDeliveryModal = ({
   content,
   type,
   price,
+  content1,
+  content2
 }) => {
   return (
     <CustomModal
@@ -45,7 +47,24 @@ const ConfirmCancelDeliveryModal = ({
         <CustomText style={[styles.title, type && {color: colors.success900}]}>
           {title}
         </CustomText>
+        {
+          type ?
+          <>
+          <View style={[styles.row,{marginHorizontal:wp(18),marginBottom:0}]}>
+          <CustomText style={styles.content}>
+          {content1}
+        </CustomText> 
+          <CustomText style={[styles.content,{ fontFamily: 'arial', fontWeight:'bold'}]}>
+          € {price}
+        </CustomText> 
+            </View>
+          <CustomText style={styles.content}>
+          {content2}
+        </CustomText> 
+        </>
+        :
         <CustomText style={styles.content}>{content}</CustomText>
+        }
         <View style={styles.row}>
           <TouchableOpacity
             style={[styles.btn, styles.btnSolid]}
@@ -99,8 +118,6 @@ const styles = StyleSheet.create({
     color: colors.neutral600,
     textAlign: 'center',
     lineHeight: hp(3),
-    marginHorizontal: wp(6),
-    marginTop: hp(0.5),
     fontFamily: 'YaldeviJaffna-Bold',
   },
   message: {

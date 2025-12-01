@@ -1,4 +1,4 @@
-import React, {useCallback, useState} from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -10,22 +10,22 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
-import {useTranslation} from 'react-i18next';
-import {useFocusEffect} from '@react-navigation/core';
-import {useDispatch,useSelector} from 'react-redux';
+import { useTranslation } from 'react-i18next';
+import { useFocusEffect } from '@react-navigation/core';
+import { useDispatch, useSelector } from 'react-redux';
 
 import CustomScreen from '../../components/common/CustomScreen';
 import colors from '../../config/colors';
 import CustomText from '../../components/common/CustomText';
 import CustomHeaderApp from '../../components/custom/CustomHeaderApp';
 import PaymentHistoryList from '../../components/list/PaymentHistoryList';
-import {getData} from '../../services/common.service';
+import { getData } from '../../services/common.service';
 import urls from '../../services/urls.json';
 import errorHandler from '../../utils/errorHandler';
-import {setUserWallet,authenticated} from '../../redux/reducers/authenticationReducer'
+import { setUserWallet, authenticated } from '../../redux/reducers/authenticationReducer';
 
 const Report = props => {
-  const {t} = useTranslation();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [dataTransaction, setDataTransaction] = useState(null);
   const [page, setPage] = useState(1);
@@ -35,41 +35,50 @@ const Report = props => {
   const user = useSelector(authenticated);
 
   const getWallet = async (pageNumber = 1) => {
-    if (pageNumber === 1) setLoading(true);
-    
-    if (pageNumber === 1) {
+    try {
+      if (pageNumber === 1) setLoading(true);
+
+      // main wallet data
+      if (pageNumber === 1) {
         const response = await getData(urls.GETWALLET);
         if (response?.data?.status) {
-          dispatch(setUserWallet(response?.data?.data))
+          dispatch(setUserWallet(response?.data?.data));
         } else {
           errorHandler(response);
         }
-    }
+      }
 
-    const responseTransaction = await getData(`${urls.GETWALLETTRANSACTION}?page_size=5&page=${pageNumber}`);
-    if (responseTransaction?.data?.status) {
-      const newItems = responseTransaction?.data?.data?.items || [];
-      
-      if (pageNumber === 1) {
+      // transactions
+      const responseTransaction = await getData(
+        `${urls.GETWALLETTRANSACTION}?page_size=5&page=${pageNumber}`,
+      );
+
+      if (responseTransaction?.data?.status) {
+        const newItems = responseTransaction?.data?.data?.items || [];
+
+        if (pageNumber === 1) {
           setDataTransaction(responseTransaction?.data?.data);
-      } else {
+        } else {
           setDataTransaction(prev => ({
-              ...prev,
-              items: [...(prev?.items || []), ...newItems]
+            ...(prev || {}),
+            items: [...(prev?.items || []), ...newItems],
           }));
-      }
-      
-      if (newItems.length < 5) {
+        }
+
+        if (newItems.length < 5) {
           setHasMore(false);
-      } else {
+        } else {
           setHasMore(true);
+        }
+      } else {
+        errorHandler(responseTransaction);
       }
-    } else {
-      errorHandler(responseTransaction);
+    } catch (e) {
+      console.log('getWallet error', e);
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
     }
-    
-    setLoading(false);
-    setLoadingMore(false);
   };
 
   useFocusEffect(
@@ -79,26 +88,40 @@ const Report = props => {
       getWallet(1);
     }, []),
   );
-  
+
   const loadMore = () => {
-      if (!loadingMore && hasMore && !loading) {
-          setLoadingMore(true);
-          const nextPage = page + 1;
-          setPage(nextPage);
-          getWallet(nextPage);
-      }
-  }
+    if (!loadingMore && hasMore && !loading) {
+      const nextPage = page + 1;
+      setLoadingMore(true);
+      setPage(nextPage);
+      getWallet(nextPage);
+    }
+  };
 
   const renderFooter = () => {
-      if (!loadingMore) return null;
-      return (
-          <View style={{paddingVertical: 20}}>
-              <ActivityIndicator size="small" color="#000" />
-          </View>
-      )
-  }
+    if (!loadingMore) return null;
+    return (
+      <View style={{ paddingVertical: 20 }}>
+        <ActivityIndicator size="small" color="#000" />
+      </View>
+    );
+  };
 
-  const renderHeader = () => (
+  const renderHeader = () => {
+    // make sure wallet is a proper array
+    const primaryWallet = Array.isArray(user?.wallet) ? user.wallet[0] : null;
+    const rawStatus = primaryWallet?.status ?? '';
+    const niceStatus =
+      typeof rawStatus === 'string' && rawStatus.length > 0
+        ? rawStatus.charAt(0).toUpperCase() + rawStatus.slice(1)
+        : '';
+
+    const balanceValue =
+      typeof primaryWallet?.balance === 'number'
+        ? primaryWallet.balance
+        : primaryWallet?.balance || 0;
+
+    return (
       <>
         <View style={styles.balanceContainer}>
           <ImageBackground
@@ -108,12 +131,7 @@ const Report = props => {
             <View style={styles.rowTop}>
               <View style={styles.statusContainer}>
                 <View style={styles.dot} />
-                <CustomText>
-                  {user?.wallet[0] && user?.wallet[0]?.status
-                    ? user?.wallet[0]?.status.charAt(0).toUpperCase() +
-                      user?.wallet[0]?.status.slice(1)
-                    : ''}
-                </CustomText>
+                <CustomText>{niceStatus}</CustomText>
               </View>
             </View>
             <View style={styles.rowBottom}>
@@ -121,7 +139,7 @@ const Report = props => {
                 {t('SavingsCard')}
               </CustomText>
               <CustomText style={styles.textPrice}>
-                € {user?.wallet && user?.wallet[0]?.balance}
+                € {balanceValue}
               </CustomText>
             </View>
           </ImageBackground>
@@ -130,24 +148,24 @@ const Report = props => {
           <CustomText style={styles.textHistory}>{t('history')}</CustomText>
         </View>
       </>
-  );
+    );
+  };
 
   return (
     <CustomScreen>
       <CustomHeaderApp title={t('yourWallet')} />
-        {loading ? (
-          <View
-            style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
-            <ActivityIndicator size={'large'} color={'#000'} />
-          </View>
-        ) : (
-            <PaymentHistoryList 
-                data={dataTransaction?.items} 
-                ListHeaderComponent={renderHeader()}
-                onEndReached={loadMore}
-                ListFooterComponent={renderFooter()}
-            />
-        )}
+      {loading ? (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size={'large'} color={'#000'} />
+        </View>
+      ) : (
+        <PaymentHistoryList
+          data={dataTransaction?.items || []}
+          ListHeaderComponent={renderHeader}
+          onEndReached={loadMore}
+          ListFooterComponent={renderFooter}
+        />
+      )}
     </CustomScreen>
   );
 };
@@ -217,7 +235,7 @@ const styles = StyleSheet.create({
   textPrice: {
     fontSize: wp(9),
     color: colors.white,
-    fontFamily: 'YaldeviJaffna-Bold',
+    fontFamily: 'arial',
     marginLeft: wp(5),
   },
   button: {

@@ -247,13 +247,13 @@ const styles = StyleSheet.create({
     marginBottom: hp(1.5),
   },
   textAddress: {
-    fontFamily: 'YaldeviJaffna-Bold',
+    fontFamily: 'arial',
     color: colors.black,
     width: wp(57),
     marginTop: hp(0.54),
   },
   textTime: {
-    fontFamily: 'YaldeviJaffna-Bold',
+    fontFamily: 'arial',
     color: colors.black,
     fontSize: wp(3.5),
     marginLeft: wp(0.1),
@@ -304,7 +304,7 @@ const styles = StyleSheet.create({
   textPrice: {
     fontSize: wp(7),
     color: colors.black,
-    fontFamily: 'YaldeviJaffna-Bold',
+    fontFamily: 'arial',
     marginLeft: wp(1),
     lineHeight: hp(3.5),
     width: wp(23),
@@ -313,7 +313,7 @@ const styles = StyleSheet.create({
   textPrice1: {
     fontSize: wp(4),
     color: colors.neutral500,
-    fontFamily: 'YaldeviJaffna-Bold',
+    fontFamily: 'arial',
     marginLeft: wp(2),
   },
   line: {

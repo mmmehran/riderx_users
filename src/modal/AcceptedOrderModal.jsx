@@ -540,7 +540,7 @@ const styles = StyleSheet.create({
     color: colors.neutral800,
     textAlign: 'left',
     marginLeft: wp(1.3),
-    fontFamily: 'YaldeviJaffna-Bold',
+    fontFamily: 'arial',
     lineHeight: hp(3),
   },
   textInfo1: {

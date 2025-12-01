@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
         textAlign: "left",
         width: wp(77),
         fontSize: wp(3.8),
-        fontFamily: "YaldeviJaffna-Medium",
+    fontFamily: 'arial',
         marginLeft:wp(2),
     },
     title: {

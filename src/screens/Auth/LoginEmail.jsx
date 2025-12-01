@@ -355,7 +355,8 @@ const LoginEmail = props => {
             <CustomText style={styles.textVersion}>
               {t('appVersion')}
             </CustomText>
-            <CustomText style={[styles.textSignu, {fontSize: wp(3.6)}]}>
+            <CustomText style={[styles.textSignu, {fontSize: wp(3.6),    fontFamily: 'arial',
+}]}>
               {version}
             </CustomText>
           </View>
