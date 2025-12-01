@@ -6,7 +6,9 @@ import {
   Platform,
   Alert,
   PermissionsAndroid,
+  Linking,
 } from 'react-native';
+import {check, request, PERMISSIONS, RESULTS} from 'react-native-permissions';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
@@ -65,31 +67,79 @@ const TakePictureModal = ({
   };
 
   const ensureCameraPermission = async () => {
-    if (Platform.OS !== 'android') {
-      return true;
+    if (Platform.OS === 'android') {
+      const ok = await requestAndroidCameraPermission();
+      if (!ok) {
+        Alert.alert(
+          'Permission required',
+          'Please enable Camera permission in Settings.',
+        );
+      }
+      return ok;
     }
-    const ok = await requestAndroidCameraPermission();
-    if (!ok) {
-      Alert.alert(
-        'Permission required',
-        'Please enable Camera permission in Settings.',
-      );
+
+    // iOS
+    try {
+      const result = await check(PERMISSIONS.IOS.CAMERA);
+      if (result === RESULTS.GRANTED) return true;
+      if (result === RESULTS.DENIED) {
+        const req = await request(PERMISSIONS.IOS.CAMERA);
+        return req === RESULTS.GRANTED;
+      }
+      if (result === RESULTS.BLOCKED) {
+        Alert.alert(
+          'Permission Blocked',
+          'Please enable Camera access in your phone Settings.',
+          [
+            {text: 'Cancel', style: 'cancel'},
+            {text: 'Open Settings', onPress: () => Linking.openSettings()},
+          ],
+        );
+        return false;
+      }
+      return false;
+    } catch (e) {
+      console.log('iOS Camera perm error:', e);
+      return false;
     }
-    return ok;
   };
 
   const ensureLibraryPermission = async () => {
-    if (Platform.OS !== 'android') {
-      return true;
+    if (Platform.OS === 'android') {
+      const ok = await requestAndroidLibraryPermission();
+      if (!ok) {
+        Alert.alert(
+          'Permission required',
+          'Please enable Photos/Files permission in Settings.',
+        );
+      }
+      return ok;
     }
-    const ok = await requestAndroidLibraryPermission();
-    if (!ok) {
-      Alert.alert(
-        'Permission required',
-        'Please enable Photos/Files permission in Settings.',
-      );
+
+    // iOS
+    try {
+      const result = await check(PERMISSIONS.IOS.PHOTO_LIBRARY);
+      if (result === RESULTS.GRANTED || result === RESULTS.LIMITED) return true;
+      if (result === RESULTS.DENIED) {
+        const req = await request(PERMISSIONS.IOS.PHOTO_LIBRARY);
+        return req === RESULTS.GRANTED || req === RESULTS.LIMITED;
+      }
+      if (result === RESULTS.BLOCKED) {
+        Alert.alert(
+          'Permission Blocked',
+          'Please enable Photo Library access in your phone Settings.',
+          [
+            {text: 'Cancel', style: 'cancel'},
+            {text: 'Open Settings', onPress: () => Linking.openSettings()},
+          ],
+        );
+        return false;
+      }
+      return false;
+    } catch (e) {
+      console.log('iOS Library perm error:', e);
+      return false;
     }
-    return ok;
   };
 
   const normalizeResult = img => {
@@ -125,7 +175,8 @@ const TakePictureModal = ({
       onSelect(normalizeResult(image));
       onBackdropPress();
     } catch (e) {
-      // console.log('Library error:', e);
+      console.log('Library error:', e);
+      Alert.alert('Error', e.message || 'Failed to open library');
     }
   };
 
@@ -149,7 +200,8 @@ const TakePictureModal = ({
       onSelect(normalizeResult(image));
       onBackdropPress();
     } catch (e) {
-      // console.log('Camera error:', e);
+      console.log('Camera error:', e);
+      Alert.alert('Error', e.message || 'Failed to open camera');
     }
   };
 
