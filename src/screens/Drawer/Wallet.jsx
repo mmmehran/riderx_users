@@ -50,7 +50,7 @@ const Report = props => {
 
       // transactions
       const responseTransaction = await getData(
-        `${urls.GETWALLETTRANSACTION}?page_size=5&page=${pageNumber}`,
+        `${urls.GETWALLETTRANSACTION}/?page_size=5&page=${pageNumber}`,
       );
 
       if (responseTransaction?.data?.status) {
