@@ -58,6 +58,7 @@ import {
   setSelectVehicle,
   setSocketStatus,
   setSelectVehicleVisible,
+  setVehicleData
 } from '../../../redux/reducers/configReducer';
 import ConfirmModal from '../../../modal/ConfirmModal';
 import ConfirmCancelDeliveryModal from '../../../modal/ConfirmCancelDeliveryModal';
@@ -1111,14 +1112,12 @@ const HomeMainScreen = ({route}) => {
   };
 
     const getVehicle = async () => {
-    setLoading(true);
     const response = await getData(`${urls.GETVEHICLE}?page=1`);
     if (response?.data?.status) {
       dispatch(setVehicleData(response?.data?.data?.items));
     } else {
       errorHandler(response);
     }
-    setLoading(false);
   };
 
 

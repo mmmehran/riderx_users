@@ -249,7 +249,7 @@ const styles = StyleSheet.create({
   textAddress: {
     fontFamily: 'arial',
     color: colors.black,
-    width: wp(57),
+    width: wp(50),
     marginTop: hp(0.54),
   },
   textTime: {
@@ -259,7 +259,7 @@ const styles = StyleSheet.create({
     marginLeft: wp(0.1),
   },
   durationContainer: {
-    width: wp(27),
+    width: wp(34),
     height: hp(3.2),
     borderWidth: wp(0.3),
     borderColor: colors.neutral200,

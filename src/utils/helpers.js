@@ -173,3 +173,7 @@ export const  parseSocketUrl = (full) => {
     return { baseUrl: urlPart, roomId };
   }
 }
+
+export const capitalizeFirstLetter = (string) => {
+    return string ? string.charAt(0).toUpperCase() + string.slice(1) : "";
+}

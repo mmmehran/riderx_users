@@ -32,6 +32,7 @@ const mainColors = {
     neonTeal300:"#00E0C6",
     contentSecondary:"#414141",
     successBase:"#1FC16B",
+    success50:"#E0FAEC",
     success900:"#2D912E",
     strong900:"#0E121B",
     error50:"#FFEBEC",

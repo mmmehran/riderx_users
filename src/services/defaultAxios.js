@@ -1,6 +1,8 @@
 import axios from "axios";
 import store from "../redux/store";
 import errorHandler from '../utils/errorHandler';
+import {version} from '../../package.json';
+
 
 const instance = axios.create();
 const instanceWithAuthorization = axios.create();
@@ -8,17 +10,28 @@ const emptyInstance = axios.create();
 
 store.subscribe(() => {
    const accessToken = store.getState().auth.token
+   const emailUser = store.getState().auth.email
    updateAuthToken(accessToken);
+   addEmailUser(emailUser);
 });
+
+export const addEmailUser = (email) => {
+   if (email)
+        instanceWithAuthorization.defaults.headers.common["user-email"] = email
+};
 
 export const setConfigTest = () => {
    instance.defaults.baseURL = "https://t3.riderx.me/api/v1/"
    instanceWithAuthorization.defaults.baseURL = "https://t3.riderx.me/api/v1/"
+   instanceWithAuthorization.defaults.headers.common["app-version"] = version
+
 };
 
 export const setConfig = () => {
    instance.defaults.baseURL = "https://gearbox.riderx.me/api/v1/"
    instanceWithAuthorization.defaults.baseURL = "https://gearbox.riderx.me/api/v1/"
+   instanceWithAuthorization.defaults.headers.common["app-version"] = version
+
 };
 
 export const addContentTypeFormData = () => {
