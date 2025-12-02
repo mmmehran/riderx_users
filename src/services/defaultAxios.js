@@ -2,7 +2,7 @@ import axios from "axios";
 import store from "../redux/store";
 import errorHandler from '../utils/errorHandler';
 import {version} from '../../package.json';
-
+import {Platform} from 'react-native'
 
 const instance = axios.create();
 const instanceWithAuthorization = axios.create();
@@ -24,14 +24,16 @@ export const setConfigTest = () => {
    instance.defaults.baseURL = "https://t3.riderx.me/api/v1/"
    instanceWithAuthorization.defaults.baseURL = "https://t3.riderx.me/api/v1/"
    instanceWithAuthorization.defaults.headers.common["app-version"] = version
-
+   instanceWithAuthorization.defaults.headers.common["app-platform"] = Platform?.OS
+   instanceWithAuthorization.defaults.headers.common["app-platform-version"] = Platform?.constants?.Version
 };
 
 export const setConfig = () => {
    instance.defaults.baseURL = "https://gearbox.riderx.me/api/v1/"
    instanceWithAuthorization.defaults.baseURL = "https://gearbox.riderx.me/api/v1/"
    instanceWithAuthorization.defaults.headers.common["app-version"] = version
-
+   instanceWithAuthorization.defaults.headers.common["app-platform"] =  Platform?.OS
+   instanceWithAuthorization.defaults.headers.common["app-platform-version"] = Platform?.constants?.Version
 };
 
 export const addContentTypeFormData = () => {

@@ -50,7 +50,7 @@ import {
 import {
   setUserProfile,
   authenticated,
-  setUserWallet
+  setUserWallet,
 } from '../../../redux/reducers/authenticationReducer';
 import {connectSocket, on, disconnectSocket} from '../../../services/socket';
 import {
@@ -58,7 +58,7 @@ import {
   setSelectVehicle,
   setSocketStatus,
   setSelectVehicleVisible,
-  setVehicleData
+  setVehicleData,
 } from '../../../redux/reducers/configReducer';
 import ConfirmModal from '../../../modal/ConfirmModal';
 import ConfirmCancelDeliveryModal from '../../../modal/ConfirmCancelDeliveryModal';
@@ -214,6 +214,9 @@ const HomeMainScreen = ({route}) => {
   const [followMode, setFollowMode] = useState('course');
   const [bearing, setBearing] = useState(0);
   const [completeOrderPrice, setCompleteOrderPrice] = useState(0);
+
+  // ⭐ ETA state
+  const [etaSec, setEtaSec] = useState(null);
 
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
@@ -735,6 +738,7 @@ const HomeMainScreen = ({route}) => {
     setRemainingFeature(null);
     progressIdxRef.current = 0;
     lastOnRoutePointRef.current = null;
+    setEtaSec(null); // ⭐ reset ETA
     if (abortRef.current) abortRef.current.abort();
   };
   const buildLineFeature = coords =>
@@ -782,6 +786,7 @@ const HomeMainScreen = ({route}) => {
           setRouteDistanceM(distance);
           setBanner({primary: '', distance: 0});
           progressIdxRef.current = 0;
+          setEtaSec(null); // ⭐ ETA will be set on first location update
 
           const userLL =
             userLocRef.current || normalizeCoord(cameraRef.current);
@@ -862,9 +867,32 @@ const HomeMainScreen = ({route}) => {
       const d = Math.max(0, Math.round(haversineMeters(userLL, nextPt)));
       if (d < 30 && idx < routeSteps.length - 1)
         progressIdxRef.current = idx + 1;
+
       setBanner({primary: stepPrimaryText(currentStep), distance: d});
+
+      // ⭐ Compute remaining distance and ETA
+      let remainingM = d;
+      for (let i = idx + 1; i < routeSteps.length; i++) {
+        remainingM += routeSteps[i]?.distance || 0;
+      }
+
+      let eta = null;
+      if (routeDistanceM > 0 && routeDurationSec > 0 && remainingM > 0) {
+        // Use average speed of the route
+        const avgSpeed = routeDistanceM / routeDurationSec; // m/s
+        eta = remainingM / avgSpeed;
+      } else if (remainingM > 0) {
+        // Fallback: assume ~30 km/h ≈ 8.33 m/s
+        eta = remainingM / 8.33;
+      }
+
+      if (eta && Number.isFinite(eta) && eta > 0) {
+        setEtaSec(eta);
+      } else {
+        setEtaSec(null);
+      }
     },
-    [routeSteps],
+    [routeSteps, routeDistanceM, routeDurationSec],
   );
 
   const updateRouteProgress = useCallback(
@@ -923,7 +951,7 @@ const HomeMainScreen = ({route}) => {
 
       if (isFollowing && routeCoords.length > 1) {
         updateRouteProgress(userLL);
-        updateBannerAndSteps(userLL);
+        updateBannerAndSteps(userLL); // ⭐ updates ETA as well
       }
 
       try {
@@ -1102,16 +1130,16 @@ const HomeMainScreen = ({route}) => {
     [camera],
   );
 
-    const getWallet = async () => {
-        const response = await getData(urls.GETWALLET);
-        if (response?.data?.status) {
-          dispatch(setUserWallet(response?.data?.data))
-        } else {
-          errorHandler(response);
-        }
+  const getWallet = async () => {
+    const response = await getData(urls.GETWALLET);
+    if (response?.data?.status) {
+      dispatch(setUserWallet(response?.data?.data));
+    } else {
+      errorHandler(response);
+    }
   };
 
-    const getVehicle = async () => {
+  const getVehicle = async () => {
     const response = await getData(`${urls.GETVEHICLE}?page=1`);
     if (response?.data?.status) {
       dispatch(setVehicleData(response?.data?.data?.items));
@@ -1120,14 +1148,12 @@ const HomeMainScreen = ({route}) => {
     }
   };
 
-
-   useFocusEffect(
-      useCallback(() => {
-        getWallet();
-        getVehicle();
-      }, []),
-    );
-
+  useFocusEffect(
+    useCallback(() => {
+      getWallet();
+      getVehicle();
+    }, []),
+  );
 
   const updateVehicleStatus = async () => {
     const response = await sendData(urls.UPDATESTATUSVEHICLE, {
@@ -1157,6 +1183,12 @@ const HomeMainScreen = ({route}) => {
       getVehicleStatus();
     }
   }, []);
+
+  // ⭐ Convert ETA seconds → minutes for UI
+  const etaMinutes =
+    etaSec != null && Number.isFinite(etaSec)
+      ? Math.max(1, Math.round(etaSec / 60))
+      : null;
 
   /* ───────── Render ───────── */
   return (
@@ -1268,7 +1300,6 @@ const HomeMainScreen = ({route}) => {
                   </Mapbox.MarkerView>
                 )}
               </Mapbox.MapView>
-              
             </>
           ) : (
             <View style={styles.map} />
@@ -1284,6 +1315,7 @@ const HomeMainScreen = ({route}) => {
                 {!!banner.distance && (
                   <CustomText style={styles.bannerSub}>
                     {banner.distance} m
+                    {etaMinutes != null ? `  •  ~${etaMinutes} min` : ''}
                   </CustomText>
                 )}
               </View>
@@ -1308,7 +1340,6 @@ const HomeMainScreen = ({route}) => {
             toggleValue={config?.selectVehicle?.on_status == 'on'}
           />
         )}
-
 
         {/* Tinder-style Accept stack */}
         {!isAccepted && showAcceptOrder && data.length > 0 && (

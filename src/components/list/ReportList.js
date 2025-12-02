@@ -14,7 +14,7 @@ const ReportList = ({ data = [], refreshing, onRefresh, onEndReached, ListFooter
         )}
         keyExtractor={(item, idx) => String(item?.id ?? idx)}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: hp(20) }}
+        contentContainerStyle={{ paddingBottom: hp(10) }}
         refreshControl={
           <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} />
         }
@@ -29,5 +29,5 @@ const ReportList = ({ data = [], refreshing, onRefresh, onEndReached, ListFooter
 export default memo(ReportList);
 
 const styles = StyleSheet.create({
-  main: { flex: 1 },
+  main: { flex: 1,marginTop:hp(2) },
 });
