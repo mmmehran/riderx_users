@@ -1,10 +1,10 @@
 import React, {memo, useState} from 'react';
-import {StyleSheet, View, TouchableOpacity, Linking, Alert} from 'react-native';
+import {StyleSheet, View, TouchableOpacity, Linking, Alert, Platform} from 'react-native';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
-import SwipeButton from 'rn-swipe-button';
+import SwipeButton from '../components/common/SwipeButton';
 import {useTranslation} from 'react-i18next';
 
 import colors from '../config/colors';
@@ -12,7 +12,6 @@ import CustomText from '../components/common/CustomText';
 import {
   ArrowUp,
   CancelIcon,
-  IconButton,
   TinyProfile,
   PhoneIcon,
   PinLocation,
@@ -159,7 +158,7 @@ const AcceptedOrderModal = ({order, changeOrder, loading, insets}) => {
                   <CustomText style={styles.textInfo1}>
                     {t('Extradetails')}:
                   </CustomText>
-                  <CustomText style={styles.textInfo}>
+                  <CustomText style={[styles.textInfo,{width:wp(70),lineHeight:hp(2.5)}]}>
                     {(order?.status !== 'pickup'
                       ? order?.sender_address_json?.address_extra_details
                       : order?.receiver_address_json?.address_extra_details) ??
@@ -293,39 +292,18 @@ const AcceptedOrderModal = ({order, changeOrder, loading, insets}) => {
           {order?.status == 'accepted' && (
             <SwipeButton
               title={t('PickedUp')}
-              titleStyles={{
-                fontWeight: 'bold',
-              }}
-              titleColor={colors.black}
-              height={hp(4.9)}
-              titleFontSize={wp(4)}
               onSwipeSuccess={() => changeOrder('pickup', false)}
-              railStyles={{
-                borderRadius: wp(3),
-                left: wp(0),
-              }}
-              railBorderColor={colors.black}
-              railFillBackgroundColor="#cccccc46"
-              railFillBorderColor="#transparent"
+              height={Math.max(hp(5), 55)}
+              width={wp(77)}
+              thumbSize={Math.max(wp(5), 45)}
               railBackgroundColor={colors.white}
-              thumbIconBackgroundColor={colors.black}
-              thumbIconBorderColor="transparent"
-              thumbIconStyles={{borderRadius: wp(2.5)}}
-              containerStyles={styles.buttonContainer}
-              thumbIconComponent={() => (
-                <IconButton width={wp(6)} height={wp(6)}></IconButton>
-              )}
+              thumbBackgroundColor={colors.black}
+              titleColor={colors.black}
             />
           )}
           {order?.status == 'pickup' && (
             <SwipeButton
               title={t('dropOff')}
-              titleStyles={{
-                fontWeight: 'bold',
-              }}
-              titleColor={colors.black}
-              height={hp(4.9)}
-              titleFontSize={wp(4)}
               onSwipeSuccess={() => {
                 if (order?.is_secure) {
                   changeOrder('completed', true);
@@ -333,27 +311,18 @@ const AcceptedOrderModal = ({order, changeOrder, loading, insets}) => {
                   changeOrder('completed', false);
                 }
               }}
-              railStyles={{
-                borderRadius: wp(3),
-                left: wp(0),
-              }}
-              railBorderColor={colors.black}
-              railFillBackgroundColor="#cccccc46"
-              railFillBorderColor="#transparent"
+              height={Math.max(hp(5), 55)}
+              width={wp(77)}
+              thumbSize={Math.max(wp(5), 45)}
               railBackgroundColor={colors.white}
-              thumbIconBackgroundColor={colors.black}
-              thumbIconBorderColor="transparent"
-              thumbIconStyles={{borderRadius: wp(2.5)}}
-              containerStyles={styles.buttonContainer}
-              thumbIconComponent={() => (
-                <IconButton width={wp(6)} height={wp(6)}></IconButton>
-              )}
+              thumbBackgroundColor={colors.black}
+              titleColor={colors.black}
             />
           )}
           <TouchableOpacity
             onPress={() => changeOrder('cancel', false)}
             style={[styles.buttonPick, styles.cancelButton]}>
-            <CancelIcon width={wp(6)} height={wp(6)}></CancelIcon>
+            <CancelIcon width={wp(7)} height={wp(7)}></CancelIcon>
           </TouchableOpacity>
         </View>
       </View>
@@ -369,7 +338,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
     borderTopLeftRadius: wp(5),
     borderTopRightRadius: wp(5),
-    paddingBottom: hp(1),
+    paddingBottom: Platform.OS === 'ios' ? hp(4) :hp(1),
     position: 'absolute',
   },
   lessContainer: {
@@ -507,8 +476,8 @@ const styles = StyleSheet.create({
     marginTop: hp(0),
   },
   cancelButton: {
-    width: wp(12.8),
-    height: wp(12.8),
+    width: Math.max(hp(5), 55),
+    height: Math.max(hp(5), 55),
     marginLeft: wp(1),
     backgroundColor: 'transparent',
     borderRadius: wp(3),

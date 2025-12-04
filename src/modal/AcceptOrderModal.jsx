@@ -6,11 +6,11 @@ import {
 } from 'react-native-responsive-screen';
 import {useTranslation} from 'react-i18next';
 import axios from 'axios';
-import SwipeButton from 'rn-swipe-button';
+import SwipeButton from '../components/common/SwipeButton';
 
 import colors from '../config/colors';
 import CustomText from '../components/common/CustomText';
-import {IconButton, AddressLine, BlueCircle} from '../../assets/svg/index';
+import {AddressLine, BlueCircle} from '../../assets/svg/index';
 import {normalizeLabel} from '../utils/helpers';
 
 const MAPBOX_TOKEN =
@@ -164,7 +164,7 @@ const AcceptOrderModal = ({
           )}
         </View>
         <View style={styles.buttonWrapper}>
-          <View style={{width: wp(21), alignItems: 'center'}}>
+          <View style={{width: wp(21), alignItems: 'center',    marginRight:wp(1.5)}}>
             <CustomText style={styles.textPrice} numberOfLines={1}>
               €{order?.rider_fee}
             </CustomText>
@@ -173,25 +173,13 @@ const AcceptOrderModal = ({
 
           <SwipeButton
             title={t('Accept')}
-            titleStyles={{
-              fontWeight: 'bold',
-            }}
-            titleColor="#fff"
-            height={hp(4.9)}
-            titleFontSize={wp(4)}
             onSwipeSuccess={handleAccept}
-            railStyles={{borderRadius: wp(3), left: wp(0)}}
-            railBorderColor="#303030ff"
-            railFillBackgroundColor="#cccccc46"
-            railFillBorderColor="#transparent"
+            height={Math.max(hp(5), 55)}
+            width={wp(73.5)}
+            thumbSize={Math.max(wp(5), 45)}
             railBackgroundColor={colors.black}
-            thumbIconBackgroundColor={colors.neonYellow}
-            thumbIconBorderColor="transparent"
-            thumbIconStyles={{borderRadius: wp(2.5)}}
-            containerStyles={styles.buttonContainer}
-            thumbIconComponent={() => (
-              <IconButton width={wp(6)} height={wp(6)}></IconButton>
-            )}
+            thumbBackgroundColor={colors.neonYellow}
+            titleColor="#fff"
           />
         </View>
       </View>
@@ -204,7 +192,7 @@ export default memo(AcceptOrderModal);
 const styles = StyleSheet.create({
   container: {
     width: wp(100),
-    height: hp(25),
+    height: hp(26),
     backgroundColor: colors.white,
     borderTopLeftRadius: wp(5),
     borderTopRightRadius: wp(5),
@@ -219,7 +207,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     marginHorizontal: wp(4),
     marginTop: hp(1),
-    height: hp(3.5),
+    height: hp(4),
   },
   textTag: {
     color: colors.neutral700,
@@ -236,7 +224,7 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     borderRadius: wp(3),
-    height: hp(5.8),
+    height: Math.max(hp(7), 60),
     marginTop: hp(1),
     paddingHorizontal: wp(1),
     width: wp(73.5),
@@ -257,6 +245,7 @@ const styles = StyleSheet.create({
     color: colors.black,
     fontSize: wp(3.5),
     marginLeft: wp(0.1),
+    marginRight:wp(1)
   },
   durationContainer: {
     width: wp(34),
@@ -268,6 +257,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     flexDirection: 'row',
+    paddingHorizontal:wp(2),
+    overflow:"hidden"
   },
   circle: {
     width: wp(2),
@@ -287,8 +278,8 @@ const styles = StyleSheet.create({
     marginTop: hp(0.5),
   },
   buttonWrapper: {
-    marginHorizontal: wp(2),
-    marginTop: hp(0.2),
+    marginLeft: wp(2),
+    marginTop: hp(0.6),
     flexDirection: 'row',
     alignItems: 'center',
   },

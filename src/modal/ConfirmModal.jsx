@@ -102,7 +102,8 @@ const ConfirmActionModal = ({
       isVisible={isVisible}
       style={styles.modal}
       backdropOpacity={0.5}
-      onBackdropPress={onCancel}>
+      onBackdropPress={onCancel}
+      avoidKeyboard={true}>
       {securePinShow ? (
         <>
           <View style={styles.secureView}>
@@ -209,7 +210,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: wp(3),
     paddingVertical: hp(2),
     paddingHorizontal: wp(4),
-    height: hp(22),
+    height: hp(24),
     //  bottom: hp(-2.5),
   },
   secureView: {

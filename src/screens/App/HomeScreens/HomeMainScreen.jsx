@@ -1356,7 +1356,7 @@ const HomeMainScreen = ({route}) => {
                 />
               )}
               cardWidth={wp(100)}
-              cardHeight={hp(31.2)}
+              cardHeight={hp(32.3)}
               stackCount={Math.min(4, data.length)}
               stackScale={0.94}
               stackOffset={14}
