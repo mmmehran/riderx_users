@@ -164,7 +164,7 @@ const AcceptOrderModal = ({
           )}
         </View>
         <View style={styles.buttonWrapper}>
-          <View style={{width: wp(21), alignItems: 'center'}}>
+          <View style={{width: wp(21), alignItems: 'center',    marginRight:wp(1.5)}}>
             <CustomText style={styles.textPrice} numberOfLines={1}>
               €{order?.rider_fee}
             </CustomText>
@@ -192,7 +192,7 @@ export default memo(AcceptOrderModal);
 const styles = StyleSheet.create({
   container: {
     width: wp(100),
-    height: hp(25),
+    height: hp(28.5),
     backgroundColor: colors.white,
     borderTopLeftRadius: wp(5),
     borderTopRightRadius: wp(5),
@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     marginHorizontal: wp(4),
     marginTop: hp(1),
-    height: hp(3.5),
+    height: hp(4),
   },
   textTag: {
     color: colors.neutral700,
@@ -245,6 +245,7 @@ const styles = StyleSheet.create({
     color: colors.black,
     fontSize: wp(3.5),
     marginLeft: wp(0.1),
+    marginRight:wp(1)
   },
   durationContainer: {
     width: wp(34),
@@ -256,6 +257,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     flexDirection: 'row',
+    paddingHorizontal:wp(2),
+    overflow:"hidden"
   },
   circle: {
     width: wp(2),
@@ -275,8 +278,8 @@ const styles = StyleSheet.create({
     marginTop: hp(0.5),
   },
   buttonWrapper: {
-    marginHorizontal: wp(2),
-    marginTop: hp(0.2),
+    marginLeft: wp(2),
+    marginTop: hp(0.6),
     flexDirection: 'row',
     alignItems: 'center',
   },
