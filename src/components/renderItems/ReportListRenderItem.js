@@ -38,13 +38,17 @@ const ReportListRenderItem = ({ item }) => {
                     <CustomText style={styles.time}>{isoTo12Hour(item?.timestamp)}</CustomText>
                 </View>
                 <View style={styles.statusContainer}>
-                    <View style={[styles.circle,{backgroundColor:colors.success900}]}></View>
+                    <View style={[styles.circle,{backgroundColor:colors.success900}]}>
+                    </View>
                     <CustomText numberOfLines={1} style={styles.textStatus}>{selectedStatusLabel}</CustomText>
              </View>
             </View>
            <View style={styles.row}>
             <View style={styles.icon}>
-                <View style={styles.userIcon}></View>
+                <View style={styles.userIcon}>
+                                        <CustomText style={[styles.title,{color:"#122368"}]}>{capitalizeFirstLetter(item?.sender?.first_name).charAt(0) + "" + capitalizeFirstLetter(item?.sender?.last_name).charAt(0)}</CustomText>
+
+                </View>
             </View>
                 <View style={styles.titleContainer}>
                     <CustomText numberOfLines={1} style={styles.title}>{capitalizeFirstLetter(item?.sender?.first_name) + " " + capitalizeFirstLetter(item?.sender?.last_name)}</CustomText>

@@ -338,7 +338,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
     borderTopLeftRadius: wp(5),
     borderTopRightRadius: wp(5),
-    paddingBottom: Platform.OS === 'ios' ? hp(4) :hp(1),
+    paddingBottom: Platform.OS === 'ios' ? hp(6) :hp(1),
     position: 'absolute',
   },
   lessContainer: {

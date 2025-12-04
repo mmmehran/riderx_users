@@ -319,7 +319,7 @@ const styles = StyleSheet.create({
     fontSize:wp(3.8)
   },
   arrowContainer: {marginTop: hp(0.5)},
-  listContainer: {marginTop: hp(0)},
+  listContainer: {marginTop: hp(1.5)},
 
   backdrop: {
     position: 'absolute',
