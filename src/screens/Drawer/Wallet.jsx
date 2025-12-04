@@ -125,7 +125,7 @@ const Report = props => {
       <>
         <View style={styles.balanceContainer}>
           <ImageBackground
-            resizeMode="contain"
+            resizeMode="cover"
             source={require('../../../assets/image/walletCart.png')}
             style={styles.balanceImage}>
             <View style={styles.rowTop}>
