@@ -49,10 +49,9 @@ const SwipeButton = ({
     })
     .onEnd(() => {
       if (swiped) return;
-      if (X.value > SWIPE_RANGE * 0.7) {
-        X.value = withSpring(SWIPE_RANGE, {damping: 20, stiffness: 200}, () => {
-          runOnJS(handleComplete)();
-        });
+      if (X.value > SWIPE_RANGE * 0.6) {
+        runOnJS(handleComplete)();
+        X.value = withSpring(SWIPE_RANGE, {damping: 20, stiffness: 400});
       } else {
         X.value = withSpring(0);
       }
