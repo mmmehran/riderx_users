@@ -1,5 +1,5 @@
 import React, {memo, useState} from 'react';
-import {StyleSheet, View, TouchableOpacity, Linking, Alert} from 'react-native';
+import {StyleSheet, View, TouchableOpacity, Linking, Alert, Platform} from 'react-native';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
@@ -158,7 +158,7 @@ const AcceptedOrderModal = ({order, changeOrder, loading, insets}) => {
                   <CustomText style={styles.textInfo1}>
                     {t('Extradetails')}:
                   </CustomText>
-                  <CustomText style={styles.textInfo}>
+                  <CustomText style={[styles.textInfo,{width:wp(70),lineHeight:hp(2.5)}]}>
                     {(order?.status !== 'pickup'
                       ? order?.sender_address_json?.address_extra_details
                       : order?.receiver_address_json?.address_extra_details) ??
@@ -338,7 +338,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
     borderTopLeftRadius: wp(5),
     borderTopRightRadius: wp(5),
-    paddingBottom: hp(3),
+    paddingBottom: Platform.OS === 'ios' ? hp(4) :hp(1),
     position: 'absolute',
   },
   lessContainer: {
