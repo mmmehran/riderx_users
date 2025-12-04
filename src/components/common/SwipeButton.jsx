@@ -87,7 +87,7 @@ const SwipeButton = ({
         style={[
           styles.rail,
           animatedRailStyle,
-          {borderRadius: height / 2},
+          {borderRadius: wp(3.5)},
         ]}>
         <Animated.Text style={[styles.text, animatedTextStyle, {color: titleColor}]}>
           {title}
@@ -103,7 +103,7 @@ const SwipeButton = ({
               height: thumbSize,
               width: thumbSize,
               backgroundColor: thumbBackgroundColor,
-              borderRadius: thumbSize / 2,
+              borderRadius: wp(2),
               left: H_PADDING,
               top: (height - thumbSize) / 2,
             },

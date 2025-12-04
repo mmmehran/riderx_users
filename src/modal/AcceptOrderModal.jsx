@@ -174,9 +174,9 @@ const AcceptOrderModal = ({
           <SwipeButton
             title={t('Accept')}
             onSwipeSuccess={handleAccept}
-            height={Math.max(hp(7), 60)}
+            height={Math.max(hp(5), 55)}
             width={wp(73.5)}
-            thumbSize={Math.max(wp(6), 45)}
+            thumbSize={Math.max(wp(5), 45)}
             railBackgroundColor={colors.black}
             thumbBackgroundColor={colors.neonYellow}
             titleColor="#fff"
