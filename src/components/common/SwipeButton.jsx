@@ -88,6 +88,9 @@ const SwipeButton = ({
           styles.rail,
           animatedRailStyle,
           {borderRadius: wp(3.5)},
+          {borderColor:colors.neutral900,
+            borderWidth:wp(0.5)
+          }
         ]}>
         <Animated.Text style={[styles.text, animatedTextStyle, {color: titleColor}]}>
           {title}
@@ -108,7 +111,7 @@ const SwipeButton = ({
               top: (height - thumbSize) / 2,
             },
           ]}>
-          <IconButton width={thumbSize * 0.6} height={thumbSize * 0.6} />
+          <IconButton width={thumbSize * 0.75} height={thumbSize * 0.75} />
         </Animated.View>
       </GestureDetector>
     </View>
@@ -118,7 +121,7 @@ const SwipeButton = ({
 const styles = StyleSheet.create({
   container: {
     justifyContent: 'center',
-    position: 'relative',
+    position: 'relative'
   },
   rail: {
     flex: 1,

@@ -192,7 +192,7 @@ export default memo(AcceptOrderModal);
 const styles = StyleSheet.create({
   container: {
     width: wp(100),
-    height: hp(28.5),
+    height: hp(26),
     backgroundColor: colors.white,
     borderTopLeftRadius: wp(5),
     borderTopRightRadius: wp(5),
