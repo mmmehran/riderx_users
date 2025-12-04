@@ -102,7 +102,8 @@ const ConfirmActionModal = ({
       isVisible={isVisible}
       style={styles.modal}
       backdropOpacity={0.5}
-      onBackdropPress={onCancel}>
+      onBackdropPress={onCancel}
+      avoidKeyboard={true}>
       {securePinShow ? (
         <>
           <View style={styles.secureView}>
