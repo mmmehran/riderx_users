@@ -176,6 +176,7 @@ const HomeMainScreen = ({route}) => {
   // NEW: track live user position & heading for the vehicle icon
   const [userCoordState, setUserCoordState] = useState(null);
   const [userHeadingDeg, setUserHeadingDeg] = useState(0);
+  const [mapHeight, setMapHeight] = useState(100);
 
   const [data, setData] = useState([]);
   const [currentOrderIndex, setCurrentOrderIndex] = useState(null);
@@ -672,6 +673,7 @@ const HomeMainScreen = ({route}) => {
     if (response?.data?.status) {
       setSelectedOrder(response?.data?.data);
       if (status === 'accepted') {
+         setMapHeight(60)
         setIsAccepted(true);
         setShowAcceptOrder(false);
         setCurrentOrderIndex(null);
@@ -689,6 +691,7 @@ const HomeMainScreen = ({route}) => {
         ].includes(status)
       ) {
         status === 'completed' && setCompleteOrderPrice(order?.rider_fee || 0);
+         setMapHeight(100)
         resetRoute();
         setSelectedOrder(null);
         setIsNavOn(false);
@@ -1190,6 +1193,7 @@ const HomeMainScreen = ({route}) => {
       ? Math.max(1, Math.round(etaSec / 60))
       : null;
 
+
   /* ───────── Render ───────── */
   return (
     <>
@@ -1205,7 +1209,7 @@ const HomeMainScreen = ({route}) => {
                 styleURL={Mapbox.StyleURL.Light}
                 zoomEnabled
                 rotateEnabled
-                style={styles.map}
+                style={[styles.map,{height:hp(mapHeight)}]}
                 onDidFinishLoadingMap={() => setMapReady(true)}>
                 {/* Remaining route (black) */}
                 {remainingFeature && (
@@ -1392,6 +1396,10 @@ const HomeMainScreen = ({route}) => {
             }
           }}
           order={selectedOrder}
+          onModalPosition={(value)=> {
+            !value ? 
+            setMapHeight(60) : setMapHeight(100)
+          }}
           loading={loadingChangeStatus}
         />
       )}
@@ -1498,7 +1506,7 @@ const styles = StyleSheet.create({
   },
   text: {fontWeight: 'bold', color: colors.white, fontSize: wp(7)},
   mapWrap: {flex: 1, width: wp(100), position: 'relative'},
-  map: {flex: 1, width: wp(100)},
+  map: { width: wp(100),height:hp(100)},
   overlay: {
     position: 'absolute',
     top: hp(11),

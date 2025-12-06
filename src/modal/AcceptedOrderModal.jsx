@@ -20,7 +20,7 @@ import {
 } from '../../assets/svg/index';
 import {normalizeLabel, timeAgoShort, isAndroid15Plus} from '../utils/helpers';
 
-const AcceptedOrderModal = ({order, changeOrder, loading, insets}) => {
+const AcceptedOrderModal = ({order, changeOrder, loading, insets,onModalPosition}) => {
   const {t} = useTranslation();
   const [less, setLess] = useState(false);
 
@@ -42,6 +42,8 @@ const AcceptedOrderModal = ({order, changeOrder, loading, insets}) => {
       console.error('Failed to make call:', err);
     }
   };
+
+  
 
   const phoneNumberSms = `sms:${
     order?.status !== 'pickup'
@@ -245,7 +247,10 @@ const AcceptedOrderModal = ({order, changeOrder, loading, insets}) => {
         )}
 
         <TouchableOpacity
-          onPress={() => setLess(!less)}
+          onPress={() => {
+             setLess(!less)
+            onModalPosition(!less)
+          }}
           style={styles.lessContainer}>
           <CustomText style={styles.textLess}>
             {less ? t('moreInfo') : t('lessInfo')}
