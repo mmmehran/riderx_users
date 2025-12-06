@@ -38,6 +38,7 @@ import CustomButton from '../../components/common/CustomButton';
 import TakePictureModal from '../../modal/TakePictureModal';
 import {showToast} from '../../utils/helpers';
 import {uploadFile} from '../../services/file.services';
+import PhoneFormField from '../../components/form/PhoneInputField';
 
 const EditMyAccount = () => {
   const navigation = useNavigation();
@@ -49,40 +50,28 @@ const EditMyAccount = () => {
   const validationSchema = Yup.object().shape({
     firstName: Yup.string().required(),
     lastName: Yup.string().required(),
-    phone: Yup.string().required(),
     email: Yup.string().email().required(),
+    phoneNumber: Yup.string(), 
+    phoneCountry: Yup.string().nullable(),
+    phoneDialCode: Yup.string().nullable(), 
   });
 
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
   const [toggleSheet, setToggleSheet] = useState(false);
   const [images, setImages] = useState(null);
-
   const [initialValues, setInitialValues] = useState({
     firstName: '',
     lastName: '',
-    phone: '',
     email: '',
+    phoneNumber: '',
+    phoneCountry: 'AT',
+    phoneDialCode: '43', 
   });
 
   const onSubmit = async values => {
     try {
       setLoading(true);
-
-      const rawPhone = (values?.phone || '').trim();
-
-      let country_code = user?.userProfile?.phone?.country_code || '+98';
-      let number = user?.userProfile?.phone?.number || '';
-
-      if (rawPhone) {
-        const match = rawPhone.match(/^(\+\d+)\s*(.*)$/);
-        if (match) {
-          country_code = match[1];
-          number = match[2]?.replace(/\s+/g, '') || '';
-        } else {
-          number = rawPhone.replace(/\s+/g, '');
-        }
-      }
 
       const payload = {
         email: values?.email,
@@ -96,8 +85,9 @@ const EditMyAccount = () => {
         gender: user?.userProfile?.gender || null,
         language: user?.userProfile?.language || null,
         phone: {
-          country_code,
-          number,
+          country_code: (values?.phoneDialCode || '').replace(/^\+/, ''),
+          number: values?.phoneNumber || '',
+          country_symbol: values?.phoneCountry || 'AT',
         },
       };
 
@@ -123,17 +113,19 @@ const EditMyAccount = () => {
       if (response?.data?.status) {
         const data = response.data.data;
         dispatch(setUserProfile(data));
-
-        const phone =
-          data?.phone?.country_code && data?.phone?.number
-            ? `${data.phone.country_code} ${data.phone.number}`
-            : '';
-
+        const serverPhone = data?.phone || {};
+        const phoneCountry = serverPhone?.country_symbol || 'IT';
+        const phoneDialCode = serverPhone?.country_code
+          ? String(serverPhone.country_code).replace(/^\+/, '')
+          : '43';
+        const phoneNumber = serverPhone?.number || '';
         setInitialValues({
           firstName: data?.first_name || '',
           lastName: data?.last_name || '',
-          phone: phone,
           email: data?.email || '',
+          phoneNumber,    
+          phoneCountry,   
+          phoneDialCode, 
         });
       } else {
         errorHandler(response);
@@ -175,14 +167,13 @@ const EditMyAccount = () => {
           <View style={styles.imageContainer}>
             <Image
               source={{
-                uri: images?.assets[0]?.uri
+                uri: images?.assets?.[0]?.uri
                   ? images?.assets[0]?.uri
                   : user?.userProfile?.profile_image,
               }}
               style={{width: wp(30), height: wp(30), borderRadius: wp(50)}}
             />
           </View>
-
           <TouchableOpacity
             onPress={() => {
               setToggleSheet(true);
@@ -190,7 +181,6 @@ const EditMyAccount = () => {
             style={styles.editContainer}>
             <EditIcon width={wp(6)} height={wp(6)} />
           </TouchableOpacity>
-
           <View style={styles.formContainer}>
             <Form
               initialValues={initialValues}
@@ -208,7 +198,6 @@ const EditMyAccount = () => {
                     value={values?.firstName}
                     icon={<UserNameIcon width={wp(4.5)} height={wp(4.5)} />}
                   />
-
                   <Input
                     name="lastName"
                     inputName={t('enterYourLastName')}
@@ -217,16 +206,14 @@ const EditMyAccount = () => {
                     value={values?.lastName}
                     icon={<UserNameIcon width={wp(4.5)} height={wp(4.5)} />}
                   />
-
-                  <Input
-                    name="phone"
-                    inputName={t('enterYourPhone')}
-                    input={{textAlign: 'left'}}
-                    autoCapitalize="none"
-                    value={values?.phone}
-                    icon={<CallUserIcon width={wp(4.5)} height={wp(4.5)} />}
+                  <PhoneFormField
+                    star
+                    name="phoneNumber"
+                    countryField="phoneCountry"
+                    dialCodeField="phoneDialCode"
+                    defaultCode="AT"
+                    placeholder={t('enterYourPhone')}
                   />
-
                   <Input
                     name="email"
                     inputName={t('enterYourEmail')}
@@ -235,14 +222,12 @@ const EditMyAccount = () => {
                     value={values?.email}
                     icon={<MessageUserIcon width={wp(4.5)} height={wp(4.5)} />}
                   />
-
                   <View style={styles.buttonContainer}>
                     <Button
                       loading={loading}
                       style={{width: wp(42), marginHorizontal: 0}}>
                       {t('saveChanges')}
                     </Button>
-
                     <CustomButton
                       onPress={() => navigation.navigate(routes.MYACCOUNT)}
                       style={styles.buttonCancel}
@@ -256,12 +241,10 @@ const EditMyAccount = () => {
           </View>
         </>
       )}
-
       <TakePictureModal
         isVisible={toggleSheet}
         onBackdropPress={() => setToggleSheet(false)}
         onSelect={cameraObject => {
-          //  setToggleSheet(false);
           setImages(cameraObject);
           uploadFileAPi(cameraObject);
         }}
@@ -287,7 +270,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.neonYellow,
     position: 'absolute',
     overflow: 'hidden',
-    top: Platform.OS == 'ios'  ? hp(24)  : hp(18),
+    top: Platform.OS == 'ios' ? hp(24) : hp(18),
     right: wp(33),
   },
   formContainer: {
