@@ -8,7 +8,8 @@ const initialStateObject = {
    socketStatus:false,
    seeOnboarding:false,
    selectVehicleVisible:false,
-   vehicleData:null
+   vehicleData:null,
+   externalMap: 'google'
 
 };
 
@@ -34,6 +35,12 @@ export const configSlice = createSlice({
          return {
             ...state,
             vehicleData: action.payload,
+         };
+      },
+      setExternalMap: (state, action) => {
+         return {
+            ...state,
+            externalMap: action.payload,
          };
       },
       setSelectVehicleVisible: (state, action) => {
@@ -68,7 +75,8 @@ export const configSlice = createSlice({
            socketStatus:false,
            seeOnboarding:true,
            selectVehicleVisible:false,
-           vehicleData:null
+           vehicleData:null,
+           externalMap: 'google'
          };
       },
    },
@@ -82,7 +90,8 @@ export const {
    setSocketStatus,
    setSeeOnboarding,
    setSelectVehicleVisible,
-   setVehicleData
+   setVehicleData,
+   setExternalMap
 } = configSlice.actions;
 
 export default configSlice.reducer;

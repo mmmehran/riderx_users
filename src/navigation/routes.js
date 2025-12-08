@@ -22,6 +22,8 @@ export default Object.freeze({
     CHANGELANGUAGE:"changeLanguage",
     CHANGEPASSWORD:"changePassword",
     EDITMYACCOUNT:"editMyAccount",
+    APPSETTINGS:"appSettings",
+    SELECTEXTERNALMAP:"selectExternalMap",
    
 
  

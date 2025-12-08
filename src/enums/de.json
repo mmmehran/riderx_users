@@ -163,6 +163,10 @@
   "pinContent": "Bitte gib den 4-stelligen Code ein, den der Empfänger zur Bestätigung der Lieferung mit dir geteilt hat.",
   "confimedDelivery": "Lieferung bestätigen",
   "SavingsCard": "Sparkarte",
-  "history": "Verlauf"
+  "history": "Verlauf",
+  "appSettings":"App Einstellungen",
+  "externalMap":"Externe Karte",
+  "selectExternalMapContent":"Wählen Sie eine Anwendung aus, um die Route außerhalb der RiderX-App zu starten",
+  "mapAppNotInstalled": "{{app}} ist nicht auf diesem Gerät installiert"
 
 }

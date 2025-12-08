@@ -17,12 +17,17 @@ import {
   PinLocation,
   ClockIcon,
   MessageIcon1,
+  MapIcon
 } from '../../assets/svg/index';
 import {normalizeLabel, timeAgoShort, isAndroid15Plus} from '../utils/helpers';
+import { useSelector } from 'react-redux';
+import { selectConfig } from '../redux/reducers/configReducer';
+
 
 const AcceptedOrderModal = ({order, changeOrder, loading, insets,onModalPosition}) => {
   const {t} = useTranslation();
   const [less, setLess] = useState(false);
+  const config = useSelector(selectConfig);
 
   const phoneNumber = `tel:${
     order?.status !== 'pickup'
@@ -43,6 +48,8 @@ const AcceptedOrderModal = ({order, changeOrder, loading, insets,onModalPosition
     }
   };
 
+
+  console.log(order)
   
 
   const phoneNumberSms = `sms:${
@@ -61,6 +68,48 @@ const AcceptedOrderModal = ({order, changeOrder, loading, insets,onModalPosition
       }
     } catch (err) {
       console.error('Failed to send SMS:', err);
+    }
+  };
+
+  const openMaps = async () => {
+    const lat = order?.status !== 'pickup' ? order?.sender_latitude : order?.receiver_latitude;
+    const lng = order?.status !== 'pickup' ? order?.sender_longitude : order?.receiver_longitude;
+    const label = order?.status !== 'pickup' ? "Pickup" : "Dropoff"; // You might want to translate this or use dynamic name
+    const app = config?.externalMap || 'google';
+
+    if (!lat || !lng) {
+      Alert.alert("Error", "Location coordinates not available.");
+      return;
+    }
+
+    const latLng = `${lat},${lng}`;
+    let url = "";
+
+    if (app === 'apple') {
+        url = `http://maps.apple.com/?daddr=${latLng}&dirflg=d`;
+    } else if (app === 'google') {
+        if (Platform.OS === 'ios') {
+             // Try comgooglemaps scheme if possible, otherwise fallback to https
+             // Since we can't easily check canOpenURL without async complexity here and standard https works for both:
+             // But user asked to "open application".
+             url = `https://www.google.com/maps/dir/?api=1&destination=${latLng}`; 
+        } else {
+             url = `geo:0,0?q=${latLng}(${label})`;
+        }
+    } else if (app === 'waze') {
+        url = `https://waze.com/ul?ll=${latLng}&navigate=yes`;
+    }
+
+    try {
+        await Linking.openURL(url);
+    } catch (err) {
+        console.error("Failed to open map:", err);
+        // Fallback for Google on iOS if comgooglemaps failed (not used here but good practice)
+        if(app === 'google' && Platform.OS === 'ios' && !url.startsWith('http')){
+             await Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${latLng}`);
+        } else {
+            Alert.alert("Error", t('mapAppNotInstalled', { app: app })); 
+        }
     }
   };
 
@@ -217,6 +266,7 @@ const AcceptedOrderModal = ({order, changeOrder, loading, insets,onModalPosition
                 </TouchableOpacity>
               </View> */}
             </View>
+            <View style={{flexDirection:"row"}}>
             {order?.status == 'accepted' && order?.sender_phone?.number && (
               <View style={styles.row}>
                 <View style={[styles.row, {marginBottom: 0}]}>
@@ -230,6 +280,11 @@ const AcceptedOrderModal = ({order, changeOrder, loading, insets,onModalPosition
                 </TouchableOpacity>
               </View>
             )}
+                <TouchableOpacity onPress={openMaps} style={[styles.buttonCall,{backgroundColor: colors.black}]}>
+                  <MapIcon width={wp(5)} height={wp(5)}></MapIcon>
+                </TouchableOpacity>
+
+            </View>
             {order?.status == 'pickup' && order?.receiver_phone?.number && (
               <View style={styles.row}>
                 <View style={[styles.row, {marginBottom: 0}]}>
@@ -422,7 +477,7 @@ const styles = StyleSheet.create({
     fontFamily: 'YaldeviJaffna-Bold',
     color: colors.black,
     marginLeft: wp(2),
-    width: wp(70),
+    width: wp(59),
     fontSize: wp(4.3),
   },
   row: {

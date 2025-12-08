@@ -32,7 +32,7 @@ import {
   VehicleInfo,
   FindRide,
   Services,
-  DriverClub,
+  Settings,
   Faq,
 } from '../../../assets/svg/index';
 
@@ -60,6 +60,12 @@ const LoginEmail = props => {
       name: t('tripHistory'),
       icon: <FindRide width={wp(6)} height={wp(6)}></FindRide>,
       onPress: () => props?.navigation.navigate(routes.REPORT),
+    },
+    {
+      id: 4,
+      name: t('appSettings'),
+      icon: <Settings width={wp(6)} height={wp(6)}></Settings>,
+      onPress: () => props?.navigation.navigate(routes.APPSETTINGS),
     },
     
     //   id: 4,

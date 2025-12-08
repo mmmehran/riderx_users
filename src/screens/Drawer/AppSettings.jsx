@@ -21,7 +21,7 @@ import {
   NotificationIcon,
   PasswordIcon,
   ArrowRightGray,
-  LogoutIcon,
+  Settings,
 } from '../../../assets/svg/index';
 import CustomHeaderApp from '../../components/custom/CustomHeaderApp';
 import {postData} from '../../services/common.service';
@@ -40,34 +40,21 @@ const MyAccount = () => {
   const user = useSelector(authenticated);
   const dispatch = useDispatch();
 
-  const data = [
+
+
+  const routesData = [
     {
       id: 1,
-      name: t('totalRide'),
-      icon: <FileGray width={wp(4)} height={wp(4)}></FileGray>,
-      value: "-",
+      name: t('ChangeLanguage'),
+      icon: <LanguageIcon width={wp(3.5)} height={wp(3.5)}></LanguageIcon>,
+      onPress: () => navigation.navigate(routes.CHANGELANGUAGE),
     },
     {
       id: 2,
-      name: t('complete'),
-      icon: <FileGreen width={wp(4)} height={wp(4)}></FileGreen>,
-      value: "-",
+      name: t('externalMap'),
+      icon: <LanguageIcon width={wp(3.5)} height={wp(3.5)}></LanguageIcon>,
+      onPress: () => navigation.navigate(routes.SELECTEXTERNALMAP),
     },
-    {
-      id: 3,
-      name: t('cancel'),
-      icon: <FileRed width={wp(4)} height={wp(4)}></FileRed>,
-      value: "-",
-    },
-  ];
-
-  const routesData = [
-    // {
-    //   id: 1,
-    //   name: t('ChangeLanguage'),
-    //   icon: <LanguageIcon width={wp(3.5)} height={wp(3.5)}></LanguageIcon>,
-    //   onPress: () => navigation.navigate(routes.CHANGELANGUAGE),
-    // },
     // {
     //   id: 2,
     //   name: t('Notification'),
@@ -75,70 +62,17 @@ const MyAccount = () => {
     //     <NotificationIcon width={wp(3.5)} height={wp(3.5)}></NotificationIcon>
     //   ),
     // },
-    {
-      id: 3,
-      name: t('password'),
-      icon: <PasswordIcon width={wp(3.5)} height={wp(3.5)}></PasswordIcon>,
-      onPress: () => navigation.navigate(routes.CHANGEPASSWORD),
-    },
   ];
 
-  const logOutUser = async () => {
-    const response = await postData(urls.LOGOUT);
-    if (response?.data?.status) {
-      dispatch(logout());
-      dispatch(logouConfig());
-    } else {
-      errorHandler(response);
-    }
-  };
 
 
   return (
     <CustomScreen>
-      <CustomHeaderApp title={t('myAccount')} />
-      <View style={styles.rowHeader}>
-        <View style={styles.imageContainer}>
-          <Image
-            source={{uri: user?.userProfile?.profile_image}}
-            style={{width: wp(17), height: wp(17), borderRadius: wp(50)}}
-          />
-          <View style={styles.tickContainer}>
-            <TickYellow width={wp(8)} height={wp(8)}></TickYellow>
-          </View>
-        </View>
-        <View style={styles.headerContainer}>
-          <View>
-            <CustomText style={styles.nameUser}>
-              {user?.userProfile?.first_name} {user?.userProfile?.last_name}
-            </CustomText>
-            <CustomText style={styles.phoneText}>{user?.phone ? `+${user?.phone}` : "-"}</CustomText>
-          </View>
-        </View>
-        <TouchableOpacity
-          onPress={() => navigation.navigate(routes.EDITMYACCOUNT)}
-          style={styles.iconContainer}>
-          <EditIcon width={wp(6.5)} height={wp(6.5)}></EditIcon>
-        </TouchableOpacity>
-      </View>
-      <View style={styles.rowStatus}>
-        {data?.map(item => {
-          return (
-            <View style={styles.statusContainer}>
-              <View style={styles.rowTop}>
-                <CustomText style={styles.textName}>{item?.name}</CustomText>
-                {item?.icon}
-              </View>
-              <CustomText style={styles.textValue}>{item?.value}</CustomText>
-            </View>
-          );
-        })}
-      </View>
+      <CustomHeaderApp title={t('appSettings')} />
       <View>
         {routesData?.map(item => {
           return (
             <TouchableOpacity onPress={item?.onPress} style={styles.rowRoute}>
-              <View style={styles.iconContainer1}>{item?.icon}</View>
               <CustomText style={styles.textRoute}>{item?.name}</CustomText>
               <View style={styles.arrowContainer}>
                 <ArrowRightGray width={wp(4)} height={wp(4)}></ArrowRightGray>
@@ -146,12 +80,6 @@ const MyAccount = () => {
             </TouchableOpacity>
           );
         })}
-      </View>
-      <View style={styles.logoutContainer}>
-        <TouchableOpacity onPress={logOutUser} style={styles.buttonLogOut}>
-          <LogoutIcon width={wp(4.5)} height={wp(4.5)}></LogoutIcon>
-          <CustomText style={styles.textLogout}>{t('logOut')}</CustomText>
-        </TouchableOpacity>
       </View>
     </CustomScreen>
   );
@@ -208,6 +136,7 @@ const styles = StyleSheet.create({
   textRoute: {
     color: colors.neutral800,
     fontSize: wp(3.8),
+    marginLeft:wp(5)
   },
   arrowContainer: {
     flex: 1,

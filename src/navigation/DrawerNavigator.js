@@ -17,6 +17,8 @@ import MyAccount from '../screens/Drawer/MyAccount'
 import {selectConfig} from '../redux/reducers/configReducer'
 import Sender from '../screens/WebView/Sender'
 import EditMyAccount from '../screens/Drawer/EditMyAccount'
+import AppSettings from '../screens/Drawer/AppSettings'
+import SelectExternalMap from '../screens/Drawer/SelectExternalMap'
 
 const Drawer = createDrawerNavigator();
 
@@ -86,6 +88,16 @@ const DrawerNavigator = () => {
             <Drawer.Screen
                 name={routes.EDITMYACCOUNT}
                 component={EditMyAccount}
+                options={{ fullScreenGestureEnabled: false }}
+            />
+            <Drawer.Screen
+                name={routes.APPSETTINGS}
+                component={AppSettings}
+                options={{ fullScreenGestureEnabled: false }}
+            />
+            <Drawer.Screen
+                name={routes.SELECTEXTERNALMAP}
+                component={SelectExternalMap}
                 options={{ fullScreenGestureEnabled: false }}
             />
         </Drawer.Navigator>

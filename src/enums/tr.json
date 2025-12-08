@@ -163,6 +163,10 @@
   "pinContent": "Teslimatı onaylamak için alıcının seninle paylaştığı 4 haneli kodu gir.",
   "confimedDelivery": "Teslimatı onayla",
   "SavingsCard": "Birikim kartı",
-"history": "Geçmiş"
+  "history": "Geçmiş",
+    "appSettings": "Uygulama Ayarları",
+  "externalMap": "Harici Harita Seç",
+  "selectExternalMapContent": "RiderX uygulaması dışında yönlendirme başlatmak için bir uygulama seçin",
+  "mapAppNotInstalled": "{{app}} bu cihazda yüklü değil"
 
 }

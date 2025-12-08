@@ -162,7 +162,11 @@
   "enterDeliveryPin": "أدخل رمز توصيل الطلب",
   "pinContent": "يرجى إدخال الرمز المكون من 4 أرقام الذي شاركه المستلم لتأكيد التوصيل.",
   "confimedDelivery": "تأكيد التوصيل",
- "SavingsCard": "بطاقة التوفير",
-"history": "السجل"
+  "SavingsCard": "بطاقة التوفير",
+  "history": "السجل",
+  "appSettings": "إعدادات التطبيق",
+  "externalMap": "اختر خريطة خارجية",
+  "selectExternalMapContent": "اختر تطبيقًا لبدء التوجيه خارج تطبيق RiderX",
+  "mapAppNotInstalled": "التطبيق {{app}} غير مُثبّت على هذا الجهاز"
 
 }

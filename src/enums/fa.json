@@ -163,5 +163,10 @@
   "pinContent": "لطفاً کد ۴ رقمی که گیرنده برای تأیید تحویل با شما به اشتراک گذاشته است وارد کنید.",
   "confimedDelivery": "تأیید تحویل",
   "SavingsCard": "کارت تخفیف",
-  "history": "تاریخچه"
+  "history": "تاریخچه",
+  "appSettings": "تنظیمات برنامه",
+  "externalMap": "انتخاب نقشه خارجی",
+  "selectExternalMapContent": "برای مسیریابی خارج از برنامه RiderX یک برنامه را انتخاب کنید",
+  "mapAppNotInstalled": "{{app}} روی این دستگاه نصب نیست"
+
 }

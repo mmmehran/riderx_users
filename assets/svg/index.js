@@ -94,3 +94,5 @@ export { default as AboutusIcon } from "./aboutusIcon.svg";
 export { default as WalletCartIcon } from "./walletCart.svg";
 export { default as DepositIcon } from "./depositIcon.svg";
 export { default as CashOutIcon } from "./cashOutIcon.svg";
+export { default as Settings } from "./settings.svg";
+export { default as MapIcon } from "./mapIcon.svg";
