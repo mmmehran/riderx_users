@@ -33,6 +33,8 @@ import AcceptedOrderModal from '../../../modal/AcceptedOrderModal';
 import CancelModal from '../../../modal/CancelModal';
 import SelectVehicleModal from '../../../modal/SelectVehicleModal';
 import TinderCarousel from '../../../components/custom/TinderCarousel';
+import { MAP_BOX_TOKEN } from "@env";
+
 
 import {LocationPin, Update} from '../../../../assets/svg/index';
 import CustomHeader from '../../../components/custom/CustomHeader';
@@ -69,8 +71,7 @@ import CustomText from '../../../components/common/CustomText';
 
 const LOCATION_UPDATE_MS = 30 * 1000;
 
-const MAPBOX_TOKEN =
-  'pk.eyJ1IjoiYnl0ZWJyaWRnZXIiLCJhIjoiY21kZzVoNnU2MGlhcDJpcGVuNGV1amYxdyJ9.YMqlR9OovVOp-pm9yGK7eA';
+const MAPBOX_TOKEN = MAP_BOX_TOKEN ;
 Mapbox.setAccessToken(MAPBOX_TOKEN);
 
 /* ───────── Utils ───────── */

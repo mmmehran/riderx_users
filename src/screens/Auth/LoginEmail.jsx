@@ -19,6 +19,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import {GoogleSignin} from '@react-native-google-signin/google-signin';
 import {appleAuth} from '@invertase/react-native-apple-authentication';
+import { IOS_CLIENT_ID, WEB_CLIENT_ID } from "@env";
 
 import CustomScreen from '../../components/common/CustomScreen';
 import {Form, Input, Button} from '../../components/form/index';
@@ -105,10 +106,8 @@ const LoginEmail = props => {
 
   useEffect(() => {
     GoogleSignin.configure({
-      iosClientId:
-        '224724744593-sshnpoo8igmgi1h5aku239r1f6bikma7.apps.googleusercontent.com',
-      webClientId:
-        '224724744593-h32i8kmlgcj029vv27tmqhh5i815cd8h.apps.googleusercontent.com',
+      iosClientId:IOS_CLIENT_ID,
+      webClientId:WEB_CLIENT_ID,
     });
   }, []);
 
