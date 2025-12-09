@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useRef, useMemo, useCallback} from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   View,
   StyleSheet,
@@ -15,17 +15,17 @@ import {
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
 import Mapbox from '@rnmapbox/maps';
-import {useDispatch, useSelector} from 'react-redux';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {useNavigation, useFocusEffect} from '@react-navigation/native';
-import {check, request, PERMISSIONS, RESULTS} from 'react-native-permissions';
+import { useDispatch, useSelector } from 'react-redux';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 import notifee, {
   AndroidImportance,
   AuthorizationStatus,
 } from '@notifee/react-native';
 import Geolocation from '@react-native-community/geolocation';
 import messaging from '@react-native-firebase/messaging';
-import {useTranslation} from 'react-i18next';
+import { useTranslation } from 'react-i18next';
 import LinearGradient from 'react-native-linear-gradient';
 
 import AcceptOrderModal from '../../../modal/AcceptOrderModal';
@@ -33,13 +33,12 @@ import AcceptedOrderModal from '../../../modal/AcceptedOrderModal';
 import CancelModal from '../../../modal/CancelModal';
 import SelectVehicleModal from '../../../modal/SelectVehicleModal';
 import TinderCarousel from '../../../components/custom/TinderCarousel';
-import { MAP_BOX_TOKEN } from "@env";
+import { MAP_BOX_TOKEN } from '@env';
 
-
-import {LocationPin, Update} from '../../../../assets/svg/index';
+import { LocationPin, Update } from '../../../../assets/svg/index';
 import CustomHeader from '../../../components/custom/CustomHeader';
 import CustomAvailableRider from '../../../components/custom/CustomAvailableRider';
-import {getData, sendData} from '../../../services/common.service';
+import { getData, sendData } from '../../../services/common.service';
 import urls from '../../../services/urls.json';
 import errorHandler from '../../../utils/errorHandler';
 import {
@@ -54,7 +53,7 @@ import {
   authenticated,
   setUserWallet,
 } from '../../../redux/reducers/authenticationReducer';
-import {connectSocket, on, disconnectSocket} from '../../../services/socket';
+import { connectSocket, on, disconnectSocket } from '../../../services/socket';
 import {
   selectConfig,
   setSelectVehicle,
@@ -66,12 +65,12 @@ import ConfirmModal from '../../../modal/ConfirmModal';
 import ConfirmCancelDeliveryModal from '../../../modal/ConfirmCancelDeliveryModal';
 import routes from '../../../navigation/routes';
 import colors from '../../../config/colors';
-import {playDing} from '../../../utils/sounds';
+import { playDing } from '../../../utils/sounds';
 import CustomText from '../../../components/common/CustomText';
 
 const LOCATION_UPDATE_MS = 30 * 1000;
 
-const MAPBOX_TOKEN = MAP_BOX_TOKEN ;
+const MAPBOX_TOKEN = MAP_BOX_TOKEN;
 Mapbox.setAccessToken(MAPBOX_TOKEN);
 
 /* ───────── Utils ───────── */
@@ -79,8 +78,8 @@ const toNum = v =>
   typeof v === 'number' && Number.isFinite(v)
     ? v
     : Number.isFinite(parseFloat(v))
-    ? parseFloat(v)
-    : null;
+      ? parseFloat(v)
+      : null;
 const round5 = v => {
   const x = toNum(v);
   return x == null ? null : Math.round(x * 1e5) / 1e5;
@@ -110,7 +109,7 @@ const lngLatToXY = ([lng, lat]) => [
 const clamp01 = t => (t < 0 ? 0 : t > 1 ? 1 : t);
 const closestOnPolyline = (ptLngLat, coords) => {
   if (!ptLngLat || !coords || coords.length < 2)
-    return {idx: 0, point: coords?.[0]};
+    return { idx: 0, point: coords?.[0] };
   const p = lngLatToXY(ptLngLat);
   let bestIdx = 0,
     bestT = 0,
@@ -138,7 +137,7 @@ const closestOnPolyline = (ptLngLat, coords) => {
     }
   }
   const idx = bestT >= 0.999 ? bestIdx + 1 : bestIdx;
-  return {idx: Math.min(idx, coords.length - 2), point: bestPoint};
+  return { idx: Math.min(idx, coords.length - 2), point: bestPoint };
 };
 const stepPrimaryText = step =>
   step?.bannerInstructions?.[0]?.primary?.text ||
@@ -171,7 +170,7 @@ const OFFROUTE_DISTANCE_M = 120;
 const OFFROUTE_PERSIST_MS = 4000;
 const OFFROUTE_JUMP_M = 50;
 
-const HomeMainScreen = ({route}) => {
+const HomeMainScreen = ({ route }) => {
   const [camera, setCamera] = useState([-74.006, 40.7128]);
 
   // NEW: track live user position & heading for the vehicle icon
@@ -193,12 +192,12 @@ const HomeMainScreen = ({route}) => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [pickUpTimeUpdate, setPickUpTimeUpdate] = useState(null);
   const pickUpTimesRef = useRef(new Map()); // orderId -> mins (for Accept)
-  const {t} = useTranslation();
+  const { t } = useTranslation();
 
   const [routeSteps, setRouteSteps] = useState([]);
   const [routeDistanceM, setRouteDistanceM] = useState(0);
   const [routeDurationSec, setRouteDurationSec] = useState(0);
-  const [banner, setBanner] = useState({primary: '', distance: 0});
+  const [banner, setBanner] = useState({ primary: '', distance: 0 });
   const [routeCoords, setRouteCoords] = useState([]);
   const [remainingFeature, setRemainingFeature] = useState(null);
   const [traveledFeature, setTraveledFeature] = useState(null);
@@ -239,10 +238,16 @@ const HomeMainScreen = ({route}) => {
   const headingRef = useRef(null);
 
   const lastFetchAtRef = useRef(0);
-  const lastLegRef = useRef({from: null, to: null});
+  const lastLegRef = useRef({ from: null, to: null });
   const offRouteSinceRef = useRef(null);
 
   const lastOnRoutePointRef = useRef(null);
+
+  // NEW: performance throttling refs
+  const lastLocationTsRef = useRef(0); // throttle onUserLocation
+  const lastProgressLLRef = useRef(null); // throttle route progress
+  const lastEtaUpdateRef = useRef(0); // throttle ETA updates
+  const lastEtaDistRef = useRef(null); // cache last remaining distance
 
   const backPressCountRef = useRef(0);
   const backResetTimerRef = useRef(null);
@@ -258,18 +263,21 @@ const HomeMainScreen = ({route}) => {
   useEffect(() => {
     cameraRef.current = camera;
   }, [camera]);
+
   useEffect(() => {
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
     };
   }, []);
+
   useEffect(() => {
     const sub = AppState.addEventListener('change', s => {
       appStateRef.current = s;
     });
     return () => sub.remove();
   }, []);
+
   useEffect(() => {
     selectedOrderRef.current = selectedOrder;
   }, [selectedOrder]);
@@ -279,6 +287,7 @@ const HomeMainScreen = ({route}) => {
     backResetTimerRef.current = null;
     backPressCountRef.current = 0;
   };
+
   useFocusEffect(
     React.useCallback(() => {
       if (Platform.OS !== 'android') return undefined;
@@ -316,9 +325,9 @@ const HomeMainScreen = ({route}) => {
   /* ───────── Sockets ───────── */
   useEffect(() => {
     const rawUrl = user?.socketio;
-    const {baseUrl, roomId} = parseSocketUrl(rawUrl);
+    const { baseUrl, roomId } = parseSocketUrl(rawUrl);
     setSocketConnected(false);
-    const s = connectSocket({baseUrl, roomId});
+    const s = connectSocket({ baseUrl, roomId });
     const offConnect = on('connect', () => setSocketConnected(true));
     const offDisconnect = on('disconnect', () => setSocketConnected(false));
     const offError = on('connect_error', () => setSocketConnected(false));
@@ -351,7 +360,7 @@ const HomeMainScreen = ({route}) => {
           await showLocalNotification({
             title: t('deliveryCancel'),
             body: t('deliveryWasCancel'),
-            data: {delivery_id: String(payload?.message?.id ?? '')},
+            data: { delivery_id: String(payload?.message?.id ?? '') },
           });
         }
       } else if (event === 'delivery_accepted_by_rider') {
@@ -373,7 +382,7 @@ const HomeMainScreen = ({route}) => {
       offError && offError();
       try {
         s.offAny(anyLogger);
-      } catch {}
+      } catch { }
     };
   }, [user?.socketio, user?.authenticated, t]);
 
@@ -417,6 +426,7 @@ const HomeMainScreen = ({route}) => {
       return false;
     }
   };
+
   const createNotifChannelOnce = async ref => {
     if (Platform.OS !== 'android') return null;
     if (ref.current) return ref.current;
@@ -433,7 +443,8 @@ const HomeMainScreen = ({route}) => {
     }
     return ref.current;
   };
-  const showLocalNotification = useCallback(async ({title, body, data}) => {
+
+  const showLocalNotification = useCallback(async ({ title, body, data }) => {
     try {
       if (Platform.OS === 'android') {
         const channelId = await createNotifChannelOnce(channelIdRef);
@@ -444,7 +455,7 @@ const HomeMainScreen = ({route}) => {
           android: {
             channelId: channelId || 'orders',
             smallIcon: 'ic_launcher',
-            pressAction: {id: 'open_accept', launchActivity: 'default'},
+            pressAction: { id: 'open_accept', launchActivity: 'default' },
           },
         });
       } else {
@@ -460,11 +471,12 @@ const HomeMainScreen = ({route}) => {
               badge: true,
             },
           },
-          pressAction: {id: 'open_accept'},
+          pressAction: { id: 'open_accept' },
         });
       }
-    } catch {}
+    } catch { }
   }, []);
+
   const ensureFcmPermissionAndToken = async () => {
     try {
       const authStatus = await messaging().requestPermission({
@@ -479,12 +491,12 @@ const HomeMainScreen = ({route}) => {
       if (!enabled) return null;
       const token = await messaging().getToken();
       try {
-        await sendData(urls.SETFCMTOKEN, {fcm_token: token});
-      } catch {}
+        await sendData(urls.SETFCMTOKEN, { fcm_token: token });
+      } catch { }
       messaging().onTokenRefresh(async newToken => {
         try {
-          await sendData(urls.SETFCMTOKEN, {fcm_token: newToken});
-        } catch {}
+          await sendData(urls.SETFCMTOKEN, { fcm_token: newToken });
+        } catch { }
       });
       return token;
     } catch {
@@ -520,20 +532,20 @@ const HomeMainScreen = ({route}) => {
         ]);
         const ok =
           granted['android.permission.ACCESS_FINE_LOCATION'] ===
-            PermissionsAndroid.RESULTS.GRANTED ||
+          PermissionsAndroid.RESULTS.GRANTED ||
           granted['android.permission.ACCESS_COARSE_LOCATION'] ===
-            PermissionsAndroid.RESULTS.GRANTED;
+          PermissionsAndroid.RESULTS.GRANTED;
         setHasLocPerm(ok);
         if (ok) {
           Geolocation.getCurrentPosition(
             pos => {
-              const {latitude, longitude} = pos.coords;
+              const { latitude, longitude } = pos.coords;
               const lng = round5(longitude),
                 lat = round5(latitude);
               if (lng != null && lat != null) setCamera([lng, lat]);
             },
-            () => {},
-            {enableHighAccuracy: true, timeout: 15000, maximumAge: 5000},
+            () => { },
+            { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 },
           );
           setMapMountKey(prev => prev + '-granted');
         }
@@ -554,13 +566,13 @@ const HomeMainScreen = ({route}) => {
       if (ok) {
         Geolocation.getCurrentPosition(
           pos => {
-            const {latitude, longitude} = pos.coords;
+            const { latitude, longitude } = pos.coords;
             const lng = round5(longitude),
               lat = round5(latitude);
             if (lng != null && lat != null) setCamera([lng, lat]);
           },
-          () => {},
-          {enableHighAccuracy: true, timeout: 15000, maximumAge: 5000},
+          () => { },
+          { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 },
         );
         setMapMountKey(prev => prev + '-granted');
       }
@@ -590,6 +602,7 @@ const HomeMainScreen = ({route}) => {
       errorHandler(response);
     }
   };
+
   const getDeliveryLists = async () => {
     setCurrentOrderIndex(null);
     setShowAcceptOrder(false);
@@ -612,6 +625,7 @@ const HomeMainScreen = ({route}) => {
       errorHandler(response);
     }
   };
+
   const getUserProfile = async () => {
     const response = await getData(urls.GETUSER);
     if (response?.data?.status) dispatch(setUserProfile(response?.data?.data));
@@ -674,7 +688,7 @@ const HomeMainScreen = ({route}) => {
     if (response?.data?.status) {
       setSelectedOrder(response?.data?.data);
       if (status === 'accepted') {
-         setMapHeight(60)
+        setMapHeight(60);
         setIsAccepted(true);
         setShowAcceptOrder(false);
         setCurrentOrderIndex(null);
@@ -692,7 +706,7 @@ const HomeMainScreen = ({route}) => {
         ].includes(status)
       ) {
         status === 'completed' && setCompleteOrderPrice(order?.rider_fee || 0);
-         setMapHeight(100)
+        setMapHeight(100);
         resetRoute();
         setSelectedOrder(null);
         setIsNavOn(false);
@@ -737,7 +751,7 @@ const HomeMainScreen = ({route}) => {
     setRouteSteps([]);
     setRouteDistanceM(0);
     setRouteDurationSec(0);
-    setBanner({primary: '', distance: 0});
+    setBanner({ primary: '', distance: 0 });
     setTraveledFeature(null);
     setRemainingFeature(null);
     progressIdxRef.current = 0;
@@ -745,9 +759,10 @@ const HomeMainScreen = ({route}) => {
     setEtaSec(null); // ⭐ reset ETA
     if (abortRef.current) abortRef.current.abort();
   };
+
   const buildLineFeature = coords =>
     coords && coords.length >= 2
-      ? {type: 'Feature', geometry: {type: 'LineString', coordinates: coords}}
+      ? { type: 'Feature', geometry: { type: 'LineString', coordinates: coords } }
       : null;
 
   const fetchRoute = useCallback(
@@ -759,8 +774,8 @@ const HomeMainScreen = ({route}) => {
         showToast('Fetch route....');
         const profile =
           config?.selectVehicle?.vehicle_type === 'bicycle' ||
-          config?.selectVehicle?.vehicle_type === 'e_bicycle' ||
-          config?.selectVehicle?.vehicle_type === 'moped'
+            config?.selectVehicle?.vehicle_type === 'e_bicycle' ||
+            config?.selectVehicle?.vehicle_type === 'moped'
             ? 'cycling'
             : 'driving';
 
@@ -769,7 +784,7 @@ const HomeMainScreen = ({route}) => {
           `${from[0]},${from[1]};${to[0]},${to[1]}` +
           `?geometries=geojson&overview=full&steps=true&banner_instructions=true&voice_instructions=false&language=en&access_token=${MAPBOX_TOKEN}`;
 
-        const res = await fetch(url, {signal: controller.signal});
+        const res = await fetch(url, { signal: controller.signal });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const json = await res.json();
 
@@ -788,14 +803,14 @@ const HomeMainScreen = ({route}) => {
           setRouteSteps(steps);
           setRouteDurationSec(duration);
           setRouteDistanceM(distance);
-          setBanner({primary: '', distance: 0});
+          setBanner({ primary: '', distance: 0 });
           progressIdxRef.current = 0;
           setEtaSec(null); // ⭐ ETA will be set on first location update
 
           const userLL =
             userLocRef.current || normalizeCoord(cameraRef.current);
           if (userLL) {
-            const {idx, point} = closestOnPolyline(userLL, coords);
+            const { idx, point } = closestOnPolyline(userLL, coords);
             progressIdxRef.current = idx;
             const traveled = coords.slice(0, idx + 1);
             traveled[traveled.length - 1] = point;
@@ -823,7 +838,7 @@ const HomeMainScreen = ({route}) => {
       if (!isAccepted || !isFollowing) return;
       const now = Date.now();
       if (now - (lastFetchAtRef.current || 0) < REROUTE_COOLDOWN_MS) return;
-      const newLeg = {from, to};
+      const newLeg = { from, to };
       if (sameLegClose(lastLegRef.current, newLeg)) return;
       await fetchRoute(from, to);
       lastFetchAtRef.current = Date.now();
@@ -852,7 +867,7 @@ const HomeMainScreen = ({route}) => {
   ]);
 
   useEffect(() => {
-    lastLegRef.current = {from: null, to: null};
+    lastLegRef.current = { from: null, to: null };
     lastFetchAtRef.current = 0;
   }, [selectedOrder?.id, senderCoordinate?.[0], senderCoordinate?.[1]]);
 
@@ -868,25 +883,40 @@ const HomeMainScreen = ({route}) => {
           ? normalizeCoord(nextLoc)
           : null;
       if (!nextPt) return;
+
       const d = Math.max(0, Math.round(haversineMeters(userLL, nextPt)));
-      if (d < 30 && idx < routeSteps.length - 1)
+      if (d < 30 && idx < routeSteps.length - 1) {
         progressIdxRef.current = idx + 1;
+      }
 
-      setBanner({primary: stepPrimaryText(currentStep), distance: d});
+      setBanner({ primary: stepPrimaryText(currentStep), distance: d });
 
-      // ⭐ Compute remaining distance and ETA
+      // ⭐ Compute remaining distance
       let remainingM = d;
       for (let i = idx + 1; i < routeSteps.length; i++) {
         remainingM += routeSteps[i]?.distance || 0;
       }
 
+      // ⭐ Throttle ETA updates
+      const now = Date.now();
+      const distChangedEnough =
+        lastEtaDistRef.current == null ||
+        Math.abs(remainingM - lastEtaDistRef.current) > 50; // 50m threshold
+      const timeOk = now - lastEtaUpdateRef.current > 5000; // at most every 5s
+
+      if (!distChangedEnough || !timeOk) {
+        return;
+      }
+
+      lastEtaUpdateRef.current = now;
+      lastEtaDistRef.current = remainingM;
+
       let eta = null;
       if (routeDistanceM > 0 && routeDurationSec > 0 && remainingM > 0) {
-        // Use average speed of the route
         const avgSpeed = routeDistanceM / routeDurationSec; // m/s
         eta = remainingM / avgSpeed;
       } else if (remainingM > 0) {
-        // Fallback: assume ~30 km/h ≈ 8.33 m/s
+        // Fallback speed: ~30km/h
         eta = remainingM / 8.33;
       }
 
@@ -902,7 +932,7 @@ const HomeMainScreen = ({route}) => {
   const updateRouteProgress = useCallback(
     userLL => {
       if (!routeCoords || routeCoords.length < 2) return;
-      const {idx, point} = closestOnPolyline(userLL, routeCoords);
+      const { idx, point } = closestOnPolyline(userLL, routeCoords);
       const nextIdx = Math.max(idx, progressIdxRef.current);
       progressIdxRef.current = nextIdx;
 
@@ -922,18 +952,29 @@ const HomeMainScreen = ({route}) => {
   const onUserLocation = useCallback(
     async location => {
       if (!location?.coords) return;
-      const {latitude, longitude, heading, course} = location.coords;
+
+      const now = Date.now();
+      // ⏱️ Throttle location updates (max once per 1000 ms)
+      if (now - lastLocationTsRef.current < 1000) {
+        return;
+      }
+      lastLocationTsRef.current = now;
+
+      const { latitude, longitude, heading, course } = location.coords;
       const userLL = [round5(longitude), round5(latitude)];
       if (userLL[0] == null || userLL[1] == null) return;
 
       setUserCoordState(userLL);
 
+      // ───── Heading smoothing ─────
       let hdg = toNum(heading);
       if (hdg == null || !Number.isFinite(hdg)) hdg = toNum(course);
+
       if ((hdg == null || hdg === 0) && lastLLRef.current) {
         const dist = haversineMeters(lastLLRef.current, userLL);
         if (dist > 1) hdg = bearingAB(lastLLRef.current, userLL);
       }
+
       if (hdg != null && Number.isFinite(hdg)) {
         const smoothed = smoothHeading(
           headingRef.current ?? normDeg(hdg),
@@ -943,38 +984,62 @@ const HomeMainScreen = ({route}) => {
         setUserHeadingDeg(smoothed);
         if (!isFollowing) setBearing(smoothed);
       }
+
       lastLLRef.current = userLL;
       userLocRef.current = userLL;
 
-      const last = cameraRef.current;
-      const movedEnough =
-        !last ||
-        Math.abs(userLL[0] - last[0]) > 0.0005 ||
-        Math.abs(userLL[1] - last[1]) > 0.0005;
-      if (!isFollowing && movedEnough) setCamera(userLL);
+      // ───── Only rerender camera when moved enough ─────
+      const lastCam = cameraRef.current;
+      const movedForCamera =
+        !lastCam ||
+        Math.abs(userLL[0] - lastCam[0]) > 0.0005 ||
+        Math.abs(userLL[1] - lastCam[1]) > 0.0005;
 
-      if (isFollowing && routeCoords.length > 1) {
-        updateRouteProgress(userLL);
-        updateBannerAndSteps(userLL); // ⭐ updates ETA as well
+      if (!isFollowing && movedForCamera) {
+        setCamera(userLL);
       }
 
+      // ───── Only update route progress when moved > ~5m ─────
+      const MIN_MOVE_FOR_ROUTE = 5; // meters
+      let movedForRoute = true;
+      if (lastProgressLLRef.current) {
+        const dRoute = haversineMeters(lastProgressLLRef.current, userLL);
+        movedForRoute = dRoute > MIN_MOVE_FOR_ROUTE;
+      }
+      if (movedForRoute) {
+        lastProgressLLRef.current = userLL;
+
+        if (isFollowing && routeCoords.length > 1) {
+          updateRouteProgress(userLL);
+          updateBannerAndSteps(userLL); // ETA throttling is inside this
+        }
+      }
+
+      // ───── Off-route jump based reroute (with cooldown) ─────
       try {
         if (isAccepted && senderCoordinate && routeCoords?.length >= 2) {
           if (!lastOnRoutePointRef.current) {
-            const {point} = closestOnPolyline(userLL, routeCoords);
+            const { point } = closestOnPolyline(userLL, routeCoords);
             lastOnRoutePointRef.current = point;
           }
+
           const dFromAnchor = haversineMeters(
             userLL,
             lastOnRoutePointRef.current,
           );
+
           if (dFromAnchor > OFFROUTE_JUMP_M) {
-            await fetchRoute(userLL, senderCoordinate);
-            lastFetchAtRef.current = Date.now();
-            lastLegRef.current = {from: userLL, to: senderCoordinate};
+            const now2 = Date.now();
+            if (now2 - (lastFetchAtRef.current || 0) > REROUTE_COOLDOWN_MS) {
+              await fetchRoute(userLL, senderCoordinate);
+              lastFetchAtRef.current = now2;
+              lastLegRef.current = { from: userLL, to: senderCoordinate };
+            }
           }
         }
-      } catch {}
+      } catch {
+        // ignore
+      }
     },
     [
       isFollowing,
@@ -991,6 +1056,8 @@ const HomeMainScreen = ({route}) => {
   useEffect(() => {
     if (!routeSteps.length) return;
     const id = setInterval(() => {
+      if (!isAccepted || !isFollowing) return;
+
       const userLL = userLocRef.current;
       if (!userLL) return;
       if (appStateRef.current !== 'active') return;
@@ -1000,13 +1067,13 @@ const HomeMainScreen = ({route}) => {
       if (anchor) {
         d = haversineMeters(userLL, anchor);
       } else if (remainingFeature?.geometry?.coordinates?.length >= 2) {
-        const {point} = closestOnPolyline(
+        const { point } = closestOnPolyline(
           userLL,
           remainingFeature.geometry.coordinates,
         );
         d = haversineMeters(userLL, point);
       } else if (routeCoords?.length >= 2) {
-        const {point} = closestOnPolyline(userLL, routeCoords);
+        const { point } = closestOnPolyline(userLL, routeCoords);
         d = haversineMeters(userLL, point);
       }
       if (!Number.isFinite(d)) return;
@@ -1018,7 +1085,7 @@ const HomeMainScreen = ({route}) => {
           const to = senderCoordinate;
           if (to) {
             lastFetchAtRef.current = 0;
-            lastLegRef.current = {from: null, to: null};
+            lastLegRef.current = { from: null, to: null };
             guardedFetchRoute(userLL, to);
           }
           offRouteSinceRef.current = null;
@@ -1026,7 +1093,8 @@ const HomeMainScreen = ({route}) => {
       } else {
         offRouteSinceRef.current = null;
       }
-    }, 2000);
+    }, 3000); // a bit slower: every 3s
+
     return () => clearInterval(id);
   }, [
     routeSteps,
@@ -1034,6 +1102,8 @@ const HomeMainScreen = ({route}) => {
     routeCoords,
     senderCoordinate,
     guardedFetchRoute,
+    isAccepted,
+    isFollowing,
   ]);
 
   /* ───────── Background location post (SEND TO API) ───────── */
@@ -1080,7 +1150,7 @@ const HomeMainScreen = ({route}) => {
     new Promise(resolve => {
       Geolocation.getCurrentPosition(
         pos => {
-          const {latitude, longitude} = pos.coords || {};
+          const { latitude, longitude } = pos.coords || {};
           resolve(
             latitude != null && longitude != null
               ? [round5(longitude), round5(latitude)]
@@ -1088,7 +1158,7 @@ const HomeMainScreen = ({route}) => {
           );
         },
         () => resolve(null),
-        {enableHighAccuracy: true, timeout: 5000, maximumAge: 0},
+        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 },
       );
     });
 
@@ -1115,7 +1185,7 @@ const HomeMainScreen = ({route}) => {
         const to = senderCoordinate;
         if (to && isAccepted) {
           lastFetchAtRef.current = 0;
-          lastLegRef.current = {from: null, to: null};
+          lastLegRef.current = { from: null, to: null };
           const from = normalizeCoord(target);
           if (from) await guardedFetchRoute(from, to);
         }
@@ -1194,12 +1264,13 @@ const HomeMainScreen = ({route}) => {
       ? Math.max(1, Math.round(etaSec / 60))
       : null;
 
+  // console.log('enterjj');
 
   /* ───────── Render ───────── */
   return (
     <>
       <View
-        style={[styles.container, isAndroid15Plus && {marginBottom: hp(6)}]}>
+        style={[styles.container, isAndroid15Plus && { marginBottom: hp(6) }]}>
         <CustomHeader onRefreshPress={onPressMyLocation} />
 
         <View style={styles.mapWrap}>
@@ -1210,7 +1281,7 @@ const HomeMainScreen = ({route}) => {
                 styleURL={Mapbox.StyleURL.Light}
                 zoomEnabled
                 rotateEnabled
-                style={[styles.map,{height:hp(mapHeight)}]}
+                style={[styles.map, { height: hp(mapHeight) }]}
                 onDidFinishLoadingMap={() => setMapReady(true)}>
                 {/* Remaining route (black) */}
                 {remainingFeature && (
@@ -1284,8 +1355,8 @@ const HomeMainScreen = ({route}) => {
                 {userCoordState && (
                   <Mapbox.MarkerView coordinate={userCoordState}>
                     {config?.selectVehicle?.vehicle_type == 'bicycle' ||
-                    config?.selectVehicle?.vehicle_type == 'e_bicycle' ||
-                    config?.selectVehicle?.vehicle_type == 'moped' ? (
+                      config?.selectVehicle?.vehicle_type == 'e_bicycle' ||
+                      config?.selectVehicle?.vehicle_type == 'moped' ? (
                       <Image
                         source={require('../../../../assets/image/motor.png')}
                         style={{
@@ -1352,7 +1423,7 @@ const HomeMainScreen = ({route}) => {
             <TinderCarousel
               key={`deck-${data[0]?.id ?? 'x'}-${data.length}`}
               data={data}
-              renderItem={({item}) => (
+              renderItem={({ item }) => (
                 <AcceptOrderModal
                   order={item}
                   userCoord={userCoordMemo}
@@ -1397,9 +1468,8 @@ const HomeMainScreen = ({route}) => {
             }
           }}
           order={selectedOrder}
-          onModalPosition={(value)=> {
-            !value ? 
-            setMapHeight(60) : setMapHeight(100)
+          onModalPosition={value => {
+            !value ? setMapHeight(60) : setMapHeight(100);
           }}
           loading={loadingChangeStatus}
         />
@@ -1505,9 +1575,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     position: 'absolute',
   },
-  text: {fontWeight: 'bold', color: colors.white, fontSize: wp(7)},
-  mapWrap: {flex: 1, width: wp(100), position: 'relative'},
-  map: { width: wp(100),height:hp(100)},
+  text: { fontWeight: 'bold', color: colors.white, fontSize: wp(7) },
+  mapWrap: { flex: 1, width: wp(100), position: 'relative' },
+  map: { width: wp(100), height: hp(100) },
   overlay: {
     position: 'absolute',
     top: hp(11),

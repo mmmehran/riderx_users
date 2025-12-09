@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -11,10 +11,11 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
-import {useNavigation} from '@react-navigation/native';
-import {useTranslation} from 'react-i18next';
-import {useDispatch, useSelector} from 'react-redux';
+import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
+import { useDispatch, useSelector } from 'react-redux';
 import * as Yup from 'yup';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 
 import CustomScreen from '../../components/common/CustomScreen';
 import colors from '../../config/colors';
@@ -25,7 +26,7 @@ import {
   UserNameIcon,
 } from '../../../assets/svg/index';
 import CustomHeaderApp from '../../components/custom/CustomHeaderApp';
-import {getData, sendData} from '../../services/common.service';
+import { getData, sendData } from '../../services/common.service';
 import urls from '../../services/urls.json';
 import errorHandler from '../../utils/errorHandler';
 import {
@@ -33,16 +34,16 @@ import {
   authenticated,
 } from '../../redux/reducers/authenticationReducer';
 import routes from '../../navigation/routes';
-import {Form, Input, Button} from '../../components/form/index';
+import { Form, Input, Button } from '../../components/form/index';
 import CustomButton from '../../components/common/CustomButton';
 import TakePictureModal from '../../modal/TakePictureModal';
-import {showToast} from '../../utils/helpers';
-import {uploadFile} from '../../services/file.services';
+import { showToast } from '../../utils/helpers';
+import { uploadFile } from '../../services/file.services';
 import PhoneFormField from '../../components/form/PhoneInputField';
 
 const EditMyAccount = () => {
   const navigation = useNavigation();
-  const {t} = useTranslation();
+  const { t } = useTranslation();
   const user = useSelector(authenticated);
   const dispatch = useDispatch();
   const formikRef = useRef(null);
@@ -51,9 +52,9 @@ const EditMyAccount = () => {
     firstName: Yup.string().required(),
     lastName: Yup.string().required(),
     email: Yup.string().email().required(),
-    phoneNumber: Yup.string(), 
+    phoneNumber: Yup.string(),
     phoneCountry: Yup.string().nullable(),
-    phoneDialCode: Yup.string().nullable(), 
+    phoneDialCode: Yup.string().nullable(),
   });
 
   const [loading, setLoading] = useState(false);
@@ -66,7 +67,7 @@ const EditMyAccount = () => {
     email: '',
     phoneNumber: '',
     phoneCountry: 'AT',
-    phoneDialCode: '43', 
+    phoneDialCode: '43',
   });
 
   const onSubmit = async values => {
@@ -123,9 +124,9 @@ const EditMyAccount = () => {
           firstName: data?.first_name || '',
           lastName: data?.last_name || '',
           email: data?.email || '',
-          phoneNumber,    
-          phoneCountry,   
-          phoneDialCode, 
+          phoneNumber,
+          phoneCountry,
+          phoneDialCode,
         });
       } else {
         errorHandler(response);
@@ -156,91 +157,97 @@ const EditMyAccount = () => {
         backPress={() => navigation.navigate(routes.MYACCOUNT)}
         title={t('editMyAccount')}
       />
-      {loadingData ? (
-        <ActivityIndicator
-          size="large"
-          color={colors.neutral900}
-          style={{marginTop: hp(5)}}
-        />
-      ) : (
-        <>
-          <View style={styles.imageContainer}>
-            <Image
-              source={{
-                uri: images?.assets?.[0]?.uri
-                  ? images?.assets[0]?.uri
-                  : user?.userProfile?.profile_image,
+      <KeyboardAwareScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ flexGrow: 1 }}>
+
+        {loadingData ? (
+          <ActivityIndicator
+            size="large"
+            color={colors.neutral900}
+            style={{ marginTop: hp(5) }}
+          />
+        ) : (
+          <>
+            <View style={styles.imageContainer}>
+              <Image
+                source={{
+                  uri: images?.assets?.[0]?.uri
+                    ? images?.assets[0]?.uri
+                    : user?.userProfile?.profile_image,
+                }}
+                style={{ width: wp(30), height: wp(30), borderRadius: wp(50) }}
+              />
+            </View>
+            <TouchableOpacity
+              onPress={() => {
+                setToggleSheet(true);
               }}
-              style={{width: wp(30), height: wp(30), borderRadius: wp(50)}}
-            />
-          </View>
-          <TouchableOpacity
-            onPress={() => {
-              setToggleSheet(true);
-            }}
-            style={styles.editContainer}>
-            <EditIcon width={wp(6)} height={wp(6)} />
-          </TouchableOpacity>
-          <View style={styles.formContainer}>
-            <Form
-              initialValues={initialValues}
-              validationSchema={validationSchema}
-              onSubmit={onSubmit}
-              innerRef={formikRef}
-              enableReinitialize>
-              {({values}) => (
-                <>
-                  <Input
-                    name="firstName"
-                    inputName={t('enterYourFirstName')}
-                    input={{textAlign: 'left'}}
-                    autoCapitalize="none"
-                    value={values?.firstName}
-                    icon={<UserNameIcon width={wp(4.5)} height={wp(4.5)} />}
-                  />
-                  <Input
-                    name="lastName"
-                    inputName={t('enterYourLastName')}
-                    input={{textAlign: 'left'}}
-                    autoCapitalize="none"
-                    value={values?.lastName}
-                    icon={<UserNameIcon width={wp(4.5)} height={wp(4.5)} />}
-                  />
-                  <PhoneFormField
-                    star
-                    name="phoneNumber"
-                    countryField="phoneCountry"
-                    dialCodeField="phoneDialCode"
-                    defaultCode="AT"
-                    placeholder={t('enterYourPhone')}
-                  />
-                  <Input
-                    name="email"
-                    inputName={t('enterYourEmail')}
-                    input={{textAlign: 'left'}}
-                    autoCapitalize="none"
-                    value={values?.email}
-                    icon={<MessageUserIcon width={wp(4.5)} height={wp(4.5)} />}
-                  />
-                  <View style={styles.buttonContainer}>
-                    <Button
-                      loading={loading}
-                      style={{width: wp(42), marginHorizontal: 0}}>
-                      {t('saveChanges')}
-                    </Button>
-                    <CustomButton
-                      onPress={() => navigation.navigate(routes.MYACCOUNT)}
-                      style={styles.buttonCancel}
-                      textStyle={{color: colors.neutral900}}>
-                      {t('cancel')}
-                    </CustomButton>
-                  </View>
-                </>
-              )}
-            </Form>
-          </View>
-        </>
-      )}
+              style={styles.editContainer}>
+              <EditIcon width={wp(6)} height={wp(6)} />
+            </TouchableOpacity>
+            <View style={styles.formContainer}>
+              <Form
+                initialValues={initialValues}
+                validationSchema={validationSchema}
+                onSubmit={onSubmit}
+                innerRef={formikRef}
+                enableReinitialize>
+                {({ values }) => (
+                  <>
+                    <Input
+                      name="firstName"
+                      inputName={t('enterYourFirstName')}
+                      input={{ textAlign: 'left' }}
+                      autoCapitalize="none"
+                      value={values?.firstName}
+                      icon={<UserNameIcon width={wp(4.5)} height={wp(4.5)} />}
+                    />
+                    <Input
+                      name="lastName"
+                      inputName={t('enterYourLastName')}
+                      input={{ textAlign: 'left' }}
+                      autoCapitalize="none"
+                      value={values?.lastName}
+                      icon={<UserNameIcon width={wp(4.5)} height={wp(4.5)} />}
+                    />
+                    <PhoneFormField
+                      star
+                      name="phoneNumber"
+                      countryField="phoneCountry"
+                      dialCodeField="phoneDialCode"
+                      defaultCode="AT"
+                      placeholder={t('enterYourPhone')}
+                    />
+                    <Input
+                      name="email"
+                      inputName={t('enterYourEmail')}
+                      input={{ textAlign: 'left' }}
+                      autoCapitalize="none"
+                      value={values?.email}
+                      icon={<MessageUserIcon width={wp(4.5)} height={wp(4.5)} />}
+                    />
+                    <View style={styles.buttonContainer}>
+                      <Button
+                        loading={loading}
+                        style={{ width: wp(42), marginHorizontal: 0 }}>
+                        {t('saveChanges')}
+                      </Button>
+                      <CustomButton
+                        onPress={() => navigation.navigate(routes.MYACCOUNT)}
+                        style={styles.buttonCancel}
+                        textStyle={{ color: colors.neutral900 }}>
+                        {t('cancel')}
+                      </CustomButton>
+                    </View>
+                  </>
+                )}
+              </Form>
+            </View>
+          </>
+        )}
+
+      </KeyboardAwareScrollView>
       <TakePictureModal
         isVisible={toggleSheet}
         onBackdropPress={() => setToggleSheet(false)}
@@ -270,7 +277,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.neonYellow,
     position: 'absolute',
     overflow: 'hidden',
-    top: Platform.OS == 'ios' ? hp(24) : hp(18),
+    top: Platform.OS == 'ios' ? hp(17) : hp(11),
     right: wp(33),
   },
   formContainer: {

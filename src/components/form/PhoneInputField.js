@@ -54,6 +54,7 @@ const PhoneFormField = ({
     <>
       <View style={[styles.fieldWrapper, stylesInput]}>
         <PhoneInput
+          keyboardType="numeric"
           value={value}
           placeholder={placeholder}
           defaultCountry={iso}          // ex: "AT"

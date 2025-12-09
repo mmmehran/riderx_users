@@ -1,11 +1,11 @@
-import React, {memo, useState} from 'react';
-import {StyleSheet, View, TouchableOpacity, Linking, Alert, Platform} from 'react-native';
+import React, { memo, useState } from 'react';
+import { StyleSheet, View, TouchableOpacity, Linking, Alert, Platform } from 'react-native';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
 import SwipeButton from '../components/common/SwipeButton';
-import {useTranslation} from 'react-i18next';
+import { useTranslation } from 'react-i18next';
 
 import colors from '../config/colors';
 import CustomText from '../components/common/CustomText';
@@ -19,21 +19,20 @@ import {
   MessageIcon1,
   MapIcon
 } from '../../assets/svg/index';
-import {normalizeLabel, timeAgoShort, isAndroid15Plus} from '../utils/helpers';
+import { normalizeLabel, timeAgoShort, isAndroid15Plus } from '../utils/helpers';
 import { useSelector } from 'react-redux';
 import { selectConfig } from '../redux/reducers/configReducer';
 
 
-const AcceptedOrderModal = ({order, changeOrder, loading, insets,onModalPosition}) => {
-  const {t} = useTranslation();
+const AcceptedOrderModal = ({ order, changeOrder, loading, insets, onModalPosition }) => {
+  const { t } = useTranslation();
   const [less, setLess] = useState(false);
   const config = useSelector(selectConfig);
 
-  const phoneNumber = `tel:${
-    order?.status !== 'pickup'
-      ? `+${order?.sender_phone?.country_code}${order?.sender_phone?.number}`
-      : `+${order?.receiver_phone?.country_code}${order?.receiver_phone?.number}`
-  }`;
+  const phoneNumber = `tel:${order?.status !== 'pickup'
+    ? `+${order?.sender_phone?.country_code}${order?.sender_phone?.number}`
+    : `+${order?.receiver_phone?.country_code}${order?.receiver_phone?.number}`
+    }`;
 
   const makeCall = async () => {
     try {
@@ -49,14 +48,12 @@ const AcceptedOrderModal = ({order, changeOrder, loading, insets,onModalPosition
   };
 
 
-  console.log(order)
-  
 
-  const phoneNumberSms = `sms:${
-    order?.status !== 'pickup'
-      ? `+${order?.sender_phone?.country_code}${order?.sender_phone?.number}`
-      : `+${order?.receiver_phone?.country_code}${order?.receiver_phone?.number}`
-  }?body=Hello, this is a test message!`;
+
+  const phoneNumberSms = `sms:${order?.status !== 'pickup'
+    ? `+${order?.sender_phone?.country_code}${order?.sender_phone?.number}`
+    : `+${order?.receiver_phone?.country_code}${order?.receiver_phone?.number}`
+    }?body=Hello, this is a test message!`;
 
   const sendSms = async () => {
     try {
@@ -86,37 +83,37 @@ const AcceptedOrderModal = ({order, changeOrder, loading, insets,onModalPosition
     let url = "";
 
     if (app === 'apple') {
-        url = `http://maps.apple.com/?daddr=${latLng}&dirflg=d`;
+      url = `http://maps.apple.com/?daddr=${latLng}&dirflg=d`;
     } else if (app === 'google') {
-        if (Platform.OS === 'ios') {
-             // Try comgooglemaps scheme if possible, otherwise fallback to https
-             // Since we can't easily check canOpenURL without async complexity here and standard https works for both:
-             // But user asked to "open application".
-             url = `https://www.google.com/maps/dir/?api=1&destination=${latLng}`; 
-        } else {
-             url = `geo:0,0?q=${latLng}(${label})`;
-        }
+      if (Platform.OS === 'ios') {
+        // Try comgooglemaps scheme if possible, otherwise fallback to https
+        // Since we can't easily check canOpenURL without async complexity here and standard https works for both:
+        // But user asked to "open application".
+        url = `https://www.google.com/maps/dir/?api=1&destination=${latLng}`;
+      } else {
+        url = `geo:0,0?q=${latLng}(${label})`;
+      }
     } else if (app === 'waze') {
-        url = `https://waze.com/ul?ll=${latLng}&navigate=yes`;
+      url = `https://waze.com/ul?ll=${latLng}&navigate=yes`;
     }
 
     try {
-        await Linking.openURL(url);
+      await Linking.openURL(url);
     } catch (err) {
-        console.error("Failed to open map:", err);
-        // Fallback for Google on iOS if comgooglemaps failed (not used here but good practice)
-        if(app === 'google' && Platform.OS === 'ios' && !url.startsWith('http')){
-             await Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${latLng}`);
-        } else {
-            Alert.alert("Error", t('mapAppNotInstalled', { app: app })); 
-        }
+      console.error("Failed to open map:", err);
+      // Fallback for Google on iOS if comgooglemaps failed (not used here but good practice)
+      if (app === 'google' && Platform.OS === 'ios' && !url.startsWith('http')) {
+        await Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${latLng}`);
+      } else {
+        Alert.alert("Error", t('mapAppNotInstalled', { app: app }));
+      }
     }
   };
 
   return (
     <View style={styles.modal}>
       <View
-        style={[styles.container, isAndroid15Plus && {marginBottom: hp(6)}]}>
+        style={[styles.container, isAndroid15Plus && { marginBottom: hp(6) }]}>
         <View style={styles.userContainer}>
           <View style={styles.imageContainer}></View>
           <View>
@@ -134,7 +131,7 @@ const AcceptedOrderModal = ({order, changeOrder, loading, insets,onModalPosition
             onPress={sendSms}
             style={[
               styles.buttonCall1,
-              {backgroundColor: colors.black, marginRight: wp(2)},
+              { backgroundColor: colors.black, marginRight: wp(2) },
             ]}>
             <MessageIcon1 width={wp(5)} height={wp(5)}></MessageIcon1>
           </TouchableOpacity>
@@ -144,7 +141,7 @@ const AcceptedOrderModal = ({order, changeOrder, loading, insets,onModalPosition
         </View>
         <View style={styles.rowStreet}>
           <PinLocation width={wp(4)} height={wp(4)}></PinLocation>
-          <View style={[styles.rowText, {marginLeft: wp(0.9)}]}>
+          <View style={[styles.rowText, { marginLeft: wp(0.9) }]}>
             <CustomText style={styles.textInfo1}>{t('address')}:</CustomText>
             <CustomText style={styles.textInfo} numberOfLines={10}>
               {(order?.status !== 'pickup'
@@ -209,7 +206,7 @@ const AcceptedOrderModal = ({order, changeOrder, loading, insets,onModalPosition
                   <CustomText style={styles.textInfo1}>
                     {t('Extradetails')}:
                   </CustomText>
-                  <CustomText style={[styles.textInfo,{width:wp(70),lineHeight:hp(2.5)}]}>
+                  <CustomText style={[styles.textInfo, { width: wp(70), lineHeight: hp(2.5) }]}>
                     {(order?.status !== 'pickup'
                       ? order?.sender_address_json?.address_extra_details
                       : order?.receiver_address_json?.address_extra_details) ??
@@ -266,44 +263,49 @@ const AcceptedOrderModal = ({order, changeOrder, loading, insets,onModalPosition
                 </TouchableOpacity>
               </View> */}
             </View>
-            <View style={{flexDirection:"row"}}>
             {order?.status == 'accepted' && order?.sender_phone?.number && (
-              <View style={styles.row}>
-                <View style={[styles.row, {marginBottom: 0}]}>
-                  <TinyProfile width={wp(4.5)} height={wp(4.5)}></TinyProfile>
-                  <CustomText style={styles.textReciever} numberOfLines={1}>
-                    {order?.sender_full_name}
-                  </CustomText>
+              <View style={{ flexDirection: "row" }}>
+                <View style={styles.row}>
+                  <View style={[styles.row, { marginBottom: 0 }]}>
+                    <TinyProfile width={wp(4.5)} height={wp(4.5)}></TinyProfile>
+                    <CustomText style={styles.textReciever} numberOfLines={1}>
+                      {order?.sender_full_name}
+                    </CustomText>
+                  </View>
+                  <TouchableOpacity onPress={makeCall} style={styles.buttonCall}>
+                    <PhoneIcon></PhoneIcon>
+                  </TouchableOpacity>
                 </View>
-                <TouchableOpacity onPress={makeCall} style={styles.buttonCall}>
-                  <PhoneIcon></PhoneIcon>
-                </TouchableOpacity>
-              </View>
-            )}
-                <TouchableOpacity onPress={openMaps} style={[styles.buttonCall,{backgroundColor: colors.black}]}>
+                <TouchableOpacity onPress={openMaps} style={[styles.buttonCall, { backgroundColor: colors.black }]}>
                   <MapIcon width={wp(5)} height={wp(5)}></MapIcon>
                 </TouchableOpacity>
-
-            </View>
+              </View>
+            )}
             {order?.status == 'pickup' && order?.receiver_phone?.number && (
-              <View style={styles.row}>
-                <View style={[styles.row, {marginBottom: 0}]}>
-                  <TinyProfile width={wp(4.5)} height={wp(4.5)}></TinyProfile>
-                  <CustomText style={styles.textReciever} numberOfLines={1}>
-                    {order?.receiver_full_name}
-                  </CustomText>
+              <View style={{ flexDirection: "row" }}>
+                <View style={styles.row}>
+                  <View style={[styles.row, { marginBottom: 0 }]}>
+                    <TinyProfile width={wp(4.5)} height={wp(4.5)}></TinyProfile>
+                    <CustomText style={styles.textReciever} numberOfLines={1}>
+                      {order?.receiver_full_name}
+                    </CustomText>
+                  </View>
+                  <TouchableOpacity onPress={makeCall} style={styles.buttonCall}>
+                    <PhoneIcon></PhoneIcon>
+                  </TouchableOpacity>
                 </View>
-                <TouchableOpacity onPress={makeCall} style={styles.buttonCall}>
-                  <PhoneIcon></PhoneIcon>
+                <TouchableOpacity onPress={openMaps} style={[styles.buttonCall, { backgroundColor: colors.black }]}>
+                  <MapIcon width={wp(5)} height={wp(5)}></MapIcon>
                 </TouchableOpacity>
               </View>
             )}
+
           </>
         )}
 
         <TouchableOpacity
           onPress={() => {
-             setLess(!less)
+            setLess(!less)
             onModalPosition(!less)
           }}
           style={styles.lessContainer}>
@@ -318,36 +320,36 @@ const AcceptedOrderModal = ({order, changeOrder, loading, insets,onModalPosition
 
             (order?.tags?.length ||
               order?.need_special_equipment ||
-              order?.is_secure) && {marginBottom: hp(0)},
+              order?.is_secure) && { marginBottom: hp(0) },
           ]}
         />
         {(order?.tags?.length ||
           order?.need_special_equipment ||
           order?.is_secure) && (
-          <View style={styles.tagContainer}>
-            {order?.tags?.map(item => {
-              return (
+            <View style={styles.tagContainer}>
+              {order?.tags?.map(item => {
+                return (
+                  <View style={styles.tagBox}>
+                    <CustomText style={styles.textTag}>
+                      {normalizeLabel(item)}
+                    </CustomText>
+                  </View>
+                );
+              })}
+              {order?.need_special_equipment && (
                 <View style={styles.tagBox}>
                   <CustomText style={styles.textTag}>
-                    {normalizeLabel(item)}
+                    {normalizeLabel(order?.need_special_equipment)}
                   </CustomText>
                 </View>
-              );
-            })}
-            {order?.need_special_equipment && (
-              <View style={styles.tagBox}>
-                <CustomText style={styles.textTag}>
-                  {normalizeLabel(order?.need_special_equipment)}
-                </CustomText>
-              </View>
-            )}
-            {order?.is_secure && (
-              <View style={styles.tagBox}>
-                <CustomText style={styles.textTag}>{t('isSecure')}</CustomText>
-              </View>
-            )}
-          </View>
-        )}
+              )}
+              {order?.is_secure && (
+                <View style={styles.tagBox}>
+                  <CustomText style={styles.textTag}>{t('isSecure')}</CustomText>
+                </View>
+              )}
+            </View>
+          )}
         <View style={styles.rowButton}>
           {order?.status == 'accepted' && (
             <SwipeButton
@@ -398,7 +400,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
     borderTopLeftRadius: wp(5),
     borderTopRightRadius: wp(5),
-    paddingBottom: Platform.OS === 'ios' ? hp(6) :hp(1),
+    paddingBottom: Platform.OS === 'ios' ? hp(6) : hp(1),
     position: 'absolute',
   },
   lessContainer: {
