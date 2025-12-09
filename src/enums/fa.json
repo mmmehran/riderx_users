@@ -166,7 +166,13 @@
   "history": "تاریخچه",
   "appSettings": "تنظیمات برنامه",
   "externalMap": "انتخاب نقشه خارجی",
-  "selectExternalMapContent": "برای مسیریابی خارج از برنامه RiderX یک برنامه را انتخاب کنید",
-  "mapAppNotInstalled": "{{app}} روی این دستگاه نصب نیست"
+  "selectExternalMapContent": "یک برنامه برای مسیریابی خارج از اپلیکیشن RiderX انتخاب کنید",
+  "selectMapStyleContent": "ظاهر نقشه در داخل برنامه را انتخاب کنید",
+  "mapAppNotInstalled": "{{app}} روی این دستگاه نصب نیست",
+  "mapStyle": "استایل نقشه",
+  "darkMode": "حالت تاریک",
+  "lightMode": "حالت روشن",
+  "Unfinished": "ناتمام"
+
 
 }

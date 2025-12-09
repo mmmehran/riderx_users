@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback, useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import {
   widthPercentageToDP as wp,
@@ -7,6 +7,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { useDispatch, useSelector } from 'react-redux';
+import { useFocusEffect } from '@react-navigation/core';
 
 import CustomScreen from '../../components/common/CustomScreen';
 import colors from '../../config/colors';
@@ -24,7 +25,7 @@ import {
   LogoutIcon,
 } from '../../../assets/svg/index';
 import CustomHeaderApp from '../../components/custom/CustomHeaderApp';
-import { postData } from '../../services/common.service';
+import { postData, getData } from '../../services/common.service';
 import urls from '../../services/urls.json';
 import errorHandler from '../../utils/errorHandler';
 import {
@@ -39,27 +40,9 @@ const MyAccount = () => {
   const { t } = useTranslation();
   const user = useSelector(authenticated);
   const dispatch = useDispatch();
+  const [loading, setLoading] = useState(true);
+  const [lastPackageData, setLastPackageData] = useState(null);
 
-  const data = [
-    {
-      id: 1,
-      name: t('totalRide'),
-      icon: <FileGray width={wp(4)} height={wp(4)}></FileGray>,
-      value: "-",
-    },
-    {
-      id: 2,
-      name: t('complete'),
-      icon: <FileGreen width={wp(4)} height={wp(4)}></FileGreen>,
-      value: "-",
-    },
-    {
-      id: 3,
-      name: t('cancel'),
-      icon: <FileRed width={wp(4)} height={wp(4)}></FileRed>,
-      value: "-",
-    },
-  ];
 
   const routesData = [
     // {
@@ -92,6 +75,41 @@ const MyAccount = () => {
       errorHandler(response);
     }
   };
+
+  const getPackageStatus = async () => {
+    const response = await getData(urls.RIDERDETAIL);
+    if (response?.data?.status) {
+      setLastPackageData(response?.data?.data);
+    } else {
+      errorHandler(response);
+    }
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      getPackageStatus();
+    }, []),
+  );
+  const data = [
+    {
+      id: 1,
+      name: t('totalRide'),
+      icon: <FileGray width={wp(4)} height={wp(4)}></FileGray>,
+      value: lastPackageData?.delivery_stats?.total_deliveries ?? "-",
+    },
+    {
+      id: 2,
+      name: t('complete'),
+      icon: <FileGreen width={wp(4)} height={wp(4)}></FileGreen>,
+      value: lastPackageData?.delivery_stats?.completed_deliveries ?? "-",
+    },
+    {
+      id: 3,
+      name: t('Unfinished'),
+      icon: <FileRed width={wp(4)} height={wp(4)}></FileRed>,
+      value: lastPackageData?.delivery_stats?.not_completed_deliveries ?? "-",
+    },
+  ];
 
 
 

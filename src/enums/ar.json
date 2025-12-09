@@ -167,6 +167,13 @@
   "appSettings": "إعدادات التطبيق",
   "externalMap": "اختر خريطة خارجية",
   "selectExternalMapContent": "اختر تطبيقًا لبدء التوجيه خارج تطبيق RiderX",
-  "mapAppNotInstalled": "التطبيق {{app}} غير مُثبّت على هذا الجهاز"
+  "selectMapStyleContent": "اختر كيفية ظهور الخريطة داخل التطبيق",
+  "mapAppNotInstalled": "{{app}} غير مُثبّت على هذا الجهاز",
+  "mapStyle": "نمط الخريطة",
+  "darkMode": "الوضع الداكن",
+  "lightMode": "الوضع الفاتح",
+  "Unfinished": "غير مكتمل"
+
+
 
 }

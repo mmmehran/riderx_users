@@ -171,5 +171,6 @@
   "mapAppNotInstalled": "{{app}} is not installed on this device",
   "mapStyle":"Map Style",
   "darkMode":"Dark Mode",
-  "lightMode":"Light Mode"
+  "lightMode":"Light Mode",
+  "Unfinished":"Unfinished"
 }

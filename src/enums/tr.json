@@ -164,9 +164,15 @@
   "confimedDelivery": "Teslimatı onayla",
   "SavingsCard": "Birikim kartı",
   "history": "Geçmiş",
-    "appSettings": "Uygulama Ayarları",
+  "appSettings": "Uygulama Ayarları",
   "externalMap": "Harici Harita Seç",
   "selectExternalMapContent": "RiderX uygulaması dışında yönlendirme başlatmak için bir uygulama seçin",
-  "mapAppNotInstalled": "{{app}} bu cihazda yüklü değil"
+  "selectMapStyleContent": "Haritanın uygulamada nasıl görüneceğini seçin",
+  "mapAppNotInstalled": "{{app}} bu cihazda yüklü değil",
+  "mapStyle": "Harita Stili",
+  "darkMode": "Karanlık Mod",
+  "lightMode": "Aydınlık Mod",
+  "Unfinished": "Tamamlanmamış"
+
 
 }

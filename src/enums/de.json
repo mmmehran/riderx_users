@@ -166,7 +166,11 @@
   "history": "Verlauf",
   "appSettings":"App Einstellungen",
   "externalMap":"Externe Karte",
-  "selectExternalMapContent":"Wählen Sie eine Anwendung aus, um die Route außerhalb der RiderX-App zu starten",
-  "mapAppNotInstalled": "{{app}} ist nicht auf diesem Gerät installiert"
-
+  "selectExternalMapContent": "Wähle eine App, um die Navigation außerhalb der RiderX-App zu starten",
+  "selectMapStyleContent": "Wähle, wie die Karte in der App aussehen soll",
+  "mapAppNotInstalled": "{{app}} ist auf diesem Gerät nicht installiert",
+  "mapStyle": "Kartenstil",
+  "darkMode": "Dunkler Modus",
+  "lightMode": "Heller Modus",
+  "Unfinished": "Unvollständig"
 }
