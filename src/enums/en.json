@@ -167,5 +167,9 @@
   "appSettings":"App settings",
   "externalMap":"Select External Map",
   "selectExternalMapContent":"Select an application to start routing outside the RiderX app",
-  "mapAppNotInstalled": "{{app}} is not installed on this device"
+  "selectMapStyleContent":"Choose how the map looks in the app",
+  "mapAppNotInstalled": "{{app}} is not installed on this device",
+  "mapStyle":"Map Style",
+  "darkMode":"Dark Mode",
+  "lightMode":"Light Mode"
 }

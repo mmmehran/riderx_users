@@ -1,17 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  StyleSheet,
-  TouchableOpacity,
-  Image,
-} from 'react-native';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
-import { useDispatch, useSelector } from 'react-redux';
 
 import CustomScreen from '../../components/common/CustomScreen';
 import colors from '../../config/colors';
@@ -20,84 +14,51 @@ import CustomText from '../../components/common/CustomText';
 import CustomHeaderApp from '../../components/custom/CustomHeaderApp';
 import CustomButton from '../../components/common/CustomButton';
 import routes from '../../navigation/routes';
-import { selectConfig, setExternalMap } from '../../redux/reducers/configReducer';
+import { useDispatch, useSelector } from 'react-redux';
+import { selectConfig, setMapStyle } from '../../redux/reducers/configReducer';
 
-const SelectExternalMap = () => {
+const SelectMapStyle = () => {
   const navigation = useNavigation();
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const config = useSelector(selectConfig);
-  const [selected, setSelected] = useState(config?.externalMap || 'google');
-
+  const [selected, setSelected] = useState(config?.mapStyle || 'light');
 
   useEffect(() => {
     if (config?.externalMap) {
-      setSelected(config.externalMap);
+      setSelected(config?.externalMap)
     }
   }, [config?.externalMap]);
 
   const onSave = () => {
-    dispatch(setExternalMap(selected));
+    dispatch(setMapStyle(selected));
     navigation.navigate(routes.APPSETTINGS);
   };
 
-  // 👇 adjust icon paths based on your folder structure
-  const MAP_APPS = [
-    {
-      code: 'google',
-      label: 'Google Maps',
-      icon: require('../../../assets/image/google-maps.png'),
-    },
-    {
-      code: 'waze',
-      label: 'Waze',
-      icon: require('../../../assets/image/waze.png'),
-    },
-    {
-      code: 'wego',
-      label: 'HERE WeGo',
-      icon: require('../../../assets/image/here-wego.png'),
-    },
-    {
-      code: 'yandex',
-      label: 'Yandex Maps',
-      icon: require('../../../assets/image/yandex-maps.png'),
-    },
-    {
-      code: 'gis',
-      label: '2GIS',
-      icon: require('../../../assets/image/2gis.png'),
-    },
-    {
-      code: 'apple',
-      label: 'Apple Maps',
-      icon: require('../../../assets/image/apple-maps.png'),
-    },
+  const LANGS = [
+    { code: 'dark', label: t("darkMode") },
+    { code: 'light', label: t("lightMode") },
   ];
 
   return (
     <CustomScreen>
       <CustomHeaderApp
         backPress={() => navigation.navigate(routes.APPSETTINGS)}
-        title={t('externalMap')}
+        title={t('mapStyle')}
       />
-
-      <CustomText style={styles.textContent}>
-        {t('selectExternalMapContent')}
-      </CustomText>
-
-      {MAP_APPS.map(item => (
-        <TouchableOpacity
-          onPress={() => setSelected(item.code)}
-          style={styles.rowButton}>
-          <View style={[styles.checkContainer]}>
-            {selected === item.code && <View style={styles.pin}></View>}
-          </View>
-          <Image source={item?.icon} style={styles.image} />
-          <CustomText style={styles.title}>{item?.label}</CustomText>
-        </TouchableOpacity>
-      ))}
-
+      <CustomText style={styles.textContent}>{t('selectMapStyleContent')}</CustomText>
+      {LANGS?.map(item => {
+        return (
+          <TouchableOpacity
+            onPress={() => setSelected(item.code)}
+            style={styles.rowButton}>
+            <View style={[styles.checkContainer]}>
+              {selected === item.code && <View style={styles.pin}></View>}
+            </View>
+            <CustomText style={styles.title}>{item?.label}</CustomText>
+          </TouchableOpacity>
+        );
+      })}
       <View style={styles.buttonContainer}>
         <View style={styles.rowButton1}>
           <CustomButton
@@ -106,7 +67,9 @@ const SelectExternalMap = () => {
             textStyle={{ color: colors.neutral900 }}>
             {t('cancel')}
           </CustomButton>
-          <CustomButton onPress={onSave} style={styles.button}>
+          <CustomButton
+            onPress={onSave}
+            style={styles.button}>
             {t('Savechanges')}
           </CustomButton>
         </View>
@@ -115,7 +78,7 @@ const SelectExternalMap = () => {
   );
 };
 
-export default SelectExternalMap;
+export default SelectMapStyle;
 
 const styles = StyleSheet.create({
   imageContainer: {
@@ -126,11 +89,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.grayLight,
     marginRight: wp(2),
     borderRadius: wp(50),
-  },
-  image: {
-    width: wp(7),
-    height: wp(7),
-    borderRadius: wp(20)
   },
   rowButton1: {
     flexDirection: 'row',
@@ -182,10 +140,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginLeft: wp(2.5),
     marginBottom: hp(3),
-    alignItems: 'center',
   },
   title: {
     color: colors.neutral700,
-    marginLeft: wp(2)
   },
 });

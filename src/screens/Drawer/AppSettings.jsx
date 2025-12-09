@@ -1,12 +1,12 @@
 import React from 'react';
-import {View, StyleSheet, TouchableOpacity, Image} from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
-import {useNavigation} from '@react-navigation/native';
-import {useTranslation} from 'react-i18next';
-import {useDispatch, useSelector} from 'react-redux';
+import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
+import { useDispatch, useSelector } from 'react-redux';
 
 import CustomScreen from '../../components/common/CustomScreen';
 import colors from '../../config/colors';
@@ -24,19 +24,19 @@ import {
   Settings,
 } from '../../../assets/svg/index';
 import CustomHeaderApp from '../../components/custom/CustomHeaderApp';
-import {postData} from '../../services/common.service';
+import { postData } from '../../services/common.service';
 import urls from '../../services/urls.json';
 import errorHandler from '../../utils/errorHandler';
 import {
   logout,
   authenticated,
 } from '../../redux/reducers/authenticationReducer';
-import {logouConfig} from '../../redux/reducers/configReducer';
+import { logouConfig } from '../../redux/reducers/configReducer';
 import routes from '../../navigation/routes';
 
 const MyAccount = () => {
   const navigation = useNavigation();
-  const {t} = useTranslation();
+  const { t } = useTranslation();
   const user = useSelector(authenticated);
   const dispatch = useDispatch();
 
@@ -54,6 +54,12 @@ const MyAccount = () => {
       name: t('externalMap'),
       icon: <LanguageIcon width={wp(3.5)} height={wp(3.5)}></LanguageIcon>,
       onPress: () => navigation.navigate(routes.SELECTEXTERNALMAP),
+    },
+    {
+      id: 2,
+      name: t('mapStyle'),
+      icon: <LanguageIcon width={wp(3.5)} height={wp(3.5)}></LanguageIcon>,
+      onPress: () => navigation.navigate(routes.MAPSTYLE),
     },
     // {
     //   id: 2,
@@ -136,7 +142,7 @@ const styles = StyleSheet.create({
   textRoute: {
     color: colors.neutral800,
     fontSize: wp(3.8),
-    marginLeft:wp(5)
+    marginLeft: wp(5)
   },
   arrowContainer: {
     flex: 1,

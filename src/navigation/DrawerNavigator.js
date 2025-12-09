@@ -19,6 +19,7 @@ import Sender from '../screens/WebView/Sender'
 import EditMyAccount from '../screens/Drawer/EditMyAccount'
 import AppSettings from '../screens/Drawer/AppSettings'
 import SelectExternalMap from '../screens/Drawer/SelectExternalMap'
+import SelectMapStyle from '../screens/Drawer/SelectMapStyle'
 
 const Drawer = createDrawerNavigator();
 
@@ -98,6 +99,11 @@ const DrawerNavigator = () => {
             <Drawer.Screen
                 name={routes.SELECTEXTERNALMAP}
                 component={SelectExternalMap}
+                options={{ fullScreenGestureEnabled: false }}
+            />
+            <Drawer.Screen
+                name={routes.MAPSTYLE}
+                component={SelectMapStyle}
                 options={{ fullScreenGestureEnabled: false }}
             />
         </Drawer.Navigator>

@@ -1,99 +1,119 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!DOCTYPE plist PUBLIC "-//Apple//DTDPLIST1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
-<dict>
-	<key>BGTaskSchedulerPermittedIdentifiers</key>
-	<array>
-		<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
-	</array>
-	<key>CFBundleDevelopmentRegion</key>
-	<string>en</string>
-	<key>CFBundleDisplayName</key>
-	<string>riderx</string>
-	<key>CFBundleExecutable</key>
-	<string>$(EXECUTABLE_NAME)</string>
-	<key>CFBundleIdentifier</key>
-	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
-	<key>CFBundleInfoDictionaryVersion</key>
-	<string>6.0</string>
-	<key>CFBundleName</key>
-	<string>$(PRODUCT_NAME)</string>
-	<key>CFBundlePackageType</key>
-	<string>APPL</string>
-	<key>CFBundleShortVersionString</key>
-	<string>$(MARKETING_VERSION)</string>
-	<key>CFBundleSignature</key>
-	<string>????</string>
-	<key>CFBundleURLTypes</key>
-	<array>
-		<dict>
-			<key>CFBundleTypeRole</key>
-			<string>Editor</string>
-			<key>CFBundleURLSchemes</key>
-			<array>
-				<string>com.googleusercontent.apps.224724744593-sshnpoo8igmgi1h5aku239r1f6bikma7</string>
-			</array>
-		</dict>
-	</array>
-	<key>CFBundleVersion</key>
-	<string>$(CURRENT_PROJECT_VERSION)</string>
-	<key>ITSAppUsesNonExemptEncryption</key>
-	<false/>
-	<key>LSRequiresIPhoneOS</key>
-	<true/>
-	<key>NSAppTransportSecurity</key>
-	<dict>
-		<key>NSAllowsArbitraryLoads</key>
-		<false/>
-		<key>NSAllowsLocalNetworking</key>
-		<true/>
-	</dict>
-	<key>NSCameraUsageDescription</key>
-	<string>We need access to your camera to take profile photos and document deliveries.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>We need access to your photo library to select profile photos.</string>
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>We need background location to update active deliveries while the app is not open.</string>
-	<key>NSLocationAlwaysUsageDescription</key>
-	<string>We use your location to navigate to deliveries even when the app is not active.</string>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>We use your location to update active deliveries.</string>
-	<key>UIBackgroundModes</key>
-	<array>
-		<string>location</string>
-		<string>fetch</string>
-		<string>processing</string>
-		<string>remote-notification</string>
-	</array>
-	<key>UILaunchStoryboardName</key>
-	<string>LaunchScreen</string>
-	<key>UIRequiredDeviceCapabilities</key>
-	<array>
-		<string>arm64</string>
-	</array>
-	<key>UISupportedInterfaceOrientations</key>
-	<array>
-		<string>UIInterfaceOrientationPortrait</string>
-	</array>
-	<key>UIViewControllerBasedStatusBarAppearance</key>
-	<false/>
-	<key>UIAppFonts</key>
-	<array>
-		<string>Poppins-Black.ttf</string>
-		<string>Poppins-Bold.ttf</string>
-		<string>Poppins-ExtraBold.ttf</string>
-		<string>Poppins-ExtraLight.ttf</string>
-		<string>Poppins-Light.ttf</string>
-		<string>Poppins-Medium.ttf</string>
-		<string>Poppins-Regular.ttf</string>
-		<string>Poppins-SemiBold.ttf</string>
-		<string>Poppins-Thin.ttf</string>
-		<string>YaldeviJaffna-Bold.ttf</string>
-		<string>YaldeviJaffna-ExtraLight.ttf</string>
-		<string>YaldeviJaffna-Light.ttf</string>
-		<string>YaldeviJaffna-Medium.ttf</string>
-		<string>YaldeviJaffna-Regular.ttf</string>
-		<string>YaldeviJaffna-SemiBold.ttf</string>
-	</array>
-</dict>
+    <dict>
+        <key>BGTaskSchedulerPermittedIdentifiers</key>
+        <array>
+            <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+        </array>
+        <key>LSApplicationQueriesSchemes</key>
+        <array>
+            <!-- Google Maps -->
+            <string>comgooglemaps</string>
+            <string>googlechromes</string>
+            <string>googlechromes</string>
+            <string>google.navigation</string>
+
+            <!-- Waze -->
+            <string>waze</string>
+
+            <!-- HERE WeGo -->
+            <string>wego</string>
+
+            <!-- Yandex Maps / Yandex Navigator -->
+            <string>yandexmaps</string>
+
+            <!-- 2GIS -->
+            <string>dgis</string>
+        </array>
+        <key>CFBundleDevelopmentRegion</key>
+        <string>en</string>
+        <key>CFBundleDisplayName</key>
+        <string>riderx</string>
+        <key>CFBundleExecutable</key>
+        <string>$(EXECUTABLE_NAME)</string>
+        <key>CFBundleIdentifier</key>
+        <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+        <key>CFBundleInfoDictionaryVersion</key>
+        <string>6.0</string>
+        <key>CFBundleName</key>
+        <string>$(PRODUCT_NAME)</string>
+        <key>CFBundlePackageType</key>
+        <string>APPL</string>
+        <key>CFBundleShortVersionString</key>
+        <string>$(MARKETING_VERSION)</string>
+        <key>CFBundleSignature</key>
+        <string>????</string>
+        <key>CFBundleURLTypes</key>
+        <array>
+            <dict>
+                <key>CFBundleTypeRole</key>
+                <string>Editor</string>
+                <key>CFBundleURLSchemes</key>
+                <array>
+                    <string>com.googleusercontent.apps.224724744593-sshnpoo8igmgi1h5aku239r1f6bikma7</string>
+                </array>
+            </dict>
+        </array>
+        <key>CFBundleVersion</key>
+        <string>$(CURRENT_PROJECT_VERSION)</string>
+        <key>ITSAppUsesNonExemptEncryption</key>
+        <false/>
+        <key>LSRequiresIPhoneOS</key>
+        <true/>
+        <key>NSAppTransportSecurity</key>
+        <dict>
+            <key>NSAllowsArbitraryLoads</key>
+            <true/>
+            <key>NSAllowsLocalNetworking</key>
+            <true/>
+        </dict>
+        <key>NSCameraUsageDescription</key>
+        <string>We need access to your camera to take profile photos and document deliveries.</string>
+        <key>NSPhotoLibraryUsageDescription</key>
+        <string>We need access to your photo library to select profile photos.</string>
+        <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+        <string>We need background location to update active deliveries while the app is not open.</string>
+        <key>NSLocationAlwaysUsageDescription</key>
+        <string>We use your location to navigate to deliveries even when the app is not active.</string>
+        <key>NSLocationWhenInUseUsageDescription</key>
+        <string>We use your location to update active deliveries.</string>
+        <key>UIBackgroundModes</key>
+        <array>
+            <string>location</string>
+            <string>fetch</string>
+            <string>processing</string>
+            <string>remote-notification</string>
+        </array>
+        <key>UILaunchStoryboardName</key>
+        <string>LaunchScreen</string>
+        <key>UIRequiredDeviceCapabilities</key>
+        <array>
+            <string>arm64</string>
+        </array>
+        <key>UISupportedInterfaceOrientations</key>
+        <array>
+            <string>UIInterfaceOrientationPortrait</string>
+        </array>
+        <key>UIViewControllerBasedStatusBarAppearance</key>
+        <false/>
+        <key>UIAppFonts</key>
+        <array>
+            <string>Poppins-Black.ttf</string>
+            <string>Poppins-Bold.ttf</string>
+            <string>Poppins-ExtraBold.ttf</string>
+            <string>Poppins-ExtraLight.ttf</string>
+            <string>Poppins-Light.ttf</string>
+            <string>Poppins-Medium.ttf</string>
+            <string>Poppins-Regular.ttf</string>
+            <string>Poppins-SemiBold.ttf</string>
+            <string>Poppins-Thin.ttf</string>
+            <string>YaldeviJaffna-Bold.ttf</string>
+            <string>YaldeviJaffna-ExtraLight.ttf</string>
+            <string>YaldeviJaffna-Light.ttf</string>
+            <string>YaldeviJaffna-Medium.ttf</string>
+            <string>YaldeviJaffna-Regular.ttf</string>
+            <string>YaldeviJaffna-SemiBold.ttf</string>
+        </array>
+    </dict>
 </plist>

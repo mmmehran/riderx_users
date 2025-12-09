@@ -9,7 +9,8 @@ const initialStateObject = {
    seeOnboarding:false,
    selectVehicleVisible:false,
    vehicleData:null,
-   externalMap: 'google'
+   externalMap: 'google',
+   mapStyle: 'light',
 
 };
 
@@ -37,16 +38,22 @@ export const configSlice = createSlice({
             vehicleData: action.payload,
          };
       },
-      setExternalMap: (state, action) => {
+      setMapStyle: (state, action) => {
          return {
             ...state,
-            externalMap: action.payload,
+            mapStyle: action.payload,
          };
       },
       setSelectVehicleVisible: (state, action) => {
          return {
             ...state,
             selectVehicleVisible: action.payload,
+         };
+      },
+      setExternalMap: (state, action) => {
+         return {
+            ...state,
+            externalMap: action.payload,
          };
       },
       setUserProfile: (state, action) => {
@@ -76,7 +83,8 @@ export const configSlice = createSlice({
            seeOnboarding:true,
            selectVehicleVisible:false,
            vehicleData:null,
-           externalMap: 'google'
+           externalMap: 'google',
+           mapStyle: 'light',
          };
       },
    },
@@ -91,7 +99,8 @@ export const {
    setSeeOnboarding,
    setSelectVehicleVisible,
    setVehicleData,
-   setExternalMap
+   setExternalMap,
+   setMapStyle
 } = configSlice.actions;
 
 export default configSlice.reducer;

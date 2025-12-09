@@ -1264,7 +1264,7 @@ const HomeMainScreen = ({ route }) => {
       ? Math.max(1, Math.round(etaSec / 60))
       : null;
 
-  // console.log('enterjj');
+
 
   /* ───────── Render ───────── */
   return (
@@ -1278,7 +1278,7 @@ const HomeMainScreen = ({ route }) => {
             <>
               <Mapbox.MapView
                 key={mapMountKey}
-                styleURL={Mapbox.StyleURL.Light}
+                styleURL={config?.mapStyle == 'dark' ? Mapbox.StyleURL.Dark : Mapbox.StyleURL.Light}
                 zoomEnabled
                 rotateEnabled
                 style={[styles.map, { height: hp(mapHeight) }]}
