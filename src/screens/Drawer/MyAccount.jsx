@@ -1,12 +1,12 @@
 import React from 'react';
-import {View, StyleSheet, TouchableOpacity, Image} from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
-import {useNavigation} from '@react-navigation/native';
-import {useTranslation} from 'react-i18next';
-import {useDispatch, useSelector} from 'react-redux';
+import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
+import { useDispatch, useSelector } from 'react-redux';
 
 import CustomScreen from '../../components/common/CustomScreen';
 import colors from '../../config/colors';
@@ -24,19 +24,19 @@ import {
   LogoutIcon,
 } from '../../../assets/svg/index';
 import CustomHeaderApp from '../../components/custom/CustomHeaderApp';
-import {postData} from '../../services/common.service';
+import { postData } from '../../services/common.service';
 import urls from '../../services/urls.json';
 import errorHandler from '../../utils/errorHandler';
 import {
   logout,
   authenticated,
 } from '../../redux/reducers/authenticationReducer';
-import {logouConfig} from '../../redux/reducers/configReducer';
+import { logouConfig } from '../../redux/reducers/configReducer';
 import routes from '../../navigation/routes';
 
 const MyAccount = () => {
   const navigation = useNavigation();
-  const {t} = useTranslation();
+  const { t } = useTranslation();
   const user = useSelector(authenticated);
   const dispatch = useDispatch();
 
@@ -94,14 +94,15 @@ const MyAccount = () => {
   };
 
 
+
   return (
     <CustomScreen>
       <CustomHeaderApp title={t('myAccount')} />
       <View style={styles.rowHeader}>
         <View style={styles.imageContainer}>
           <Image
-            source={{uri: user?.userProfile?.profile_image}}
-            style={{width: wp(17), height: wp(17), borderRadius: wp(50)}}
+            source={{ uri: user?.userProfile?.profile_image }}
+            style={{ width: wp(17), height: wp(17), borderRadius: wp(50) }}
           />
           <View style={styles.tickContainer}>
             <TickYellow width={wp(8)} height={wp(8)}></TickYellow>
@@ -112,7 +113,7 @@ const MyAccount = () => {
             <CustomText style={styles.nameUser}>
               {user?.userProfile?.first_name} {user?.userProfile?.last_name}
             </CustomText>
-            <CustomText style={styles.phoneText}>{user?.phone ? `+${user?.phone}` : "-"}</CustomText>
+            <CustomText style={styles.phoneText}>{user?.userProfile?.phone?.number ? `+${user?.userProfile?.phone?.country_code}${user?.userProfile?.phone?.number}` : "-"}</CustomText>
           </View>
         </View>
         <TouchableOpacity

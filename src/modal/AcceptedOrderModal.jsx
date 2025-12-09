@@ -214,54 +214,11 @@ const AcceptedOrderModal = ({ order, changeOrder, loading, insets, onModalPositi
                   </CustomText>
                 </View>
               </View>
-              {/* <View style={styles.iconContainer}>
-                {order?.status == 'pickup' && order?.receiver_phone?.number && (
-                  <>
-                    <TouchableOpacity
-                      onPress={sendSms}
-                      style={styles.buttonIcon}>
-                      <Message width={wp(7)} height={wp(7)} />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={makeCall}
-                      style={styles.buttonIcon}>
-                      <PhoneCall width={wp(7)} height={wp(7)} />
-                    </TouchableOpacity>
-                  </>
-                )}
-                {order?.status == 'accepted' && order?.sender_phone?.number && (
-                  <>
-                    <TouchableOpacity
-                      onPress={sendSms}
-                      style={styles.buttonIcon}>
-                      <Message width={wp(7)} height={wp(7)} />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={makeCall}
-                      style={styles.buttonIcon}>
-                      <PhoneCall width={wp(7)} height={wp(7)} />
-                    </TouchableOpacity>
-                  </>
-                )}
-                <TouchableOpacity
-                  onPress={() => {
-                    openGoogleMaps({
-                      lat:
-                        order?.status !== 'pickup'
-                          ? order.sender_latitude
-                          : order.receiver_latitude,
-                      lng:
-                        order?.status !== 'pickup'
-                          ? order.sender_longitude
-                          : order.receiver_longitude,
-                      label: 'Pickup #1024',
-                      mode: 'd',
-                    });
-                  }}
-                  style={styles.buttonIcon}>
-                  <OpenMap width={wp(8.5)} height={wp(8.5)} />
-                </TouchableOpacity>
-              </View> */}
+            </View>
+            <View style={{ alignItems: "flex-end", marginRight: wp(3), marginBottom: hp(1.5) }}>
+              <TouchableOpacity onPress={openMaps} style={[styles.buttonCall, { backgroundColor: colors.black }]}>
+                <MapIcon width={wp(5)} height={wp(5)}></MapIcon>
+              </TouchableOpacity>
             </View>
             {order?.status == 'accepted' && order?.sender_phone?.number && (
               <View style={{ flexDirection: "row" }}>
@@ -276,9 +233,6 @@ const AcceptedOrderModal = ({ order, changeOrder, loading, insets, onModalPositi
                     <PhoneIcon></PhoneIcon>
                   </TouchableOpacity>
                 </View>
-                <TouchableOpacity onPress={openMaps} style={[styles.buttonCall, { backgroundColor: colors.black }]}>
-                  <MapIcon width={wp(5)} height={wp(5)}></MapIcon>
-                </TouchableOpacity>
               </View>
             )}
             {order?.status == 'pickup' && order?.receiver_phone?.number && (
@@ -294,15 +248,10 @@ const AcceptedOrderModal = ({ order, changeOrder, loading, insets, onModalPositi
                     <PhoneIcon></PhoneIcon>
                   </TouchableOpacity>
                 </View>
-                <TouchableOpacity onPress={openMaps} style={[styles.buttonCall, { backgroundColor: colors.black }]}>
-                  <MapIcon width={wp(5)} height={wp(5)}></MapIcon>
-                </TouchableOpacity>
               </View>
             )}
-
           </>
         )}
-
         <TouchableOpacity
           onPress={() => {
             setLess(!less)
@@ -445,7 +394,7 @@ const styles = StyleSheet.create({
     marginTop: hp(2),
   },
   addressContainer: {
-    marginBottom: hp(1),
+    marginBottom: hp(0),
   },
   rowTextContainer: {
     flexDirection: 'row',
@@ -479,7 +428,7 @@ const styles = StyleSheet.create({
     fontFamily: 'YaldeviJaffna-Bold',
     color: colors.black,
     marginLeft: wp(2),
-    width: wp(59),
+    width: wp(72.5),
     fontSize: wp(4.3),
   },
   row: {

@@ -1,20 +1,21 @@
-import React from 'react';
-import {View, StyleSheet, TouchableOpacity, Image} from 'react-native';
+import React, { useEffect } from 'react';
+import { View, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
-import {useTranslation} from 'react-i18next';
-import {useDispatch, useSelector} from 'react-redux';
+import { useTranslation } from 'react-i18next';
+import { useDispatch, useSelector } from 'react-redux';
 
 import CustomScreen from '../../components/common/CustomScreen';
 import routes from '../../navigation/routes';
 import colors from '../../config/colors';
 import CustomText from '../../components/common/CustomText';
-import {authenticated} from '../../redux/reducers/authenticationReducer';
+import { authenticated } from '../../redux/reducers/authenticationReducer';
 import {
   selectConfig,
   setSelectVehicleVisible,
+  setSelectVehicle
 } from '../../redux/reducers/configReducer';
 import {
   ArrowLeft1,
@@ -35,9 +36,14 @@ import {
   Settings,
   Faq,
 } from '../../../assets/svg/index';
+import CustomAvailableRider from '../../components/custom/CustomAvailableRider1';
+import { sendData, getData } from '../../services/common.service';
+import urls from '../../services/urls.json';
+import errorHandler from '../../utils/errorHandler';
+
 
 const LoginEmail = props => {
-  const {t} = useTranslation();
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   const user = useSelector(authenticated);
   const config = useSelector(selectConfig);
@@ -67,7 +73,7 @@ const LoginEmail = props => {
       icon: <Settings width={wp(6)} height={wp(6)}></Settings>,
       onPress: () => props?.navigation.navigate(routes.APPSETTINGS),
     },
-    
+
     //   id: 4,
     //   name: t('VehicleInfo'),
     //   icon: <VehicleInfo width={wp(6)} height={wp(6)}></VehicleInfo>,
@@ -97,6 +103,31 @@ const LoginEmail = props => {
     // },
   ];
 
+  const updateVehicleStatus = async () => {
+    const response = await sendData(urls.UPDATESTATUSVEHICLE, {
+      id: config?.selectVehicle?.id,
+      on_status: config?.selectVehicle?.on_status == 'on' ? 'off' : 'on',
+    });
+    if (response?.data?.status) {
+      getVehicleStatus();
+    } else {
+      errorHandler(response);
+    }
+  };
+
+
+  const getVehicleStatus = async () => {
+    const response = await getData(
+      `${urls.GETVEHICLEDETAIL}?id=${config?.selectVehicle?.id}`,
+    );
+    if (response?.data?.status) {
+      dispatch(setSelectVehicle(response?.data?.data));
+    } else {
+      errorHandler(response);
+    }
+  };
+
+
   return (
     <CustomScreen>
       <View style={styles.left}>
@@ -112,8 +143,8 @@ const LoginEmail = props => {
         <View style={styles.profileContainer}>
           <View style={styles.imageContainer}>
             <Image
-              source={{uri: user?.userProfile?.profile_image}}
-              style={{width: wp(15), height: wp(15), borderRadius: wp(50)}}
+              source={{ uri: user?.userProfile?.profile_image }}
+              style={{ width: wp(15), height: wp(15), borderRadius: wp(50) }}
             />
             <View style={styles.tickContainer}>
               <TickYellow width={wp(8)} height={wp(8)}></TickYellow>
@@ -122,12 +153,12 @@ const LoginEmail = props => {
               <View
                 style={[
                   styles.statusContainer,
-                  !config?.socketStatus && {backgroundColor: colors.neutral400},
+                  !config?.socketStatus && { backgroundColor: colors.neutral400 },
                 ]}></View>
               <CustomText
                 style={[
                   styles.textStatus,
-                  !config?.socketStatus && {color: colors.neutral300},
+                  !config?.socketStatus && { color: colors.neutral300 },
                 ]}>
                 {config?.socketStatus ? t('online') : t('offline')}
               </CustomText>
@@ -162,13 +193,13 @@ const LoginEmail = props => {
           {(config?.selectVehicle?.vehicle_type == 'van_1t' ||
             config?.selectVehicle?.vehicle_type == 'van_2t' ||
             config?.selectVehicle?.vehicle_type == 'van_3.5t') && (
-            <VanIcon width={wp(14)} height={hp(4)}></VanIcon>
-          )}
+              <VanIcon width={wp(14)} height={hp(4)}></VanIcon>
+            )}
           {(config?.selectVehicle?.vehicle_type == 'motorcycle' ||
             config?.selectVehicle?.vehicle_type == 'bicycle' ||
             config?.selectVehicle?.vehicle_type == 'e_bicycle') && (
-            <MotorIcon1 width={wp(14)} height={hp(4)}></MotorIcon1>
-          )}
+              <MotorIcon1 width={wp(14)} height={hp(4)}></MotorIcon1>
+            )}
           {config?.selectVehicle?.vehicle_type == 'car' && (
             <CarIcon1 width={wp(14)} height={hp(4)}></CarIcon1>
           )}
@@ -178,14 +209,18 @@ const LoginEmail = props => {
           <CustomText style={[styles.textCurrentVehicle]}>
             {config?.selectVehicle?.vehicle_brand
               ? ` ${config?.selectVehicle?.vehicle_brand?.title} ${config?.selectVehicle?.vehicle_model?.title} ${config?.selectVehicle?.vehicle_model?.model_type}`
-              : `${
-                  (config?.selectVehicle?.vehicle_type ?? '')
-                    .charAt(0)
-                    .toUpperCase() +
-                  (config?.selectVehicle?.vehicle_type ?? '').slice(1)
-                }`}
+              : `${(config?.selectVehicle?.vehicle_type ?? '')
+                .charAt(0)
+                .toUpperCase() +
+              (config?.selectVehicle?.vehicle_type ?? '').slice(1)
+              }`}
           </CustomText>
         </View>
+
+        <CustomAvailableRider
+          onAvailabilityChange={updateVehicleStatus}
+          toggleValue={config?.selectVehicle?.on_status == 'on'}
+        />
         <TouchableOpacity
           onPress={() => props?.navigation.navigate(routes.WALLET)}
           style={styles.walletContainer}>
@@ -360,14 +395,14 @@ const styles = StyleSheet.create({
     borderColor: colors.neutral200,
     borderWidth: wp(0.4),
   },
-  bottom: {justifyContent: 'flex-end', flex: 1},
+  bottom: { justifyContent: 'flex-end', flex: 1 },
   textRowbutton: {
     fontSize: wp(5.8),
     color: colors.contentSecondary,
     marginLeft: wp(2.5),
     fontFamily: 'YaldeviJaffna-Bold',
   },
-  rowContainer: {marginTop: hp(2)},
+  rowContainer: { marginTop: hp(2) },
   imageContainer: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -377,14 +412,14 @@ const styles = StyleSheet.create({
     marginRight: wp(2),
     borderRadius: wp(50),
   },
-  container: {flex: 1},
+  container: { flex: 1 },
   profileContainer: {
     marginTop: hp(2),
     alignItems: 'center',
     marginLeft: wp(4),
     flexDirection: 'row',
   },
-  row: {flexDirection: 'row-reverse', alignItems: 'center', marginTop: hp(1)},
+  row: { flexDirection: 'row-reverse', alignItems: 'center', marginTop: hp(1) },
   text: {
     fontSize: wp(7),
     color: colors.black,
