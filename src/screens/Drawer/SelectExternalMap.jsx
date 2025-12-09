@@ -16,11 +16,13 @@ import { useDispatch, useSelector } from 'react-redux';
 import CustomScreen from '../../components/common/CustomScreen';
 import colors from '../../config/colors';
 import CustomText from '../../components/common/CustomText';
-
 import CustomHeaderApp from '../../components/custom/CustomHeaderApp';
 import CustomButton from '../../components/common/CustomButton';
 import routes from '../../navigation/routes';
 import { selectConfig, setExternalMap } from '../../redux/reducers/configReducer';
+
+// ✅ import detector
+import { getAvailableMapApps } from '../../utils/externalMap';
 
 const SelectExternalMap = () => {
   const navigation = useNavigation();
@@ -29,19 +31,7 @@ const SelectExternalMap = () => {
   const config = useSelector(selectConfig);
   const [selected, setSelected] = useState(config?.externalMap || 'google');
 
-
-  useEffect(() => {
-    if (config?.externalMap) {
-      setSelected(config.externalMap);
-    }
-  }, [config?.externalMap]);
-
-  const onSave = () => {
-    dispatch(setExternalMap(selected));
-    navigation.navigate(routes.APPSETTINGS);
-  };
-
-  // 👇 adjust icon paths based on your folder structure
+  // full list with icons
   const MAP_APPS = [
     {
       code: 'google',
@@ -75,6 +65,47 @@ const SelectExternalMap = () => {
     },
   ];
 
+  // what we actually render (installed apps)
+  const [availableApps, setAvailableApps] = useState(MAP_APPS);
+
+  useEffect(() => {
+    if (config?.externalMap) {
+      setSelected(config.externalMap);
+    }
+  }, [config?.externalMap]);
+
+  useEffect(() => {
+    // on mount, detect installed apps
+    (async () => {
+      try {
+        const installedCodes = await getAvailableMapApps(); // ['google','waze',...]
+        if (installedCodes && installedCodes.length > 0) {
+          const filtered = MAP_APPS.filter(app =>
+            installedCodes.includes(app.code),
+          );
+          setAvailableApps(filtered);
+
+          // ensure selected app is valid
+          if (!installedCodes.includes(selected)) {
+            setSelected(filtered[0]?.code || 'google');
+          }
+        } else {
+          // if nothing detected (e.g. canOpenURL restrictions), show full list
+          setAvailableApps(MAP_APPS);
+        }
+      } catch (e) {
+        console.log('getAvailableMapApps error', e);
+        setAvailableApps(MAP_APPS);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // run once
+
+  const onSave = () => {
+    dispatch(setExternalMap(selected));
+    navigation.navigate(routes.APPSETTINGS);
+  };
+
   return (
     <CustomScreen>
       <CustomHeaderApp
@@ -86,15 +117,16 @@ const SelectExternalMap = () => {
         {t('selectExternalMapContent')}
       </CustomText>
 
-      {MAP_APPS.map(item => (
+      {availableApps.map(item => (
         <TouchableOpacity
+          key={item.code}
           onPress={() => setSelected(item.code)}
           style={styles.rowButton}>
-          <View style={[styles.checkContainer]}>
-            {selected === item.code && <View style={styles.pin}></View>}
+          <View style={styles.checkContainer}>
+            {selected === item.code && <View style={styles.pin} />}
           </View>
-          <Image source={item?.icon} style={styles.image} />
-          <CustomText style={styles.title}>{item?.label}</CustomText>
+          <Image source={item.icon} style={styles.image} />
+          <CustomText style={styles.title}>{item.label}</CustomText>
         </TouchableOpacity>
       ))}
 
@@ -118,19 +150,10 @@ const SelectExternalMap = () => {
 export default SelectExternalMap;
 
 const styles = StyleSheet.create({
-  imageContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: wp(15),
-    height: wp(15),
-    backgroundColor: colors.grayLight,
-    marginRight: wp(2),
-    borderRadius: wp(50),
-  },
   image: {
     width: wp(7),
     height: wp(7),
-    borderRadius: wp(20)
+    borderRadius: wp(20),
   },
   rowButton1: {
     flexDirection: 'row',
@@ -155,7 +178,6 @@ const styles = StyleSheet.create({
   textContent: {
     color: colors.neutral700,
     fontSize: wp(3.9),
-    // fontFamily: 'YaldeviJaffna-Bold',
     marginHorizontal: wp(4.5),
     marginTop: hp(2),
     marginBottom: hp(3),
@@ -186,6 +208,6 @@ const styles = StyleSheet.create({
   },
   title: {
     color: colors.neutral700,
-    marginLeft: wp(2)
+    marginLeft: wp(2),
   },
 });

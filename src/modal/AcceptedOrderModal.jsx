@@ -70,25 +70,34 @@ const AcceptedOrderModal = ({ order, changeOrder, loading, insets, onModalPositi
   };
 
   const openMaps = async () => {
-    const lat = order?.status !== 'pickup' ? order?.sender_latitude : order?.receiver_latitude;
-    const lng = order?.status !== 'pickup' ? order?.sender_longitude : order?.receiver_longitude;
-    const label = order?.status !== 'pickup' ? "Pickup" : "Dropoff"; // You might want to translate this or use dynamic name
-    const app = await config?.externalMap;
+    const lat =
+      order?.status !== 'pickup'
+        ? order?.sender_latitude
+        : order?.receiver_latitude;
+    const lng =
+      order?.status !== 'pickup'
+        ? order?.sender_longitude
+        : order?.receiver_longitude;
+    const label = order?.status !== 'pickup' ? 'Pickup' : 'Dropoff';
 
-
+    // default: iOS -> apple, Android -> google
+    const app =
+      config?.externalMap ||
+      (Platform.OS === 'ios' ? 'apple' : 'google');
 
     if (!lat || !lng) {
-      Alert.alert("Error", "Location coordinates not available.");
+      Alert.alert('Error', 'Location coordinates not available.');
       return;
     }
-
 
     try {
       await openExternalMap(app, lat, lng, label);
     } catch (err) {
-      console.error("Failed to open map:", err);
+      console.error('Failed to open map:', err);
+      Alert.alert('Error', t('mapAppNotInstalled', { app }));
     }
   };
+
 
   return (
     <View style={styles.modal}>
