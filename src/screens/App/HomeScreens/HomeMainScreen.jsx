@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useMemo,
+  useCallback,
+} from 'react';
 import {
   View,
   StyleSheet,
@@ -70,6 +76,7 @@ import { playDing } from '../../../utils/sounds';
 import CustomText from '../../../components/common/CustomText';
 
 const LOCATION_UPDATE_MS = 30 * 1000;
+const MAX_FALLBACK_AGE_MS = 5 * 60 * 1000; // max age for bg fallback (5min)
 
 const MAPBOX_TOKEN = MAP_BOX_TOKEN;
 Mapbox.setAccessToken(MAPBOX_TOKEN);
@@ -81,16 +88,19 @@ const toNum = v =>
     : Number.isFinite(parseFloat(v))
       ? parseFloat(v)
       : null;
+
 const round5 = v => {
   const x = toNum(v);
   return x == null ? null : Math.round(x * 1e5) / 1e5;
 };
+
 const normalizeCoord = coord => {
   if (!Array.isArray(coord) || coord.length < 2) return null;
   const lng = round5(coord[0]);
   const lat = round5(coord[1]);
   return lng == null || lat == null ? null : [lng, lat];
 };
+
 const haversineMeters = (a, b) => {
   const R = 6371000,
     toRad = d => (d * Math.PI) / 180;
@@ -103,11 +113,14 @@ const haversineMeters = (a, b) => {
     Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
   return 2 * R * Math.asin(Math.sqrt(x));
 };
+
 const lngLatToXY = ([lng, lat]) => [
   lng * 111320 * Math.cos((lat * Math.PI) / 180),
   lat * 110540,
 ];
+
 const clamp01 = t => (t < 0 ? 0 : t > 1 ? 1 : t);
+
 const closestOnPolyline = (ptLngLat, coords) => {
   if (!ptLngLat || !coords || coords.length < 2)
     return { idx: 0, point: coords?.[0] };
@@ -140,11 +153,14 @@ const closestOnPolyline = (ptLngLat, coords) => {
   const idx = bestT >= 0.999 ? bestIdx + 1 : bestIdx;
   return { idx: Math.min(idx, coords.length - 2), point: bestPoint };
 };
+
 const stepPrimaryText = step =>
   step?.bannerInstructions?.[0]?.primary?.text ||
   step?.maneuver?.instruction ||
   '';
+
 const normDeg = d => ((d % 360) + 360) % 360;
+
 const bearingAB = (a, b) => {
   const toRad = x => (x * Math.PI) / 180,
     toDeg = x => (x * 180) / Math.PI;
@@ -158,6 +174,7 @@ const bearingAB = (a, b) => {
     Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
   return normDeg(toDeg(Math.atan2(y, x)));
 };
+
 const smoothHeading = (prev, next, alpha = 0.25) => {
   if (prev == null) return next;
   const diff = ((next - prev + 540) % 360) - 180;
@@ -174,7 +191,7 @@ const OFFROUTE_JUMP_M = 50;
 const HomeMainScreen = ({ route }) => {
   const [camera, setCamera] = useState([-74.006, 40.7128]);
 
-  // NEW: track live user position & heading for the vehicle icon
+  // live user position & heading
   const [userCoordState, setUserCoordState] = useState(null);
   const [userHeadingDeg, setUserHeadingDeg] = useState(0);
   const [mapHeight, setMapHeight] = useState(100);
@@ -192,7 +209,8 @@ const HomeMainScreen = ({ route }) => {
   const [isAccepted, setIsAccepted] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [pickUpTimeUpdate, setPickUpTimeUpdate] = useState(null);
-  const pickUpTimesRef = useRef(new Map()); // orderId -> mins (for Accept)
+  const pickUpTimesRef = useRef(new Map());
+
   const { t } = useTranslation();
 
   const [routeSteps, setRouteSteps] = useState([]);
@@ -209,7 +227,7 @@ const HomeMainScreen = ({ route }) => {
   const [securePinShow, setSecurePinShow] = useState(false);
 
   const [hasLocPerm, setHasLocPerm] = useState(false);
-  const [hasBgLocPerm, setHasBgLocPerm] = useState(false); // ⭐ background permission
+  const [hasBgLocPerm, setHasBgLocPerm] = useState(false);
   const [mapMountKey, setMapMountKey] = useState('map-0');
   const [mapReady, setMapReady] = useState(false);
   const [isNavOn, setIsNavOn] = useState(false);
@@ -218,7 +236,7 @@ const HomeMainScreen = ({ route }) => {
   const [bearing, setBearing] = useState(0);
   const [completeOrderPrice, setCompleteOrderPrice] = useState(0);
 
-  // ⭐ ETA state
+  // ETA state
   const [etaSec, setEtaSec] = useState(null);
 
   const insets = useSafeAreaInsets();
@@ -245,11 +263,12 @@ const HomeMainScreen = ({ route }) => {
 
   const lastOnRoutePointRef = useRef(null);
 
-  // NEW: performance throttling refs
-  const lastLocationTsRef = useRef(0); // throttle onUserLocation
-  const lastProgressLLRef = useRef(null); // throttle route progress
-  const lastEtaUpdateRef = useRef(0); // throttle ETA updates
-  const lastEtaDistRef = useRef(null); // cache last remaining distance
+  // throttling & freshness
+  const lastLocationTsRef = useRef(0); // throttling for onUserLocation
+  const lastProgressLLRef = useRef(null);
+  const lastEtaUpdateRef = useRef(0);
+  const lastEtaDistRef = useRef(null);
+  const lastFreshLocTsRef = useRef(0); // REAL last known good location (fg or bg)
 
   const backPressCountRef = useRef(0);
   const backResetTimerRef = useRef(null);
@@ -273,29 +292,38 @@ const HomeMainScreen = ({ route }) => {
     };
   }, []);
 
-  // 🔹 AppState + background service handling
+  /* ───────── AppState + background service ───────── */
   useEffect(() => {
     if (Platform.OS !== 'android') return;
 
     const handleStateChange = state => {
       appStateRef.current = state;
+      console.log('AppState change =>', state, {
+        onStatus: config?.selectVehicle?.on_status,
+        hasBgLocPerm,
+      });
 
-      // if rider is offline OR we don't have background permission -> stop service
-      if (
-        !config?.selectVehicle ||
-        config?.selectVehicle?.on_status !== 'on' ||
-        !hasBgLocPerm
-      ) {
+      const canRunBG =
+        !!config?.selectVehicle &&
+        config?.selectVehicle?.on_status === 'on' &&
+        hasBgLocPerm;
+
+      if (!canRunBG) {
+        console.log('Stopping BG: missing vehicle/on_status/bgPerm');
         stopBackgroundLocation();
         return;
       }
 
       if (state === 'active') {
-        // app came to foreground -> stop BG service, foreground interval will run
+        console.log('App active -> stop BG');
         stopBackgroundLocation();
       } else if (state === 'background') {
-        // app went to background -> start BG service (safe, we have permission)
-        startBackgroundLocation();
+        if (!BackgroundService.isRunning()) {
+          console.log('App background -> start BG');
+          startBackgroundLocation();
+        } else {
+          console.log('App background but BG already running');
+        }
       }
     };
 
@@ -316,7 +344,7 @@ const HomeMainScreen = ({ route }) => {
   };
 
   useFocusEffect(
-    React.useCallback(() => {
+    useCallback(() => {
       if (Platform.OS !== 'android') return undefined;
       const onBackPress = () => {
         backPressCountRef.current += 1;
@@ -550,58 +578,72 @@ const HomeMainScreen = ({ route }) => {
     };
   }, []);
 
-  // 🔹 Request location (fg + bg)
+  // Request location (fg + bg)
   const requestLocationPermission = async () => {
     if (Platform.OS === 'android') {
       try {
-        // 1) Foreground location
         const granted = await PermissionsAndroid.requestMultiple([
           PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
           PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,
         ]);
 
-        const fgOk =
+        let ok =
           granted['android.permission.ACCESS_FINE_LOCATION'] ===
           PermissionsAndroid.RESULTS.GRANTED ||
           granted['android.permission.ACCESS_COARSE_LOCATION'] ===
           PermissionsAndroid.RESULTS.GRANTED;
 
-        setHasLocPerm(fgOk);
+        let bgOk = ok;
 
-        // 2) Background location (Android 10+)
-        let bgOk = false;
-        if (fgOk && Platform.Version >= 29) {
+        if (ok && Platform.Version >= 29) {
           const bg = await PermissionsAndroid.request(
             PermissionsAndroid.PERMISSIONS.ACCESS_BACKGROUND_LOCATION,
+            {
+              title: 'Allow background location',
+              message:
+                'We need background location to update your position while you are delivering.',
+              buttonPositive: 'Allow',
+              buttonNegative: 'Deny',
+            },
           );
           bgOk = bg === PermissionsAndroid.RESULTS.GRANTED;
-        } else if (fgOk) {
-          // pre-29 doesn't need ACCESS_BACKGROUND_LOCATION
-          bgOk = true;
+          if (!bgOk) {
+            console.log('Background location NOT granted');
+          } else {
+            console.log('Background location granted');
+          }
         }
 
+        setHasLocPerm(ok);
         setHasBgLocPerm(bgOk);
 
-        if (fgOk) {
+        if (ok) {
           Geolocation.getCurrentPosition(
             pos => {
               const { latitude, longitude } = pos.coords;
               const lng = round5(longitude),
                 lat = round5(latitude);
-              if (lng != null && lat != null) setCamera([lng, lat]);
+              if (lng != null && lat != null) {
+                const ll = [lng, lat];
+                setCamera(ll);
+                userLocRef.current = ll;
+                lastFreshLocTsRef.current = Date.now();
+              }
             },
             () => { },
             { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 },
           );
           setMapMountKey(prev => prev + '-granted');
         }
-        return fgOk;
-      } catch {
+        return ok;
+      } catch (e) {
+        console.log('requestLocationPermission error', e);
         setHasLocPerm(false);
         setHasBgLocPerm(false);
         return false;
       }
     }
+
     // iOS
     try {
       const status = await check(PERMISSIONS.IOS.LOCATION_WHEN_IN_USE);
@@ -611,7 +653,7 @@ const HomeMainScreen = ({ route }) => {
         ok = res === RESULTS.GRANTED || res === RESULTS.LIMITED;
       }
       setHasLocPerm(ok);
-      setHasBgLocPerm(ok); // treat same on iOS
+      setHasBgLocPerm(ok);
 
       if (ok) {
         Geolocation.getCurrentPosition(
@@ -619,7 +661,12 @@ const HomeMainScreen = ({ route }) => {
             const { latitude, longitude } = pos.coords;
             const lng = round5(longitude),
               lat = round5(latitude);
-            if (lng != null && lat != null) setCamera([lng, lat]);
+            if (lng != null && lat != null) {
+              const ll = [lng, lat];
+              setCamera(ll);
+              userLocRef.current = ll;
+              lastFreshLocTsRef.current = Date.now();
+            }
           },
           () => { },
           { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 },
@@ -807,13 +854,16 @@ const HomeMainScreen = ({ route }) => {
     setRemainingFeature(null);
     progressIdxRef.current = 0;
     lastOnRoutePointRef.current = null;
-    setEtaSec(null); // ⭐ reset ETA
+    setEtaSec(null);
     if (abortRef.current) abortRef.current.abort();
   };
 
   const buildLineFeature = coords =>
     coords && coords.length >= 2
-      ? { type: 'Feature', geometry: { type: 'LineString', coordinates: coords } }
+      ? {
+        type: 'Feature',
+        geometry: { type: 'LineString', coordinates: coords },
+      }
       : null;
 
   const fetchRoute = useCallback(
@@ -856,7 +906,7 @@ const HomeMainScreen = ({ route }) => {
           setRouteDistanceM(distance);
           setBanner({ primary: '', distance: 0 });
           progressIdxRef.current = 0;
-          setEtaSec(null); // ⭐ ETA will be set on first location update
+          setEtaSec(null);
 
           const userLL =
             userLocRef.current || normalizeCoord(cameraRef.current);
@@ -922,7 +972,7 @@ const HomeMainScreen = ({ route }) => {
     lastFetchAtRef.current = 0;
   }, [selectedOrder?.id, senderCoordinate?.[0], senderCoordinate?.[1]]);
 
-  /* ───────── Live progress + banner ───────── */
+  /* ───────── Live progress + banner + ETA ───────── */
   const updateBannerAndSteps = useCallback(
     userLL => {
       if (!routeSteps.length) return;
@@ -942,18 +992,16 @@ const HomeMainScreen = ({ route }) => {
 
       setBanner({ primary: stepPrimaryText(currentStep), distance: d });
 
-      // ⭐ Compute remaining distance
       let remainingM = d;
       for (let i = idx + 1; i < routeSteps.length; i++) {
         remainingM += routeSteps[i]?.distance || 0;
       }
 
-      // ⭐ Throttle ETA updates
       const now = Date.now();
       const distChangedEnough =
         lastEtaDistRef.current == null ||
-        Math.abs(remainingM - lastEtaDistRef.current) > 50; // 50m threshold
-      const timeOk = now - lastEtaUpdateRef.current > 5000; // at most every 5s
+        Math.abs(remainingM - lastEtaDistRef.current) > 50;
+      const timeOk = now - lastEtaUpdateRef.current > 5000;
 
       if (!distChangedEnough || !timeOk) {
         return;
@@ -964,10 +1012,9 @@ const HomeMainScreen = ({ route }) => {
 
       let eta = null;
       if (routeDistanceM > 0 && routeDurationSec > 0 && remainingM > 0) {
-        const avgSpeed = routeDistanceM / routeDurationSec; // m/s
+        const avgSpeed = routeDistanceM / routeDurationSec;
         eta = remainingM / avgSpeed;
       } else if (remainingM > 0) {
-        // Fallback speed: ~30km/h
         eta = remainingM / 8.33;
       }
 
@@ -999,13 +1046,12 @@ const HomeMainScreen = ({ route }) => {
     [routeCoords],
   );
 
-  /* ───────── USER LOCATION updates ───────── */
+  /* ───────── USER LOCATION updates (foreground Mapbox) ───────── */
   const onUserLocation = useCallback(
     async location => {
       if (!location?.coords) return;
 
       const now = Date.now();
-      // ⏱️ Throttle location updates (max once per 1000 ms)
       if (now - lastLocationTsRef.current < 1000) {
         return;
       }
@@ -1016,8 +1062,10 @@ const HomeMainScreen = ({ route }) => {
       if (userLL[0] == null || userLL[1] == null) return;
 
       setUserCoordState(userLL);
+      userLocRef.current = userLL;
+      lastLLRef.current = userLL;
+      lastFreshLocTsRef.current = Date.now(); // mark as fresh
 
-      // ───── Heading smoothing ─────
       let hdg = toNum(heading);
       if (hdg == null || !Number.isFinite(hdg)) hdg = toNum(course);
 
@@ -1036,10 +1084,6 @@ const HomeMainScreen = ({ route }) => {
         if (!isFollowing) setBearing(smoothed);
       }
 
-      lastLLRef.current = userLL;
-      userLocRef.current = userLL;
-
-      // ───── Only rerender camera when moved enough ─────
       const lastCam = cameraRef.current;
       const movedForCamera =
         !lastCam ||
@@ -1050,8 +1094,7 @@ const HomeMainScreen = ({ route }) => {
         setCamera(userLL);
       }
 
-      // ───── Only update route progress when moved > ~5m ─────
-      const MIN_MOVE_FOR_ROUTE = 5; // meters
+      const MIN_MOVE_FOR_ROUTE = 5;
       let movedForRoute = true;
       if (lastProgressLLRef.current) {
         const dRoute = haversineMeters(lastProgressLLRef.current, userLL);
@@ -1062,11 +1105,10 @@ const HomeMainScreen = ({ route }) => {
 
         if (isFollowing && routeCoords.length > 1) {
           updateRouteProgress(userLL);
-          updateBannerAndSteps(userLL); // ETA throttling is inside this
+          updateBannerAndSteps(userLL);
         }
       }
 
-      // ───── Off-route jump based reroute (with cooldown) ─────
       try {
         if (isAccepted && senderCoordinate && routeCoords?.length >= 2) {
           if (!lastOnRoutePointRef.current) {
@@ -1088,9 +1130,7 @@ const HomeMainScreen = ({ route }) => {
             }
           }
         }
-      } catch {
-        // ignore
-      }
+      } catch { }
     },
     [
       isFollowing,
@@ -1144,7 +1184,7 @@ const HomeMainScreen = ({ route }) => {
       } else {
         offRouteSinceRef.current = null;
       }
-    }, 3000); // a bit slower: every 3s
+    }, 3000);
 
     return () => clearInterval(id);
   }, [
@@ -1160,27 +1200,39 @@ const HomeMainScreen = ({ route }) => {
   /* ───────── Background + foreground location post ───────── */
   const locationInFlightRef = useRef(false);
 
-  // shared sender: can be used from foreground interval OR background service
   const postLocation = useCallback(
-    async overrideLL => {
-      if (!config?.selectVehicle?.id) return;
-      if (locationInFlightRef.current) return;
+    async (overrideLL, source = 'auto') => {
+      if (!config?.selectVehicle?.id) {
+        console.log('postLocation: no selectVehicle.id -> skip');
+        return;
+      }
+      if (locationInFlightRef.current) {
+        console.log('postLocation: request already in flight -> skip');
+        return;
+      }
+      if (config?.selectVehicle?.on_status !== 'on') {
+        console.log('postLocation: vehicle is not on -> skip');
+        return;
+      }
 
-      // from BG task we pass coords, otherwise use last known
       const loc = overrideLL || userLocRef.current || cameraRef.current;
       const norm = normalizeCoord(loc);
-      if (!norm) return;
+      if (!norm) {
+        console.log('postLocation: no valid coords ->', loc);
+        return;
+      }
 
       const dir =
         headingRef.current != null ? Math.round(headingRef.current) : null;
 
       locationInFlightRef.current = true;
       try {
-        console.log({
+        console.log('UPDATELOCATION payload =>', {
           longitude: norm[0],
           latitude: norm[1],
           heading: dir,
           vehicle_id: config?.selectVehicle?.id,
+          source,
         });
         await sendData(urls.UPDATELOCATION, {
           longitude: norm[0],
@@ -1188,20 +1240,21 @@ const HomeMainScreen = ({ route }) => {
           heading: dir,
           vehicle_id: config?.selectVehicle?.id,
         });
+        console.log('UPDATELOCATION success');
       } catch (e) {
-        // console.log('UPDATELOCATION error', e);
+        console.log('UPDATELOCATION error', e);
       } finally {
         locationInFlightRef.current = false;
       }
     },
-    [config?.selectVehicle?.id],
+    [config?.selectVehicle?.id, config?.selectVehicle?.on_status],
   );
 
-  // ***** FOREGROUND: standard interval, only when app is active *****
+  // FOREGROUND interval
   useEffect(() => {
     const fireIfActive = () => {
       if (appStateRef.current === 'active') {
-        postLocation();
+        postLocation(null, 'fg');
       }
     };
 
@@ -1214,31 +1267,92 @@ const HomeMainScreen = ({ route }) => {
     };
   }, [postLocation]);
 
-  // ***** BACKGROUND: background-actions service *****
+  // BACKGROUND: background-actions service
   const backgroundLocationTask = async ({ delay }) => {
+    console.log('BG task started');
+    let tick = 0;
+
     await new Promise(async resolve => {
       while (BackgroundService.isRunning()) {
-        // get new GPS fix
+        tick += 1;
+        console.log(
+          'BG loop tick #',
+          tick,
+          'appState =',
+          appStateRef.current,
+        );
+
+        if (appStateRef.current === 'active') {
+          console.log('BG loop: app is active, skip GPS + postLocation');
+          await new Promise(r =>
+            setTimeout(r, delay || LOCATION_UPDATE_MS),
+          );
+          continue;
+        }
+
+        let usedFresh = false;
+
         await new Promise(res => {
           Geolocation.getCurrentPosition(
             pos => {
+              console.log('BG getCurrentPosition success', pos?.coords);
               const { latitude, longitude } = pos?.coords || {};
               if (latitude != null && longitude != null) {
                 const ll = [round5(longitude), round5(latitude)];
-                postLocation(ll); // use fresh coords
+                userLocRef.current = ll;
+                lastLLRef.current = ll;
+                lastFreshLocTsRef.current = Date.now();
+                usedFresh = true;
+                postLocation(ll, 'bg-fresh');
+              } else {
+                console.log('BG: coords are null');
               }
               res();
             },
-            () => res(),
-            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
+            error => {
+              console.log('BG getCurrentPosition ERROR (BG)', error);
+              res();
+            },
+            {
+              enableHighAccuracy: false,
+              timeout: 60000,
+              maximumAge: 60000,
+              distanceFilter: 0,
+            },
           );
         });
 
-        // wait before next update
+        // Fallback if GPS failed or timed out
+        if (!usedFresh) {
+          const last =
+            userLocRef.current || cameraRef.current || userCoordState;
+          const lastTs = lastFreshLocTsRef.current || 0;
+          const ageMs = lastTs ? Date.now() - lastTs : Infinity;
+
+          if (!last) {
+            console.log('BG no last known location to send');
+          } else if (!lastTs || ageMs > MAX_FALLBACK_AGE_MS) {
+            console.log(
+              'BG fallback skipped: no recent last known location (age ms =',
+              ageMs,
+              ')',
+            );
+          } else {
+            console.log(
+              'BG using last known location fallback =>',
+              last,
+              'ageMs=',
+              ageMs,
+            );
+            postLocation(last, 'bg-fallback');
+          }
+        }
+
         await new Promise(r =>
           setTimeout(r, delay || LOCATION_UPDATE_MS),
         );
       }
+      console.log('BG task stopping');
       resolve();
     });
   };
@@ -1252,27 +1366,47 @@ const HomeMainScreen = ({ route }) => {
       type: 'mipmap',
     },
     color: '#FF6B00',
-    linkingURI: 'riderx://home', // change if you use another scheme
+    linkingURI: 'riderx://home',
     parameters: {
       delay: LOCATION_UPDATE_MS,
     },
   };
 
   const startBackgroundLocation = async () => {
-    if (BackgroundService.isRunning()) return;
+    if (BackgroundService.isRunning()) {
+      console.log('startBackgroundLocation: already running, skip');
+      return;
+    }
+
+    if (
+      appStateRef.current !== 'background' ||
+      !config?.selectVehicle ||
+      config?.selectVehicle?.on_status !== 'on' ||
+      !hasBgLocPerm
+    ) {
+      console.log('startBackgroundLocation: conditions not met, skip start', {
+        appState: appStateRef.current,
+        onStatus: config?.selectVehicle?.on_status,
+        hasBgLocPerm,
+      });
+      return;
+    }
+
     try {
+      console.log('startBackgroundLocation: starting BG service');
       await BackgroundService.start(backgroundLocationTask, backgroundOptions);
     } catch (e) {
-      // console.log('BG start error', e);
+      console.log('BG start error', e);
     }
   };
 
   const stopBackgroundLocation = async () => {
     if (!BackgroundService.isRunning()) return;
     try {
+      console.log('stopBackgroundLocation: stopping BG service');
       await BackgroundService.stop();
     } catch (e) {
-      // console.log('BG stop error', e);
+      console.log('BG stop error', e);
     }
   };
 
@@ -1389,7 +1523,6 @@ const HomeMainScreen = ({ route }) => {
     }
   }, []);
 
-  // ⭐ Convert ETA seconds → minutes for UI
   const etaMinutes =
     etaSec != null && Number.isFinite(etaSec)
       ? Math.max(1, Math.round(etaSec / 60))
@@ -1416,7 +1549,7 @@ const HomeMainScreen = ({ route }) => {
                 rotateEnabled
                 style={[styles.map, { height: hp(mapHeight) }]}
                 onDidFinishLoadingMap={() => setMapReady(true)}>
-                {/* Remaining route (black) */}
+                {/* Remaining route */}
                 {remainingFeature && (
                   <Mapbox.ShapeSource
                     id="remainingSource"
@@ -1433,7 +1566,7 @@ const HomeMainScreen = ({ route }) => {
                   </Mapbox.ShapeSource>
                 )}
 
-                {/* Traveled route (yellow) */}
+                {/* Traveled route */}
                 {traveledFeature && (
                   <Mapbox.ShapeSource
                     id="traveledSource"
@@ -1537,12 +1670,14 @@ const HomeMainScreen = ({ route }) => {
             <CustomText style={styles.text}>{t('vehicleOff')}</CustomText>
           </View>
         )}
+
         <TouchableOpacity
           activeOpacity={0.6}
           onPress={getDeliveryLists}
           style={styles.button1}>
           <Update width={wp(5)} height={wp(5)} />
         </TouchableOpacity>
+
         {!selectedOrder && (
           <CustomAvailableRider
             onAvailabilityChange={updateVehicleStatus}
@@ -1617,6 +1752,7 @@ const HomeMainScreen = ({ route }) => {
         }}
         onClose={() => setCancelModalVisible(false)}
       />
+
       <SelectVehicleModal
         isVisible={config?.selectVehicleVisible}
         onSelectReason={(reasonKey, text) => {
