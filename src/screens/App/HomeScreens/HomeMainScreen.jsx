@@ -27,6 +27,7 @@ import Geolocation from '@react-native-community/geolocation';
 import messaging from '@react-native-firebase/messaging';
 import { useTranslation } from 'react-i18next';
 import LinearGradient from 'react-native-linear-gradient';
+import BackgroundService from 'react-native-background-actions';
 
 import AcceptOrderModal from '../../../modal/AcceptOrderModal';
 import AcceptedOrderModal from '../../../modal/AcceptedOrderModal';
@@ -208,6 +209,7 @@ const HomeMainScreen = ({ route }) => {
   const [securePinShow, setSecurePinShow] = useState(false);
 
   const [hasLocPerm, setHasLocPerm] = useState(false);
+  const [hasBgLocPerm, setHasBgLocPerm] = useState(false); // ⭐ background permission
   const [mapMountKey, setMapMountKey] = useState('map-0');
   const [mapReady, setMapReady] = useState(false);
   const [isNavOn, setIsNavOn] = useState(false);
@@ -271,12 +273,37 @@ const HomeMainScreen = ({ route }) => {
     };
   }, []);
 
+  // 🔹 AppState + background service handling
   useEffect(() => {
-    const sub = AppState.addEventListener('change', s => {
-      appStateRef.current = s;
-    });
-    return () => sub.remove();
-  }, []);
+    if (Platform.OS !== 'android') return;
+
+    const handleStateChange = state => {
+      appStateRef.current = state;
+
+      // if rider is offline OR we don't have background permission -> stop service
+      if (
+        !config?.selectVehicle ||
+        config?.selectVehicle?.on_status !== 'on' ||
+        !hasBgLocPerm
+      ) {
+        stopBackgroundLocation();
+        return;
+      }
+
+      if (state === 'active') {
+        // app came to foreground -> stop BG service, foreground interval will run
+        stopBackgroundLocation();
+      } else if (state === 'background') {
+        // app went to background -> start BG service (safe, we have permission)
+        startBackgroundLocation();
+      }
+    };
+
+    const sub = AppState.addEventListener('change', handleStateChange);
+    return () => {
+      sub.remove();
+    };
+  }, [config?.selectVehicle?.on_status, hasBgLocPerm]);
 
   useEffect(() => {
     selectedOrderRef.current = selectedOrder;
@@ -523,20 +550,39 @@ const HomeMainScreen = ({ route }) => {
     };
   }, []);
 
+  // 🔹 Request location (fg + bg)
   const requestLocationPermission = async () => {
     if (Platform.OS === 'android') {
       try {
+        // 1) Foreground location
         const granted = await PermissionsAndroid.requestMultiple([
           PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
           PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,
         ]);
-        const ok =
+
+        const fgOk =
           granted['android.permission.ACCESS_FINE_LOCATION'] ===
           PermissionsAndroid.RESULTS.GRANTED ||
           granted['android.permission.ACCESS_COARSE_LOCATION'] ===
           PermissionsAndroid.RESULTS.GRANTED;
-        setHasLocPerm(ok);
-        if (ok) {
+
+        setHasLocPerm(fgOk);
+
+        // 2) Background location (Android 10+)
+        let bgOk = false;
+        if (fgOk && Platform.Version >= 29) {
+          const bg = await PermissionsAndroid.request(
+            PermissionsAndroid.PERMISSIONS.ACCESS_BACKGROUND_LOCATION,
+          );
+          bgOk = bg === PermissionsAndroid.RESULTS.GRANTED;
+        } else if (fgOk) {
+          // pre-29 doesn't need ACCESS_BACKGROUND_LOCATION
+          bgOk = true;
+        }
+
+        setHasBgLocPerm(bgOk);
+
+        if (fgOk) {
           Geolocation.getCurrentPosition(
             pos => {
               const { latitude, longitude } = pos.coords;
@@ -549,12 +595,14 @@ const HomeMainScreen = ({ route }) => {
           );
           setMapMountKey(prev => prev + '-granted');
         }
-        return ok;
+        return fgOk;
       } catch {
         setHasLocPerm(false);
+        setHasBgLocPerm(false);
         return false;
       }
     }
+    // iOS
     try {
       const status = await check(PERMISSIONS.IOS.LOCATION_WHEN_IN_USE);
       let ok = status === RESULTS.GRANTED || status === RESULTS.LIMITED;
@@ -563,6 +611,8 @@ const HomeMainScreen = ({ route }) => {
         ok = res === RESULTS.GRANTED || res === RESULTS.LIMITED;
       }
       setHasLocPerm(ok);
+      setHasBgLocPerm(ok); // treat same on iOS
+
       if (ok) {
         Geolocation.getCurrentPosition(
           pos => {
@@ -579,6 +629,7 @@ const HomeMainScreen = ({ route }) => {
       return ok;
     } catch {
       setHasLocPerm(false);
+      setHasBgLocPerm(false);
       return false;
     }
   };
@@ -1106,44 +1157,124 @@ const HomeMainScreen = ({ route }) => {
     isFollowing,
   ]);
 
-  /* ───────── Background location post (SEND TO API) ───────── */
+  /* ───────── Background + foreground location post ───────── */
   const locationInFlightRef = useRef(false);
 
-  const postLocation = useCallback(async () => {
-    if (!config?.selectVehicle?.id) return;
-    if (locationInFlightRef.current) return;
+  // shared sender: can be used from foreground interval OR background service
+  const postLocation = useCallback(
+    async overrideLL => {
+      if (!config?.selectVehicle?.id) return;
+      if (locationInFlightRef.current) return;
 
-    // ✅ Use real GPS location; fallback to camera if GPS not ready yet
-    const loc = userLocRef.current || cameraRef.current;
-    const norm = normalizeCoord(loc);
-    if (!norm) return;
+      // from BG task we pass coords, otherwise use last known
+      const loc = overrideLL || userLocRef.current || cameraRef.current;
+      const norm = normalizeCoord(loc);
+      if (!norm) return;
 
-    const dir =
-      headingRef.current != null ? Math.round(headingRef.current) : null;
+      const dir =
+        headingRef.current != null ? Math.round(headingRef.current) : null;
 
-    locationInFlightRef.current = true;
-    try {
-      await sendData(urls.UPDATELOCATION, {
-        longitude: norm[0],
-        latitude: norm[1],
-        heading: dir,
-        vehicle_id: config?.selectVehicle?.id,
-      });
-    } catch (e) {
-      // optional: console.log('UPDATELOCATION error', e);
-    } finally {
-      locationInFlightRef.current = false;
-    }
-  }, [config?.selectVehicle?.id]);
+      locationInFlightRef.current = true;
+      try {
+        console.log({
+          longitude: norm[0],
+          latitude: norm[1],
+          heading: dir,
+          vehicle_id: config?.selectVehicle?.id,
+        });
+        await sendData(urls.UPDATELOCATION, {
+          longitude: norm[0],
+          latitude: norm[1],
+          heading: dir,
+          vehicle_id: config?.selectVehicle?.id,
+        });
+      } catch (e) {
+        // console.log('UPDATELOCATION error', e);
+      } finally {
+        locationInFlightRef.current = false;
+      }
+    },
+    [config?.selectVehicle?.id],
+  );
 
+  // ***** FOREGROUND: standard interval, only when app is active *****
   useEffect(() => {
-    const first = setTimeout(postLocation, 3000);
-    const id = setInterval(postLocation, LOCATION_UPDATE_MS);
+    const fireIfActive = () => {
+      if (appStateRef.current === 'active') {
+        postLocation();
+      }
+    };
+
+    const first = setTimeout(fireIfActive, 3000);
+    const id = setInterval(fireIfActive, LOCATION_UPDATE_MS);
+
     return () => {
       clearTimeout(first);
       clearInterval(id);
     };
   }, [postLocation]);
+
+  // ***** BACKGROUND: background-actions service *****
+  const backgroundLocationTask = async ({ delay }) => {
+    await new Promise(async resolve => {
+      while (BackgroundService.isRunning()) {
+        // get new GPS fix
+        await new Promise(res => {
+          Geolocation.getCurrentPosition(
+            pos => {
+              const { latitude, longitude } = pos?.coords || {};
+              if (latitude != null && longitude != null) {
+                const ll = [round5(longitude), round5(latitude)];
+                postLocation(ll); // use fresh coords
+              }
+              res();
+            },
+            () => res(),
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
+          );
+        });
+
+        // wait before next update
+        await new Promise(r =>
+          setTimeout(r, delay || LOCATION_UPDATE_MS),
+        );
+      }
+      resolve();
+    });
+  };
+
+  const backgroundOptions = {
+    taskName: 'RiderLocation',
+    taskTitle: 'Sharing your location',
+    taskDesc: 'We keep your position updated for deliveries.',
+    taskIcon: {
+      name: 'ic_launcher',
+      type: 'mipmap',
+    },
+    color: '#FF6B00',
+    linkingURI: 'riderx://home', // change if you use another scheme
+    parameters: {
+      delay: LOCATION_UPDATE_MS,
+    },
+  };
+
+  const startBackgroundLocation = async () => {
+    if (BackgroundService.isRunning()) return;
+    try {
+      await BackgroundService.start(backgroundLocationTask, backgroundOptions);
+    } catch (e) {
+      // console.log('BG start error', e);
+    }
+  };
+
+  const stopBackgroundLocation = async () => {
+    if (!BackgroundService.isRunning()) return;
+    try {
+      await BackgroundService.stop();
+    } catch (e) {
+      // console.log('BG stop error', e);
+    }
+  };
 
   /* ───────── Center-on-me FAB ───────── */
   const getOneShotGPS = () =>
@@ -1264,8 +1395,6 @@ const HomeMainScreen = ({ route }) => {
       ? Math.max(1, Math.round(etaSec / 60))
       : null;
 
-
-
   /* ───────── Render ───────── */
   return (
     <>
@@ -1278,7 +1407,11 @@ const HomeMainScreen = ({ route }) => {
             <>
               <Mapbox.MapView
                 key={mapMountKey}
-                styleURL={config?.mapStyle == 'dark' ? Mapbox.StyleURL.Dark : Mapbox.StyleURL.Light}
+                styleURL={
+                  config?.mapStyle == 'dark'
+                    ? Mapbox.StyleURL.Dark
+                    : Mapbox.StyleURL.Light
+                }
                 zoomEnabled
                 rotateEnabled
                 style={[styles.map, { height: hp(mapHeight) }]}
@@ -1595,7 +1728,6 @@ const styles = StyleSheet.create({
     height: hp(10),
     zIndex: 10,
   },
-
   banner: {
     position: 'absolute',
     top: hp(2),
