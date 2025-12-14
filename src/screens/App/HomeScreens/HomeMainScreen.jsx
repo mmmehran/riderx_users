@@ -292,10 +292,10 @@ const HomeMainScreen = ({ route }) => {
 
     const handleStateChange = state => {
       appStateRef.current = state;
-      console.log('AppState change =>', state, {
-        onStatus: config?.selectVehicle?.on_status,
-        hasBgLocPerm,
-      });
+      // console.log('AppState change =>', state, {
+      //   onStatus: config?.selectVehicle?.on_status,
+      //   hasBgLocPerm,
+      // });
 
       const canRunBG =
         !!config?.selectVehicle &&
@@ -303,20 +303,20 @@ const HomeMainScreen = ({ route }) => {
         hasBgLocPerm;
 
       if (!canRunBG) {
-        console.log('Stopping BG: missing vehicle/on_status/bgPerm');
+        // console.log('Stopping BG: missing vehicle/on_status/bgPerm');
         stopBackgroundLocation();
         return;
       }
 
       if (state === 'active') {
-        console.log('App active -> stop BG');
+        // console.log('App active -> stop BG');
         stopBackgroundLocation();
       } else if (state === 'background') {
         if (!BackgroundService.isRunning()) {
-          console.log('App background -> start BG');
+          //console.log('App background -> start BG');
           startBackgroundLocation();
         } else {
-          console.log('App background but BG already running');
+          //console.log('App background but BG already running');
         }
       }
     };
@@ -577,7 +577,7 @@ const HomeMainScreen = ({ route }) => {
             },
           );
           bgOk = bg === PermissionsAndroid.RESULTS.GRANTED;
-          console.log('Background location', bgOk ? 'granted' : 'NOT granted');
+          // console.log('Background location', bgOk ? 'granted' : 'NOT granted');
         }
 
         setHasLocPerm(ok);
@@ -1104,11 +1104,6 @@ const HomeMainScreen = ({ route }) => {
 
   const postLocation = useCallback(
     async (overrideLL, source = 'auto') => {
-      console.log('UPDATELOCATION overrideLL =>', overrideLL);
-      console.log('UPDATELOCATION source =>', source);
-      console.log('UPDATELOCATION config?.selectVehicle?.id =>', config?.selectVehicle?.id);
-      console.log('UPDATELOCATION locationInFlightRef.current =>', locationInFlightRef.current);
-      console.log('UPDATELOCATION config?.selectVehicle?.on_status =>', config?.selectVehicle?.on_status);
       if (!config?.selectVehicle?.id) return;
       if (locationInFlightRef.current) return;
       if (config?.selectVehicle?.on_status !== 'on') return;
@@ -1121,14 +1116,6 @@ const HomeMainScreen = ({ route }) => {
 
       locationInFlightRef.current = true;
       try {
-        console.log('UPDATELOCATION payload =>', {
-          longitude: norm[0],
-          latitude: norm[1],
-          heading: dir,
-          vehicle_id: config?.selectVehicle?.id,
-          source,
-        });
-
         // If your backend doesn't accept "source", remove it.
         await sendData(urls.UPDATELOCATION, {
           longitude: norm[0],
@@ -1137,12 +1124,6 @@ const HomeMainScreen = ({ route }) => {
           vehicle_id: config?.selectVehicle?.id,
           source,
         });
-        await showLocalNotification({
-          title: "Update location request",
-          body: t(`long:${norm[0]} lat:${norm[1]}`),
-          data: { delivery_id: '' },
-        });
-        console.log('UPDATELOCATION success');
       } catch (e) {
         console.log('UPDATELOCATION error', e);
       } finally {
@@ -1204,7 +1185,7 @@ const HomeMainScreen = ({ route }) => {
       );
 
       bgWatchIdRef.current = id;
-      console.log('BG watchPosition started id=', id);
+      //console.log('BG watchPosition started id=', id);
     } catch (e) {
       console.log('BG watchPosition start error', e);
     }
@@ -1242,7 +1223,7 @@ const HomeMainScreen = ({ route }) => {
 
   // BACKGROUND: background-actions service
   const backgroundLocationTask = async ({ delay }) => {
-    console.log('BG task started');
+    //console.log('BG task started');
 
     // ✅ Start watchPosition once (so we always have fresh-ish coords)
     startBgWatch();
@@ -1253,7 +1234,7 @@ const HomeMainScreen = ({ route }) => {
       // eslint-disable-next-line no-constant-condition
       while (BackgroundService.isRunning()) {
         tick += 1;
-        console.log('BG loop tick #', tick, 'appState =', appStateRef.current);
+        // console.log('BG loop tick #', tick, 'appState =', appStateRef.current);
 
         if (appStateRef.current === 'active') {
           await new Promise(r => setTimeout(r, delay || LOCATION_UPDATE_MS));
@@ -1266,7 +1247,7 @@ const HomeMainScreen = ({ route }) => {
 
         // ✅ RESTART LOGIC: If watcher seems dead (>30s stale) and we are in background, kick it.
         if (ageMs > 30_000) {
-          console.log(`BG: watcher stale (${ageMs}ms), restarting...`);
+          // console.log(`BG: watcher stale (${ageMs}ms), restarting...`);
           stopBgWatch();
           startBgWatch();
           // Give it a moment to try and get a fix
@@ -1278,13 +1259,13 @@ const HomeMainScreen = ({ route }) => {
 
         // 2) If no watcher data (or it's still old), try one-shot High Accuracy
         if (!fresh || (lastFreshLocTsRef.current && (Date.now() - lastFreshLocTsRef.current > 15000))) {
-          console.log('BG: watcher empty or old, trying one-shot HIGH accuracy');
+          // console.log('BG: watcher empty or old, trying one-shot HIGH accuracy');
           fresh = await getBgOneShot(true);
         }
 
         // 3) If High Accuracy failed (timeout), force Low Accuracy (Network/WiFi)
         if (!fresh) {
-          console.log('BG: HIGH accuracy failed, attempting LOW accuracy fallback');
+          //console.log('BG: HIGH accuracy failed, attempting LOW accuracy fallback');
           fresh = await getBgOneShot(false);
         }
 
@@ -1303,11 +1284,11 @@ const HomeMainScreen = ({ route }) => {
 
         // Log decision
         if (!fresh) {
-          console.log('BG: no location to send (all sources null)');
+          // console.log('BG: no location to send (all sources null)');
         } else if (!finalLastTs || finalAgeMs > MAX_FALLBACK_AGE_MS) {
-          console.log('BG: skip send (too old) ageMs=', finalAgeMs);
+          // console.log('BG: skip send (too old) ageMs=', finalAgeMs);
         } else {
-          console.log('BG sending location =>', fresh, 'ageMs=', finalAgeMs);
+          // console.log('BG sending location =>', fresh, 'ageMs=', finalAgeMs);
           postLocation(fresh, 'bg');
         }
 
@@ -1316,7 +1297,7 @@ const HomeMainScreen = ({ route }) => {
     } catch (err) {
       console.log('BG task CRASHED', err);
     } finally {
-      console.log('BG task stopping');
+      // console.log('BG task stopping');
       stopBgWatch();
     }
   };
@@ -1340,16 +1321,16 @@ const HomeMainScreen = ({ route }) => {
       config?.selectVehicle?.on_status !== 'on' ||
       !hasBgLocPerm
     ) {
-      console.log('startBackgroundLocation: conditions not met', {
-        appState: appStateRef.current,
-        onStatus: config?.selectVehicle?.on_status,
-        hasBgLocPerm,
-      });
+      //console.log('startBackgroundLocation: conditions not met', {
+      //  appState: appStateRef.current,
+      //  onStatus: config?.selectVehicle?.on_status,
+      //  hasBgLocPerm,
+      //});
       return;
     }
 
     try {
-      console.log('startBackgroundLocation: starting BG service');
+      // console.log('startBackgroundLocation: starting BG service');
       await BackgroundService.start(backgroundLocationTask, backgroundOptions);
     } catch (e) {
       console.log('BG start error', e);
