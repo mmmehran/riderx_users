@@ -1,4 +1,4 @@
-import React, {useState, useRef, useCallback, useEffect} from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -12,21 +12,21 @@ import {
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
 import * as Yup from 'yup';
-import {KeyboardAwareScrollView} from 'react-native-keyboard-aware-scroll-view';
-import {useTranslation} from 'react-i18next';
-import {useDispatch} from 'react-redux';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import { useTranslation } from 'react-i18next';
+import { useDispatch } from 'react-redux';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {useNavigation, useFocusEffect} from '@react-navigation/native';
-import {GoogleSignin} from '@react-native-google-signin/google-signin';
-import {appleAuth} from '@invertase/react-native-apple-authentication';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import { appleAuth } from '@invertase/react-native-apple-authentication';
 import { IOS_CLIENT_ID, WEB_CLIENT_ID } from "@env";
 
 import CustomScreen from '../../components/common/CustomScreen';
-import {Form, Input, Button} from '../../components/form/index';
-import {postData} from '../../services/common.service';
+import { Form, Input, Button } from '../../components/form/index';
+import { postData } from '../../services/common.service';
 import urls from '../../services/urls.json';
 import errorHandler from '../../utils/errorHandler';
-import {showToast, showError} from '../../utils/helpers';
+import { showToast, showError } from '../../utils/helpers';
 import {
   Logo,
   Google,
@@ -34,34 +34,34 @@ import {
   PersonIcon,
   KeyboardIcon,
 } from '../../../assets/svg/index';
-import {login} from '../../redux/reducers/authenticationReducer';
-import {setConfigTest, setConfig} from '../../services/defaultAxios';
+import { login } from '../../redux/reducers/authenticationReducer';
+import { setConfigTest, setConfig } from '../../services/defaultAxios';
 import CustomText from '../../components/common/CustomText';
 import colors from '../../config/colors';
-import i18n from '../../utils/i18n';
+import i18n, { applyLanguage } from '../../utils/i18n';
 import routes from '../../navigation/routes';
-import {version} from '../../../package.json';
+import { version } from '../../../package.json';
 
 const LANGS = [
-  {code: 'en', label: 'English', rtl: false},
-  {code: 'de', label: 'Deutsch', rtl: false},
-  {code: 'tr', label: 'Türkçe', rtl: false},
-  {code: 'fa', label: 'فارسی', rtl: true},
-  {code: 'ar', label: 'العربية', rtl: true},
+  { code: 'en', label: 'English', rtl: false },
+  { code: 'de', label: 'Deutsch', rtl: false },
+  { code: 'tr', label: 'Türkçe', rtl: false },
+  { code: 'fa', label: 'فارسی', rtl: true },
+  { code: 'ar', label: 'العربية', rtl: true },
 ];
 
 const REMEMBER_KEY = 'remember_credentials_v1';
 
 const LoginEmail = props => {
   const formikRef = useRef(null);
-  const {t} = useTranslation();
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   const navigation = useNavigation();
 
   const [loading, setLoading] = useState(false);
   const [langModal, setLangModal] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  const [prefill, setPrefill] = useState({email: '', password: ''});
+  const [prefill, setPrefill] = useState({ email: '', password: '' });
 
   const validationSchema = Yup.object().shape({
     email: Yup.string().required(),
@@ -72,8 +72,8 @@ const LoginEmail = props => {
     try {
       const raw = await AsyncStorage.getItem(REMEMBER_KEY);
       if (raw) {
-        const {email = '', password = ''} = JSON.parse(raw) || {};
-        setPrefill({email, password});
+        const { email = '', password = '' } = JSON.parse(raw) || {};
+        setPrefill({ email, password });
         setRememberMe(true);
         setTimeout(() => {
           const f = formikRef.current;
@@ -84,7 +84,7 @@ const LoginEmail = props => {
         }, 0);
       } else {
         setRememberMe(false);
-        setPrefill({email: '', password: ''});
+        setPrefill({ email: '', password: '' });
         setTimeout(() => {
           const f = formikRef.current;
           if (f?.setFieldValue) {
@@ -93,7 +93,7 @@ const LoginEmail = props => {
           }
         }, 0);
       }
-    } catch {}
+    } catch { }
   }, []);
 
   useFocusEffect(
@@ -106,8 +106,8 @@ const LoginEmail = props => {
 
   useEffect(() => {
     GoogleSignin.configure({
-      iosClientId:IOS_CLIENT_ID,
-      webClientId:WEB_CLIENT_ID,
+      iosClientId: IOS_CLIENT_ID,
+      webClientId: WEB_CLIENT_ID,
     });
   }, []);
 
@@ -121,7 +121,7 @@ const LoginEmail = props => {
     await new Promise(r => setTimeout(r, 300));
     const response = await postData(
       urls.LOGIN,
-      {email: value?.email, password: value?.password},
+      { email: value?.email, password: value?.password },
       false,
     );
     if (response?.data?.status) {
@@ -142,8 +142,11 @@ const LoginEmail = props => {
         } else {
           await AsyncStorage.removeItem(REMEMBER_KEY);
         }
-      } catch {}
+      } catch { }
       if (response?.data?.data) {
+        if (response.data.data.language) {
+          applyLanguage(response.data.data.language);
+        }
         dispatch(login(response?.data?.data));
       }
       showToast(response?.data?.message);
@@ -154,10 +157,9 @@ const LoginEmail = props => {
   };
 
   const openLangModal = () => setLangModal(true);
-  const applyLanguage = async (code, rtl) => {
+  const handleLanguageSelect = async (code, rtl) => {
     setLangModal(false);
-    await AsyncStorage.setItem('language', code);
-    await i18n.changeLanguage(code);
+    await applyLanguage(code);
   };
   const currentLabel =
     (LANGS.find(l => l.code === i18n.language) || {})?.label || 'English';
@@ -222,7 +224,7 @@ const LoginEmail = props => {
         requestedOperation: appleAuth.Operation.LOGIN,
         requestedScopes: [appleAuth.Scope.FULL_NAME, appleAuth.Scope.EMAIL],
       });
-      const {user, email, fullName, identityToken, authorizationCode} =
+      const { user, email, fullName, identityToken, authorizationCode } =
         appleResponse;
       setConfig();
       await new Promise(r => setTimeout(r, 300));
@@ -258,23 +260,23 @@ const LoginEmail = props => {
     <CustomScreen>
       <KeyboardAwareScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{flexGrow: 1}}>
+        contentContainerStyle={{ flexGrow: 1 }}>
         <CustomText style={styles.title}>
           {t('enterYourPhoneOrEmail')}
         </CustomText>
         <View style={styles.formContainer}>
           <Form
-            initialValues={{email: prefill.email, password: prefill.password}}
+            initialValues={{ email: prefill.email, password: prefill.password }}
             validationSchema={validationSchema}
             onSubmit={onSubmit}
             innerRef={formikRef}
             enableReinitialize>
-            {({values}) => (
+            {({ values }) => (
               <>
                 <Input
                   name="email"
                   inputName={t('enterPhoneOrEmail')}
-                  input={{textAlign: 'left'}}
+                  input={{ textAlign: 'left' }}
                   autoCapitalize="none"
                   value={values?.email}
                   icon={
@@ -284,7 +286,7 @@ const LoginEmail = props => {
                 <Input
                   name="password"
                   inputName={t('enterYourPassword')}
-                  input={{textAlign: 'left'}}
+                  input={{ textAlign: 'left' }}
                   password
                   autoCapitalize="none"
                   value={values?.password}
@@ -301,7 +303,7 @@ const LoginEmail = props => {
           </Form>
           <TouchableOpacity
             onPress={() => navigation.navigate(routes.RESETPASSWORDEMAIL)}
-            style={{marginTop: hp(2.5)}}>
+            style={{ marginTop: hp(2.5) }}>
             <CustomText style={styles.textSignu}>
               {t('forgetPassword')}
             </CustomText>
@@ -330,22 +332,22 @@ const LoginEmail = props => {
           <View
             style={[
               styles.line,
-              {marginTop: hp(3), width: wp(92), marginHorizontal: wp(4)},
+              { marginTop: hp(3), width: wp(92), marginHorizontal: wp(4) },
             ]}></View>
           <TouchableOpacity
             style={styles.signUpContainer}
             onPress={() => navigation.navigate(routes.SIGNUPSENDER)}>
-            <CustomText style={[styles.textSignu, {fontSize: wp(4)}]}>
+            <CustomText style={[styles.textSignu, { fontSize: wp(4) }]}>
               {t('dontAccount')}
             </CustomText>
             <View style={styles.buttonRegister}>
-              <CustomText style={[styles.textSignu, {fontSize: wp(3.4)}]}>
+              <CustomText style={[styles.textSignu, { fontSize: wp(3.4) }]}>
                 {t('register')}
               </CustomText>
             </View>
           </TouchableOpacity>
           <View
-            style={{flex: 1, justifyContent: 'flex-end', marginBottom: hp(1)}}>
+            style={{ flex: 1, justifyContent: 'flex-end', marginBottom: hp(1) }}>
             <TouchableOpacity onPress={openLangModal}>
               <CustomText style={styles.text}>{currentLabel}</CustomText>
             </TouchableOpacity>
@@ -354,8 +356,9 @@ const LoginEmail = props => {
             <CustomText style={styles.textVersion}>
               {t('appVersion')}
             </CustomText>
-            <CustomText style={[styles.textSignu, {fontSize: wp(3.6),    fontFamily: 'arial',
-}]}>
+            <CustomText style={[styles.textSignu, {
+              fontSize: wp(3.6), fontFamily: 'arial',
+            }]}>
               {version}
             </CustomText>
           </View>
@@ -376,7 +379,7 @@ const LoginEmail = props => {
               <TouchableOpacity
                 key={item.code}
                 style={styles.optionRow}
-                onPress={() => applyLanguage(item.code, item.rtl)}>
+                onPress={() => handleLanguageSelect(item.code, item.rtl)}>
                 <CustomText style={styles.optionText}>
                   {item.label}
                   {i18n.language === item.code ? ' ✓' : ''}
@@ -384,9 +387,9 @@ const LoginEmail = props => {
               </TouchableOpacity>
             ))}
             <TouchableOpacity
-              style={[styles.optionRow, {alignItems: 'center'}]}
+              style={[styles.optionRow, { alignItems: 'center' }]}
               onPress={() => setLangModal(false)}>
-              <CustomText style={[styles.optionText, {color: colors.blue}]}>
+              <CustomText style={[styles.optionText, { color: colors.blue }]}>
                 {t('cancel')}
               </CustomText>
             </TouchableOpacity>
@@ -444,9 +447,9 @@ const styles = StyleSheet.create({
     fontFamily: 'YaldeviJaffna-Bold',
     fontSize: wp(3.3),
   },
-  logoContainer: {alignItems: 'center', marginTop: hp(5)},
-  formContainer: {flex: 1, marginTop: hp(3)},
-  text: {textAlign: 'center', color: colors.blue},
+  logoContainer: { alignItems: 'center', marginTop: hp(5) },
+  formContainer: { flex: 1, marginTop: hp(3) },
+  text: { textAlign: 'center', color: colors.blue },
   rememberRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -509,7 +512,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'transparent',
   },
-  checkboxChecked: {borderColor: colors.blue},
+  checkboxChecked: { borderColor: colors.blue },
   checkboxDot: {
     width: wp(3.6),
     height: wp(3.6),
@@ -529,13 +532,13 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: wp(6),
     borderTopRightRadius: wp(6),
   },
-  sheetTitle: {fontSize: wp(4.3), marginBottom: hp(1.5)},
+  sheetTitle: { fontSize: wp(4.3), marginBottom: hp(1.5) },
   optionRow: {
     paddingVertical: hp(1.8),
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: 'rgba(0,0,0,0.08)',
   },
-  optionText: {fontSize: wp(4)},
+  optionText: { fontSize: wp(4) },
   appleRow: {
     marginTop: hp(3),
     alignItems: 'center',

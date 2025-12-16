@@ -13,7 +13,8 @@ const initialStateObject = {
    email_verified:null,
    is_rider:null,
    social_auth_callback_url:null,
-   wallet:null
+   wallet:null,
+   language:null
 };
 
 export const selectAuthenticated = (state) => state.auth.authenticated;
@@ -35,6 +36,7 @@ export const authenticationSlice = createSlice({
             email_verified: action.payload?.email_verified,
             is_rider: action.payload?.is_rider ? action.payload?.is_rider : false,
             social_auth_callback_url: action.payload?.social_auth_callback_url ,
+            language: action.payload?.language,
          };
       },
       setUserProfile: (state, action) => {
