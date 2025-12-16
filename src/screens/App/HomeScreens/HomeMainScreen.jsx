@@ -1112,8 +1112,8 @@ const HomeMainScreen = ({ route }) => {
       const norm = normalizeCoord(loc);
       if (!norm) return;
 
-      const dir = headingRef.current != null ? Math.round(headingRef.current) : null;
-
+      let dir = headingRef.current != null ? Math.round(headingRef.current) : null;
+      if (dir == null) dir = 0;
       locationInFlightRef.current = true;
       try {
         // If your backend doesn't accept "source", remove it.
