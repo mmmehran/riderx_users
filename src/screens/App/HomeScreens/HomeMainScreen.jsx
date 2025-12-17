@@ -1113,7 +1113,8 @@ const HomeMainScreen = ({ route }) => {
       if (!norm) return;
 
       let dir = headingRef.current != null ? Math.round(headingRef.current) : null;
-      if (dir == null) dir = 0;
+      //if (dir == null) dir = 0;
+      if (dir == null) return
       locationInFlightRef.current = true;
       try {
         // If your backend doesn't accept "source", remove it.
