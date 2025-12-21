@@ -1,17 +1,17 @@
-import React, {memo, useEffect, useState, useMemo} from 'react';
-import {StyleSheet, View} from 'react-native';
+import React, { memo, useEffect, useState, useMemo } from 'react';
+import { StyleSheet, View } from 'react-native';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
-import {useTranslation} from 'react-i18next';
+import { useTranslation } from 'react-i18next';
 import axios from 'axios';
 import SwipeButton from '../components/common/SwipeButton';
 
 import colors from '../config/colors';
 import CustomText from '../components/common/CustomText';
-import {AddressLine, BlueCircle} from '../../assets/svg/index';
-import {normalizeLabel} from '../utils/helpers';
+import { AddressLine, BlueCircle } from '../../assets/svg/index';
+import { normalizeLabel } from '../utils/helpers';
 
 const MAPBOX_TOKEN =
   'pk.eyJ1IjoiYnl0ZWJyaWRnZXIiLCJhIjoiY21kZzVoNnU2MGlhcDJpcGVuNGV1amYxdyJ9.YMqlR9OovVOp-pm9yGK7eA';
@@ -22,7 +22,7 @@ const AcceptOrderModal = ({
   pickUpTime,
   userCoord, // <-- [lng, lat] from parent (Mapbox camera / user location)
 }) => {
-  const {t} = useTranslation();
+  const { t } = useTranslation();
 
   // mins/km calculated here (no geolocation inside the modal)
   const [userToPickupKm, setUserToPickupKm] = useState(null);
@@ -58,12 +58,12 @@ const AcceptOrderModal = ({
     try {
       const res = await axios.get(buildDirectionsUrl(a, b));
       const r = res?.data?.routes?.[0];
-      if (!r) return {km: null, mins: null};
+      if (!r) return { km: null, mins: null };
       const km = (r.distance ?? 0) / 1000; // meters -> km
       const mins = Math.max(1, Math.round((r.duration ?? 0) / 60)); // seconds -> mins
-      return {km, mins};
+      return { km, mins };
     } catch {
-      return {km: null, mins: null};
+      return { km: null, mins: null };
     }
   };
 
@@ -114,7 +114,7 @@ const AcceptOrderModal = ({
       <View style={styles.container}>
         <View style={styles.headerContainer}>
           <AddressLine width={wp(6)} height={hp(7.6)}></AddressLine>
-          <View style={{marginTop: hp(1.5)}}>
+          <View style={{ marginTop: hp(1.5) }}>
             <View style={styles.row}>
               <CustomText style={styles.textAddress} numberOfLines={1}>
                 {pickupLabel}
@@ -164,7 +164,7 @@ const AcceptOrderModal = ({
           )}
         </View>
         <View style={styles.buttonWrapper}>
-          <View style={{width: wp(21), alignItems: 'center',    marginRight:wp(1.5)}}>
+          <View style={{ width: wp(21), alignItems: 'center', marginRight: wp(1.5) }}>
             <CustomText style={styles.textPrice} numberOfLines={1}>
               €{order?.rider_fee}
             </CustomText>
@@ -194,9 +194,10 @@ const styles = StyleSheet.create({
     width: wp(100),
     height: hp(26),
     backgroundColor: colors.white,
-    borderTopLeftRadius: wp(5),
-    borderTopRightRadius: wp(5),
+    borderTopLeftRadius: wp(4),
+    borderTopRightRadius: wp(4),
     paddingBottom: hp(1),
+    elevation: 5
   },
   swipeCapture: {
     flex: 1,
@@ -245,7 +246,7 @@ const styles = StyleSheet.create({
     color: colors.black,
     fontSize: wp(3.5),
     marginLeft: wp(0.1),
-    marginRight:wp(1)
+    marginRight: wp(1)
   },
   durationContainer: {
     width: wp(34),
@@ -257,8 +258,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     flexDirection: 'row',
-    paddingHorizontal:wp(2),
-    overflow:"hidden"
+    paddingHorizontal: wp(2),
+    overflow: "hidden"
   },
   circle: {
     width: wp(2),
@@ -300,6 +301,7 @@ const styles = StyleSheet.create({
     lineHeight: hp(3.5),
     width: wp(23),
     textAlign: 'center',
+    fontWeight: "bold"
   },
   textPrice1: {
     fontSize: wp(4),

@@ -162,6 +162,7 @@ export default function TinderCarousel({
     return out;
   }, [data, stackCount, index.value]);
 
+  console.log(stackOffset)
   return (
     <View style={[styles.root, { height: cardHeight, width: cardWidth }]}>
       {stackItems
@@ -172,7 +173,7 @@ export default function TinderCarousel({
             key={idx}
             item={item}
             idx={idx}
-            layer={layer}
+            layer={1}
             isTop={layer === 0}
             cardHeight={cardHeight}
             tx={tx}
@@ -199,8 +200,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0, // stretch to container width
-    borderRadius: 18,
+    borderRadius: 14,
     overflow: 'hidden',
-    backgroundColor: '#424242da',
+  //backgroundColor: '#adadad15',
   },
 });

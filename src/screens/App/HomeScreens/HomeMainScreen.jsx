@@ -1583,7 +1583,7 @@ const HomeMainScreen = ({ route }) => {
               cardHeight={hp(32.3)}
               stackCount={Math.min(4, data.length)}
               stackScale={0.94}
-              stackOffset={14}
+              stackOffset={19.5}
               onIndexChange={i => {
                 if (i >= data.length) {
                   setShowAcceptOrder(false);
