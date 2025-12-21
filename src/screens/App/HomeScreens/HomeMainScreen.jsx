@@ -66,7 +66,7 @@ import colors from '../../../config/colors';
 import { playDing } from '../../../utils/sounds';
 import CustomText from '../../../components/common/CustomText';
 
-const LOCATION_UPDATE_MS = 30 * 1000;
+const LOCATION_UPDATE_MS = 180 * 1000;
 const MAX_FALLBACK_AGE_MS = 5 * 60 * 1000; // 5 min
 const BG_GPS_TIMEOUT_MS = 5 * 1000; // shorter timeout -> check cache quicker
 const BG_MAXIMUM_AGE_MS = 2 * 60 * 1000; // allow cached fix quickly (2 min)
@@ -1167,26 +1167,21 @@ const HomeMainScreen = ({ route }) => {
           lastLLRef.current = ll;
           lastFreshLocTsRef.current = Date.now();
         },
-        err => {
-          // Watch errors can happen in background; we just keep fallback.
-          console.log('BG watchPosition ERROR', err);
-        },
+        err => { console.log('BG watchPosition ERROR', err); },
         {
           enableHighAccuracy: true,
-          distanceFilter: 0,
-          interval: 10_000,
-          fastestInterval: 5_000,
-          maximumAge: BG_MAXIMUM_AGE_MS,
-          // iOS Background options
+          distanceFilter: 10,       // Only triggers if rider moves > 10m
+          interval: 120000,         // Target 120s interval
+          fastestInterval: 60000,   // Limit updates to no more than once a minute
+          maximumAge: 120000,       // Allow slightly older cached data
           allowsBackgroundLocationUpdates: true,
-          pausesLocationUpdatesAutomatically: false,
+          pausesLocationUpdatesAutomatically: true,
           showsBackgroundLocationIndicator: true,
           activityType: 'AutomotiveNavigation',
         },
       );
 
       bgWatchIdRef.current = id;
-      //console.log('BG watchPosition started id=', id);
     } catch (e) {
       console.log('BG watchPosition start error', e);
     }
@@ -1224,81 +1219,41 @@ const HomeMainScreen = ({ route }) => {
 
   // BACKGROUND: background-actions service
   const backgroundLocationTask = async ({ delay }) => {
-    //console.log('BG task started');
-
-    // ✅ Start watchPosition once (so we always have fresh-ish coords)
     startBgWatch();
 
-    let tick = 0;
-
     try {
-      // eslint-disable-next-line no-constant-condition
       while (BackgroundService.isRunning()) {
-        tick += 1;
-        // console.log('BG loop tick #', tick, 'appState =', appStateRef.current);
+        // 1. Wait 120 seconds
+        await new Promise(r => setTimeout(r, delay || 120000));
 
-        if (appStateRef.current === 'active') {
-          await new Promise(r => setTimeout(r, delay || LOCATION_UPDATE_MS));
-          continue;
-        }
+        if (appStateRef.current === 'active') continue;
 
-        // 0) Calculate freshness of what we have
+        const now = Date.now();
         const lastTs = lastFreshLocTsRef.current || 0;
-        const ageMs = lastTs ? Date.now() - lastTs : Infinity;
+        const ageMs = now - lastTs;
 
-        // ✅ RESTART LOGIC: If watcher seems dead (>30s stale) and we are in background, kick it.
-        if (ageMs > 30_000) {
-          // console.log(`BG: watcher stale (${ageMs}ms), restarting...`);
-          stopBgWatch();
-          startBgWatch();
-          // Give it a moment to try and get a fix
-          await new Promise(r => setTimeout(r, 2000));
-        }
+        let fresh = null;
 
-        // 1) First check our watcher reference (fastest, most reliable in BG if running)
-        let fresh = bgLastCoordsRef.current;
-
-        // 2) If no watcher data (or it's still old), try one-shot High Accuracy
-        if (!fresh || (lastFreshLocTsRef.current && (Date.now() - lastFreshLocTsRef.current > 15000))) {
-          // console.log('BG: watcher empty or old, trying one-shot HIGH accuracy');
+        // 2. Only perform active GPS polling if current data is too old (> 120s)
+        if (ageMs > 120000) {
           fresh = await getBgOneShot(true);
-        }
-
-        // 3) If High Accuracy failed (timeout), force Low Accuracy (Network/WiFi)
-        if (!fresh) {
-          //console.log('BG: HIGH accuracy failed, attempting LOW accuracy fallback');
-          fresh = await getBgOneShot(false);
-        }
-
-        // ✅ If we managed to get a fresh location from one-shot, update our refs so we know we are "alive"
-        if (fresh) {
-          userLocRef.current = fresh;
-          lastFreshLocTsRef.current = Date.now();
-        }
-
-        // 4) If still nothing, fallback to last known refs (may be old)
-        if (!fresh) fresh = userLocRef.current || cameraRef.current || userCoordState;
-
-        // Re-check freshness after all attempts
-        const finalLastTs = lastFreshLocTsRef.current || 0;
-        const finalAgeMs = finalLastTs ? Date.now() - finalLastTs : Infinity;
-
-        // Log decision
-        if (!fresh) {
-          // console.log('BG: no location to send (all sources null)');
-        } else if (!finalLastTs || finalAgeMs > MAX_FALLBACK_AGE_MS) {
-          // console.log('BG: skip send (too old) ageMs=', finalAgeMs);
+          if (fresh) {
+            userLocRef.current = fresh;
+            lastFreshLocTsRef.current = now;
+          }
         } else {
-          // console.log('BG sending location =>', fresh, 'ageMs=', finalAgeMs);
+          // Use data from the 10m watcher
+          fresh = bgLastCoordsRef.current || userLocRef.current;
+        }
+
+        // 3. Post to server
+        if (fresh && ageMs < MAX_FALLBACK_AGE_MS) {
           postLocation(fresh, 'bg');
         }
-
-        await new Promise(r => setTimeout(r, delay || LOCATION_UPDATE_MS));
       }
     } catch (err) {
       console.log('BG task CRASHED', err);
     } finally {
-      // console.log('BG task stopping');
       stopBgWatch();
     }
   };
