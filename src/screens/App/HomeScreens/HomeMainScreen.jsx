@@ -66,7 +66,7 @@ import colors from '../../../config/colors';
 import { playDing } from '../../../utils/sounds';
 import CustomText from '../../../components/common/CustomText';
 
-const LOCATION_UPDATE_MS = 180 * 1000;
+const LOCATION_UPDATE_MS = 120 * 1000;
 const MAX_FALLBACK_AGE_MS = 5 * 60 * 1000; // 5 min
 const BG_GPS_TIMEOUT_MS = 5 * 1000; // shorter timeout -> check cache quicker
 const BG_MAXIMUM_AGE_MS = 2 * 60 * 1000; // allow cached fix quickly (2 min)
@@ -288,42 +288,36 @@ const HomeMainScreen = ({ route }) => {
 
   /* ───────── AppState + background service ───────── */
   useEffect(() => {
-    // if (Platform.OS !== 'android') return; // ✅ Removied guard for iOS support
-
-    const handleStateChange = state => {
-      appStateRef.current = state;
-      // console.log('AppState change =>', state, {
-      //   onStatus: config?.selectVehicle?.on_status,
-      //   hasBgLocPerm,
-      // });
-
-      const canRunBG =
-        !!config?.selectVehicle &&
-        config?.selectVehicle?.on_status === 'on' &&
-        hasBgLocPerm;
-
-      if (!canRunBG) {
-        // console.log('Stopping BG: missing vehicle/on_status/bgPerm');
+    const handleStateChange = nextAppState => {
+      // 1. Reconnect Socket and Stop BG Service when coming to Foreground
+      if (appStateRef.current.match(/inactive|background/) && nextAppState === 'active') {
+        connectSocket({
+          baseUrl: parseSocketUrl(user?.socketio).baseUrl,
+          roomId: parseSocketUrl(user?.socketio).roomId
+        });
         stopBackgroundLocation();
-        return;
       }
 
-      if (state === 'active') {
-        // console.log('App active -> stop BG');
-        stopBackgroundLocation();
-      } else if (state === 'background') {
-        if (!BackgroundService.isRunning()) {
-          //console.log('App background -> start BG');
+      // 2. Disconnect Socket and Start BG Service when going to Background
+      if (nextAppState.match(/inactive|background/)) {
+        disconnectSocket(); // Kill socket to save radio power
+
+        const canRunBG =
+          !!config?.selectVehicle &&
+          config?.selectVehicle?.on_status === 'on' &&
+          hasBgLocPerm;
+
+        if (canRunBG && !BackgroundService.isRunning()) {
           startBackgroundLocation();
-        } else {
-          //console.log('App background but BG already running');
         }
       }
+
+      appStateRef.current = nextAppState;
     };
 
     const sub = AppState.addEventListener('change', handleStateChange);
     return () => sub.remove();
-  }, [config?.selectVehicle?.on_status, hasBgLocPerm]);
+  }, [config?.selectVehicle?.on_status, hasBgLocPerm, user?.socketio]);
 
   useEffect(() => {
     selectedOrderRef.current = selectedOrder;
