@@ -179,11 +179,13 @@ const LoginEmail = props => {
   const handleGoogleLogin = async () => {
     try {
       setLoading(true);
+
       if (Platform.OS === 'android') {
         await GoogleSignin.hasPlayServices({
           showPlayServicesUpdateDialog: true,
         });
       }
+      await GoogleSignin.signOut();
       const userInfo = await GoogleSignin.signIn();
       const token = await GoogleSignin.getTokens();
 
@@ -199,9 +201,7 @@ const LoginEmail = props => {
       );
 
       if (response?.data?.status) {
-        if (response?.data?.data) {
-          dispatch(login(response?.data?.data));
-        }
+        dispatch(login(response?.data?.data));
         showToast(response?.data?.message);
       } else {
         errorHandler(response);
@@ -212,6 +212,7 @@ const LoginEmail = props => {
       setLoading(false);
     }
   };
+
 
   const handleAppleLogin = async () => {
     try {

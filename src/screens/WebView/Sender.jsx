@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect} from 'react';
+import React, { useCallback, useEffect } from 'react';
 import {
   View,
   SafeAreaView,
@@ -6,8 +6,8 @@ import {
   Platform,
   StatusBar,
 } from 'react-native';
-import {WebView} from 'react-native-webview';
-import {useDispatch, useSelector} from 'react-redux';
+import { WebView } from 'react-native-webview';
+import { useDispatch, useSelector } from 'react-redux';
 
 import colors from '../../config/colors';
 import {
@@ -15,7 +15,7 @@ import {
   authenticated,
 } from '../../redux/reducers/authenticationReducer';
 
-export default function Sender({route}) {
+export default function Sender({ route }) {
   const dispatch = useDispatch();
   const user = useSelector(authenticated);
 
@@ -25,23 +25,26 @@ export default function Sender({route}) {
       if (data?.type === 'LOGOUT') {
         dispatch(logout());
       }
-    } catch {}
-  }, []);
+    } catch { }
+  }, [user]);
 
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.screen}>
-        <View style={{flex: 1}}>
+        <View style={{ flex: 1 }}>
           {user?.social_auth_callback_url && (
             <WebView
-              key="only-web"
-              style={{flex: 1}}
-              source={{uri: user?.social_auth_callback_url}}
+              key={user?.user_id || 'guest'}
+              style={{ flex: 1 }}
+              source={{ uri: user?.social_auth_callback_url }}
               javaScriptEnabled
               onMessage={onMessage}
-              domStorageEnabled
               allowsInlineMediaPlayback
               mediaPlaybackRequiresUserAction={false}
+              incognito
+              cacheEnabled={false}
+              thirdPartyCookiesEnabled={false}
+              domStorageEnabled={false}
             />
           )}
         </View>

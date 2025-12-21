@@ -56,6 +56,8 @@ export default function SignUpSender({ route }) {
           showPlayServicesUpdateDialog: true,
         });
       }
+      await GoogleSignin.signOut();
+
       const userInfo = await GoogleSignin.signIn();
       const token = await GoogleSignin.getTokens();
 
@@ -89,14 +91,17 @@ export default function SignUpSender({ route }) {
       <SafeAreaView style={styles.screen}>
         <View style={{ flex: 1 }}>
           <WebView
-            key="only-web"
+            key={user?.user_id || 'guest'}
             style={{ flex: 1 }}
             source={{ uri: 'https://s.riderx.me/register' }}
             javaScriptEnabled
             onMessage={onMessage}
-            domStorageEnabled
             allowsInlineMediaPlayback
             mediaPlaybackRequiresUserAction={false}
+            incognito
+            cacheEnabled={false}
+            thirdPartyCookiesEnabled={false}
+            domStorageEnabled={false}
           />
         </View>
       </SafeAreaView>
