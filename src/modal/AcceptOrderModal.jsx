@@ -192,7 +192,7 @@ export default memo(AcceptOrderModal);
 const styles = StyleSheet.create({
   container: {
     width: wp(100),
-    height: hp(26),
+    // height: hp(26),
     backgroundColor: colors.white,
     borderTopLeftRadius: wp(4),
     borderTopRightRadius: wp(4),
@@ -207,8 +207,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     marginHorizontal: wp(4),
-    marginTop: hp(1),
-    height: hp(4),
+    marginTop: hp(1)
   },
   textTag: {
     color: colors.neutral700,
@@ -280,9 +279,10 @@ const styles = StyleSheet.create({
   },
   buttonWrapper: {
     marginLeft: wp(2),
-    marginTop: hp(0.6),
+    marginTop: hp(2),
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: hp(2)
   },
   button: {
     flex: 1,

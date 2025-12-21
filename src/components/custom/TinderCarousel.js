@@ -162,7 +162,6 @@ export default function TinderCarousel({
     return out;
   }, [data, stackCount, index.value]);
 
-  console.log(stackOffset)
   return (
     <View style={[styles.root, { height: cardHeight, width: cardWidth }]}>
       {stackItems
