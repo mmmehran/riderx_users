@@ -96,3 +96,4 @@ export { default as DepositIcon } from "./depositIcon.svg";
 export { default as CashOutIcon } from "./cashOutIcon.svg";
 export { default as Settings } from "./settings.svg";
 export { default as MapIcon } from "./mapIcon.svg";
+export { default as MapArrow } from "./mapArrow.svg";

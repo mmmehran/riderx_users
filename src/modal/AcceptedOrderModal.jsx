@@ -132,10 +132,10 @@ const AcceptedOrderModal = ({ order, changeOrder, loading, insets, onModalPositi
           <PinLocation width={wp(4)} height={wp(4)}></PinLocation>
           <View style={[styles.rowText, { marginLeft: wp(0.9) }]}>
             <CustomText style={styles.textInfo1}>{t('address')}:</CustomText>
-            <CustomText style={styles.textInfo} numberOfLines={10}>
+            <CustomText style={[styles.textInfo, { maxWidth: wp(75), lineHeight: hp(2.3) }]} numberOfLines={4}>
               {(order?.status !== 'pickup'
-                ? order?.sender_address_json?.street
-                : order?.receiver_address_json?.street) ?? '-'}
+                ? order?.sender_address_json?.full_address
+                : order?.receiver_address_json?.full_address) ?? '-'}
             </CustomText>
           </View>
         </View>
@@ -143,7 +143,7 @@ const AcceptedOrderModal = ({ order, changeOrder, loading, insets, onModalPositi
           <>
             <View style={styles.addressContainer}>
               <View style={styles.rowTextContainer}>
-                <View style={styles.rowText}>
+                {/* <View style={styles.rowText}>
                   <CustomText style={styles.textInfo1}>
                     {t('postalCode')}:
                   </CustomText>
@@ -152,7 +152,7 @@ const AcceptedOrderModal = ({ order, changeOrder, loading, insets, onModalPositi
                       ? order?.sender_address_json?.postal_code
                       : order?.receiver_address_json?.postal_code) ?? '-'}
                   </CustomText>
-                </View>
+                </View> */}
                 <View style={styles.rowText}>
                   <CustomText style={styles.textInfo1}>
                     {t('houseNumber')}:
@@ -191,27 +191,28 @@ const AcceptedOrderModal = ({ order, changeOrder, loading, insets, onModalPositi
                       : order?.receiver_address_json?.apartment_door) ?? '-'}
                   </CustomText>
                 </View>
-                <View style={styles.rowText}>
-                  <CustomText style={styles.textInfo1}>
-                    {t('Extradetails')}:
-                  </CustomText>
-                  <CustomText style={[styles.textInfo, { width: wp(70), lineHeight: hp(2.5) }]}>
-                    {(order?.status !== 'pickup'
-                      ? order?.sender_address_json?.address_extra_details
-                      : order?.receiver_address_json?.address_extra_details) ??
-                      '-'}
-                  </CustomText>
-                </View>
+                {(order?.sender_address_json?.address_extra_details ||
+                  order?.receiver_address_json?.address_extra_details) && <View style={styles.rowText}>
+                    <CustomText style={styles.textInfo1}>
+                      {t('Extradetails')}:
+                    </CustomText>
+                    <CustomText style={[styles.textInfo, { width: wp(70), lineHeight: hp(2.5) }]}>
+                      {(order?.status !== 'pickup'
+                        ? order?.sender_address_json?.address_extra_details
+                        : order?.receiver_address_json?.address_extra_details) ??
+                        '-'}
+                    </CustomText>
+                  </View>}
               </View>
             </View>
-            <View style={{ alignItems: "flex-end", marginRight: wp(3), marginBottom: hp(1.5) }}>
+            {/* <View style={{ alignItems: "flex-end", marginRight: wp(3), marginBottom: hp(1.5) }}>
               <TouchableOpacity onPress={openMaps} style={[styles.buttonCall, { backgroundColor: colors.black }]}>
                 <MapIcon width={wp(5)} height={wp(5)}></MapIcon>
               </TouchableOpacity>
-            </View>
+            </View> */}
             {order?.status == 'accepted' && order?.sender_phone?.number && (
               <View style={{ flexDirection: "row" }}>
-                <View style={styles.row}>
+                <View style={[styles.row, { marginBottom: hp(0) }]}>
                   <View style={[styles.row, { marginBottom: 0 }]}>
                     <TinyProfile width={wp(4.5)} height={wp(4.5)}></TinyProfile>
                     <CustomText style={styles.textReciever} numberOfLines={1}>
@@ -226,7 +227,7 @@ const AcceptedOrderModal = ({ order, changeOrder, loading, insets, onModalPositi
             )}
             {order?.status == 'pickup' && order?.receiver_phone?.number && (
               <View style={{ flexDirection: "row" }}>
-                <View style={styles.row}>
+                <View style={[styles.row, { marginBottom: hp(0) }]}>
                   <View style={[styles.row, { marginBottom: 0 }]}>
                     <TinyProfile width={wp(4.5)} height={wp(4.5)}></TinyProfile>
                     <CustomText style={styles.textReciever} numberOfLines={1}>
@@ -348,11 +349,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.neutral100,
     marginHorizontal: wp(4.5),
     marginBottom: hp(1.5),
-    marginTop: hp(1),
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: wp(3),
+    marginTop: hp(1)
   },
   rowTime: {
     flexDirection: 'row',
@@ -494,7 +495,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    height: hp(10),
+    height: hp(9),
     backgroundColor: colors.neutral100,
   },
   text: {

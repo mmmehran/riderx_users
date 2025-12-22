@@ -1386,7 +1386,7 @@ const HomeMainScreen = ({ route }) => {
   return (
     <>
       <View style={[styles.container, isAndroid15Plus && { marginBottom: hp(6) }]}>
-        <CustomHeader onRefreshPress={onPressMyLocation} />
+        <CustomHeader onRefreshPress={onPressMyLocation} order={selectedOrder} />
 
         <View style={styles.mapWrap}>
           {hasLocPerm ? (
