@@ -33,7 +33,7 @@ import SelectVehicleModal from '../../../modal/SelectVehicleModal';
 import TinderCarousel from '../../../components/custom/TinderCarousel';
 import { MAP_BOX_TOKEN } from '@env';
 
-import { LocationPin, Update } from '../../../../assets/svg/index';
+import { LocationPin, Update, ArrowRightWhite1 } from '../../../../assets/svg/index';
 import CustomHeader from '../../../components/custom/CustomHeader';
 import CustomAvailableRider from '../../../components/custom/CustomAvailableRider';
 import { getData, sendData } from '../../../services/common.service';
@@ -1396,7 +1396,12 @@ const HomeMainScreen = ({ route }) => {
     <>
       <View style={[styles.container, isAndroid15Plus && { marginBottom: hp(6) }]}>
         <CustomHeader onRefreshPress={onPressMyLocation} order={selectedOrder} />
-
+        <TouchableOpacity activeOpacity={0.7} style={styles.nextTripContainer}>
+          <CustomText style={styles.textTrip}>{t("nextTrip")}</CustomText>
+          <View style={{ marginTop: hp(0.2) }}>
+            <ArrowRightWhite1 width={wp(6)} height={wp(6)} />
+          </View>
+        </TouchableOpacity>
         <View style={styles.mapWrap}>
           {hasLocPerm ? (
             <>
@@ -1639,6 +1644,27 @@ export default HomeMainScreen;
 
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  nextTripContainer: {
+    width: wp(50),
+    height: hp(4.8),
+    backgroundColor: colors.black,
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: wp(2.5),
+    borderColor: colors.neonYellow,
+    borderWidth: wp(0.6),
+    position: "absolute",
+    top: hp(11),
+    left: wp(4),
+    zIndex: 999,
+    flexDirection: "row"
+  },
+  textTrip: {
+    color: colors.white,
+    fontSize: wp(4),
+    fontWeight: "bold",
+    marginRight: wp(1)
+  },
   button1: {
     width: wp(10.5),
     height: wp(10.5),
@@ -1666,7 +1692,7 @@ const styles = StyleSheet.create({
   map: { width: wp(100), height: hp(100) },
   overlay: {
     position: 'absolute',
-    top: hp(11),
+    top: hp(15),
     left: wp(2.3),
     right: wp(2.3),
     bottom: 0,
