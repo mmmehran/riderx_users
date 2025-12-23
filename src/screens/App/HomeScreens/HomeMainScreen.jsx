@@ -10,7 +10,10 @@ import {
   BackHandler,
   ToastAndroid,
   Image,
+  Animated,
 } from 'react-native';
+
+const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
@@ -1390,18 +1393,37 @@ const HomeMainScreen = ({ route }) => {
   const etaMinutes =
     etaSec != null && Number.isFinite(etaSec) ? Math.max(1, Math.round(etaSec / 60)) : null;
 
-  console.log(banner.distance)
   /* ───────── Render ───────── */
+  const slideAnim = useRef(new Animated.Value(-wp(100))).current;
+
+  useEffect(() => {
+    Animated.sequence([
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 1300,
+        useNativeDriver: true,
+      }),
+      Animated.delay(8000),
+      Animated.timing(slideAnim, {
+        toValue: wp(100),
+        duration: 500,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
   return (
     <>
       <View style={[styles.container, isAndroid15Plus && { marginBottom: hp(6) }]}>
         <CustomHeader onRefreshPress={onPressMyLocation} order={selectedOrder} />
-        <TouchableOpacity activeOpacity={0.7} style={styles.nextTripContainer}>
+        <AnimatedTouchableOpacity
+          activeOpacity={0.7}
+          style={[styles.nextTripContainer, { transform: [{ translateX: slideAnim }] }]}>
           <CustomText style={styles.textTrip}>{t("nextTrip")}</CustomText>
           <View style={{ marginTop: hp(0.2) }}>
             <ArrowRightWhite1 width={wp(6)} height={wp(6)} />
           </View>
-        </TouchableOpacity>
+        </AnimatedTouchableOpacity>
         <View style={styles.mapWrap}>
           {hasLocPerm ? (
             <>
@@ -1497,9 +1519,6 @@ const HomeMainScreen = ({ route }) => {
           ) : (
             <View style={styles.map} />
           )}
-
-
-
           <View style={styles.overlay} pointerEvents="box-none">
             {banner?.primary ? (
               <View style={styles.banner} pointerEvents="none">
