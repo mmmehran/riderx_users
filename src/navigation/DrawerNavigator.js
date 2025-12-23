@@ -20,6 +20,7 @@ import EditMyAccount from '../screens/Drawer/EditMyAccount'
 import AppSettings from '../screens/Drawer/AppSettings'
 import SelectExternalMap from '../screens/Drawer/SelectExternalMap'
 import SelectMapStyle from '../screens/Drawer/SelectMapStyle'
+import MultiOrder from '../screens/Drawer/MultiOrder'
 
 const Drawer = createDrawerNavigator();
 
@@ -49,6 +50,11 @@ const DrawerNavigator = () => {
             <Drawer.Screen
                 name={routes.CHOOSESERVICE}
                 component={ChooseTheService}
+                options={{ fullScreenGestureEnabled: false }}
+            />
+            <Drawer.Screen
+                name={routes.NEXTTRIP}
+                component={MultiOrder}
                 options={{ fullScreenGestureEnabled: false }}
             />
             <Drawer.Screen

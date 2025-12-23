@@ -24,7 +24,8 @@ export default Object.freeze({
     EDITMYACCOUNT:"editMyAccount",
     APPSETTINGS:"appSettings",
     SELECTEXTERNALMAP:"selectExternalMap",
-    MAPSTYLE:"mapStyle"
+    MAPSTYLE:"mapStyle",
+    NEXTTRIP:"nextTrip"
    
 
  

@@ -1418,6 +1418,7 @@ const HomeMainScreen = ({ route }) => {
         <CustomHeader onRefreshPress={onPressMyLocation} order={selectedOrder} />
         <AnimatedTouchableOpacity
           activeOpacity={0.7}
+          onPress={() => navigation.navigate(routes.NEXTTRIP)}
           style={[styles.nextTripContainer, { transform: [{ translateX: slideAnim }] }]}>
           <CustomText style={styles.textTrip}>{t("nextTrip")}</CustomText>
           <View style={{ marginTop: hp(0.2) }}>
