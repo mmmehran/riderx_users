@@ -1379,9 +1379,18 @@ const HomeMainScreen = ({ route }) => {
     if (config?.selectVehicle) getVehicleStatus();
   }, []);
 
+
+  const formatDistance = (distanceInMeters) => {
+    if (distanceInMeters >= 1000) {
+      return (distanceInMeters / 1000).toFixed(1) + ' km';
+    }
+    return distanceInMeters + ' m';
+  }
+
   const etaMinutes =
     etaSec != null && Number.isFinite(etaSec) ? Math.max(1, Math.round(etaSec / 60)) : null;
 
+  console.log(banner.distance)
   /* ───────── Render ───────── */
   return (
     <>
@@ -1484,13 +1493,15 @@ const HomeMainScreen = ({ route }) => {
             <View style={styles.map} />
           )}
 
+
+
           <View style={styles.overlay} pointerEvents="box-none">
             {banner?.primary ? (
               <View style={styles.banner} pointerEvents="none">
                 <CustomText style={styles.bannerTitle}>{banner.primary}</CustomText>
                 {!!banner.distance && (
                   <CustomText style={styles.bannerSub}>
-                    {banner.distance} m{etaMinutes != null ? `  •  ~${etaMinutes} min` : ''}
+                    {formatDistance(banner.distance)} {etaMinutes != null ? `  •  ~${etaMinutes} min` : ''}
                   </CustomText>
                 )}
               </View>
