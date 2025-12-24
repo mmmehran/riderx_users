@@ -1393,6 +1393,7 @@ const HomeMainScreen = ({ route }) => {
             <>
               <Mapbox.MapView
                 key={mapMountKey}
+                scaleBarEnabled={false}
                 styleURL={config?.mapStyle == 'dark' ? Mapbox.StyleURL.Dark : Mapbox.StyleURL.Light}
                 zoomEnabled
                 rotateEnabled
