@@ -12,7 +12,9 @@ const initialStateObject = {
    profile_image:null,
    email_verified:null,
    is_rider:null,
-   sender_panel_direct_login_url:null,
+   social_auth_callback_url:null,
+   wallet:null,
+   language:null
 };
 
 export const selectAuthenticated = (state) => state.auth.authenticated;
@@ -28,18 +30,25 @@ export const authenticationSlice = createSlice({
             token: action.payload?.token,
             user_id: action.payload?.user_id,
             email: action.payload?.email,
-            phone: `${action.payload?.phone?.country_code}${action.payload?.phone?.number}`,
+            phone: action.payload?.phone ? `${action.payload?.phone?.country_code}${action.payload?.phone?.number}` : null,
             socketio: action.payload?.socketio,
             profile_image: action.payload?.profile_image,
             email_verified: action.payload?.email_verified,
             is_rider: action.payload?.is_rider ? action.payload?.is_rider : false,
-            sender_panel_direct_login_url: action.payload?.sender_panel_direct_login_url ? action.payload?.sender_panel_direct_login_url :  `https://s.riderx.me/direct_login?token=${action.payload?.token}`,
+            social_auth_callback_url: action.payload?.social_auth_callback_url ,
+            language: action.payload?.language,
          };
       },
       setUserProfile: (state, action) => {
          return {
            ...state,
             userProfile: action.payload,
+         };
+      },
+      setUserWallet: (state, action) => {
+         return {
+           ...state,
+            wallet: action.payload,
          };
       },
       logout: () => {
@@ -51,7 +60,8 @@ export const authenticationSlice = createSlice({
 export const {
    login,
    logout,
-   setUserProfile
+   setUserProfile,
+   setUserWallet
 } = authenticationSlice.actions;
 
 export default authenticationSlice.reducer;

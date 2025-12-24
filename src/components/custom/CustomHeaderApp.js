@@ -4,26 +4,24 @@ import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-nat
 import { useNavigation } from "@react-navigation/native";
 
 import colors from '../../config/colors';
-import {  ArrowLeft } from '../../../assets/svg';
+import {  ArrowLeft1 } from '../../../assets/svg';
 import CustomText from '../common/CustomText';
 
-const CustomHeaderApp = ({title}) => {
+const CustomHeaderApp = ({title,backPress}) => {
     const navigation = useNavigation();
 
     return (
         <View style={styles.container}>
             <View style={styles.left}>
-                <TouchableOpacity
-                    onPress={() => navigation.goBack()}
-                    style={styles.button}>
-                    <ArrowLeft width={wp(5)} height={wp(5)}></ArrowLeft>
-                </TouchableOpacity>
+                 <TouchableOpacity
+                         activeOpacity={0.6}
+                         onPress={backPress ? backPress :  () => navigation.goBack()}
+                         style={styles.button}>
+                         <ArrowLeft1 width={wp(3.5)} height={wp(3.5)}></ArrowLeft1>
+                       </TouchableOpacity>
             </View>
             <View style={styles.center}>
                 <CustomText style={styles.text}>{title}</CustomText>
-            </View>
-            <View style={[styles.left, { alignItems: "flex-end" }]}>
-               
             </View>
         </View>
     )
@@ -34,32 +32,31 @@ export default CustomHeaderApp
 const styles = StyleSheet.create({
     container: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
-        height: hp(6),
         marginVertical: hp(1)
     },
     left: {
-        flex: 1,
-        marginHorizontal: wp(6),
+        marginLeft: wp(4.5),
         justifyContent: 'center',
     },
     center: {
-        flex: 2,
         justifyContent: 'center',
-        alignItems: 'center',
+        alignItems: "flex-start",
+        marginLeft:wp(3)
     },
     button: {
-        width: wp(9),
-        height: wp(9),
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderRadius: wp(50),
-        backgroundColor: "rgba(136, 136, 136, 0.1)",
+       width: wp(8.5),
+    height: wp(8.5),
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: wp(2),
+    backgroundColor: colors.white,
+    borderColor: colors.neutral200,
+    borderWidth: wp(0.4),
     },
     text:{
         fontSize: wp(6),
-        color: colors.black,
-        fontWeight: '900',
-        textAlign: 'center',
+        color: colors.neutral800,
+    fontFamily: 'YaldeviJaffna-Bold',
+        textAlign: 'left',
     }
 });

@@ -87,13 +87,13 @@ const styles = StyleSheet.create({
     },
     input: {
         height: hp(6),
-        color: colors.lightGray,
+        color: colors.neutral900,
         textAlign: "left",
         width: wp(76),
         paddingRight: wp(4),
         paddingLeft: wp(2),
-        fontSize: wp(3.5),
-        fontFamily: "Poppins-Regular",
+        fontSize: wp(3.8),
+        fontFamily: "YaldeviJaffna-Medium",
         paddingTop: hp(1.5),
     },
     disableContainer: {

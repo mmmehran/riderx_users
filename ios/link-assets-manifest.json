@@ -1,0 +1,65 @@
+{
+  "migIndex": 1,
+  "data": [
+    {
+      "path": "assets/fonts/Poppins-Black.ttf",
+      "sha1": "7b805dfef616d972afcc171f406ed149c1750f41"
+    },
+    {
+      "path": "assets/fonts/Poppins-Bold.ttf",
+      "sha1": "b612d86d9ef71f867574631ccb0794d4d5ea90e1"
+    },
+    {
+      "path": "assets/fonts/Poppins-ExtraBold.ttf",
+      "sha1": "3ca43a0fc9dc1adf4963e6323f75e711563a0868"
+    },
+    {
+      "path": "assets/fonts/Poppins-ExtraLight.ttf",
+      "sha1": "c983cd04f0d8c5bd446cd8077a069011d51debc0"
+    },
+    {
+      "path": "assets/fonts/Poppins-Light.ttf",
+      "sha1": "6ff06458d3d43689b881408d4d30d18989037e65"
+    },
+    {
+      "path": "assets/fonts/Poppins-Medium.ttf",
+      "sha1": "f98ef566867c22be01c47d2f38649b973c133179"
+    },
+    {
+      "path": "assets/fonts/Poppins-Regular.ttf",
+      "sha1": "865b817e8ed688b86ee961d6a10d02aa08bd87fd"
+    },
+    {
+      "path": "assets/fonts/Poppins-SemiBold.ttf",
+      "sha1": "f2e5d92bb6e88eaf0117b0f5ff7266838c34fe2b"
+    },
+    {
+      "path": "assets/fonts/Poppins-Thin.ttf",
+      "sha1": "f0dd82514aff59a8c94e47327b40871486605b5a"
+    },
+    {
+      "path": "assets/fonts/YaldeviJaffna-Bold.ttf",
+      "sha1": "843ee441546b4e01f49046a8d3f9422044a85052"
+    },
+    {
+      "path": "assets/fonts/YaldeviJaffna-ExtraLight.ttf",
+      "sha1": "fceb97b6f797d62253aa267c3349c5abbc681653"
+    },
+    {
+      "path": "assets/fonts/YaldeviJaffna-Light.ttf",
+      "sha1": "a12d6c0e7679b613c623734620efad66fe940f55"
+    },
+    {
+      "path": "assets/fonts/YaldeviJaffna-Medium.ttf",
+      "sha1": "d4a274106a3dcd1139ffc85f390f2f74104c306a"
+    },
+    {
+      "path": "assets/fonts/YaldeviJaffna-Regular.ttf",
+      "sha1": "7944584c7b858bfb633f2bda12a7ba7040d66146"
+    },
+    {
+      "path": "assets/fonts/YaldeviJaffna-SemiBold.ttf",
+      "sha1": "1527538ef73832de7fea40d9b5fda6d9f4f37ab7"
+    }
+  ]
+}

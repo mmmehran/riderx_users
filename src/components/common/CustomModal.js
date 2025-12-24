@@ -6,7 +6,8 @@ const CustomModal = ({
 	isVisible,
 	onBackdropPress,
 	backdropOpacity = 0.7,
-	style
+	style,
+	...props
 }) => {
 	return (
 		<Modal
@@ -17,6 +18,7 @@ const CustomModal = ({
 			style={style ? style : { alignItems: "center", justifyContent: "center" }}
   			animationInTiming={300}
 			animationOutTiming={300}
+			{...props}
 		>
 			{children}
 		</Modal>

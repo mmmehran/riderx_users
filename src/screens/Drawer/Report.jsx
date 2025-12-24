@@ -170,9 +170,10 @@ const Report = () => {
       </View>
     ) : null;
 
+
   return (
     <CustomScreen>
-      <CustomHeaderApp title={t('report')} />
+      <CustomHeaderApp title={t('tripHistory')} />
       <View style={styles.sortContainer}>
         <TouchableOpacity
           style={[styles.sort, {width: wp(33)}]}
@@ -183,9 +184,10 @@ const Report = () => {
             {selectedStatusLabel}
           </CustomText>
           <View style={styles.arrowContainer}>
-            <ArrowDown width={wp(4)} height={wp(4)} />
+            <ArrowDown width={wp(3)} height={wp(3)} />
           </View>
         </TouchableOpacity>
+        <View style={styles.line}></View>
         <TouchableOpacity
           style={[styles.sort, {width: wp(36)}]}
           onPress={() => setShowVehicleModal(true)}>
@@ -195,9 +197,10 @@ const Report = () => {
             {selectedVehicleLabel}
           </CustomText>
           <View style={styles.arrowContainer}>
-            <ArrowDown width={wp(4)} height={wp(4)} />
+            <ArrowDown width={wp(3)} height={wp(3)} />
           </View>
         </TouchableOpacity>
+                <View style={styles.line}></View>
         <TouchableOpacity style={[styles.sort]} onPress={clearAll}>
           <CustomText style={styles.textsort}>{t('clearAll')}</CustomText>
         </TouchableOpacity>
@@ -284,17 +287,26 @@ export default Report;
 const styles = StyleSheet.create({
   sortContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     alignItems: 'center',
-    marginHorizontal: wp(2.5),
+    marginHorizontal: wp(5),
+    borderColor:colors.neutral100,
+    borderWidth:wp(0.3),
+    borderRadius:wp(2),
+    marginTop:hp(2)
   },
   noDataContainer: {
     alignItems: 'center',
     marginTop: hp(2),
   },
+  line:{
+    width:wp(0.3),
+    height:hp(4),
+    backgroundColor:colors.neutral100
+  },
   sort: {
     height: hp(4),
-    backgroundColor: 'rgba(217,217,217,0.5)',
+    backgroundColor: 'transparent',
     borderRadius: wp(50),
     justifyContent: 'center',
     alignItems: 'center',
@@ -302,12 +314,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: wp(2),
   },
   textsort: {
-    color: 'rgba(55,55,55,0.8)',
-    fontWeight: 'bold',
-    marginRight: wp(2),
+    color: colors.neutral900,
+    fontFamily: 'YaldeviJaffna-Bold',
+    fontSize:wp(3.8)
   },
   arrowContainer: {marginTop: hp(0.5)},
-  listContainer: {marginTop: hp(2)},
+  listContainer: {marginTop: hp(1.5)},
 
   backdrop: {
     position: 'absolute',

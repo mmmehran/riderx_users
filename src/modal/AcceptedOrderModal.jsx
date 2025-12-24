@@ -1,33 +1,39 @@
-import React, {memo, useState} from 'react';
-import {StyleSheet, View, TouchableOpacity, Linking, Alert} from 'react-native';
+import React, { memo, useState } from 'react';
+import { StyleSheet, View, TouchableOpacity, Linking, Alert, Platform } from 'react-native';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
-import SwipeButton from 'rn-swipe-button';
-import {useTranslation} from 'react-i18next';
+import SwipeButton from '../components/common/SwipeButton';
+import { useTranslation } from 'react-i18next';
 
 import colors from '../config/colors';
 import CustomText from '../components/common/CustomText';
 import {
-  MessageIcon,
-  CallIcon,
-  OpenMap,
-  Message,
-  PhoneCall,
+  ArrowUp,
+  CancelIcon,
+  TinyProfile,
+  PhoneIcon,
+  PinLocation,
+  ClockIcon,
+  MessageIcon1,
+  MapIcon
 } from '../../assets/svg/index';
-import {openGoogleMaps} from '../utils/googleMapsNavigator';
-import {isAndroid15Plus} from '../utils/helpers';
+import { normalizeLabel, timeAgoShort, isAndroid15Plus } from '../utils/helpers';
+import { openExternalMap } from '../utils/externalMap';
+import { useSelector } from 'react-redux';
+import { selectConfig } from '../redux/reducers/configReducer';
 
-const AcceptedOrderModal = ({order, changeOrder, loading, insets}) => {
-  const [showAddress, SetShowAddress] = useState(false);
-  const {t} = useTranslation();
 
-  const phoneNumber = `tel:${
-    order?.status !== 'pickup'
-      ? `+${order?.sender_phone?.country_code}${order?.sender_phone?.number}`
-      : `+${order?.receiver_phone?.country_code}${order?.receiver_phone?.number}`
-  }`;
+const AcceptedOrderModal = ({ order, changeOrder, loading, insets, onModalPosition }) => {
+  const { t } = useTranslation();
+  const [less, setLess] = useState(false);
+  const config = useSelector(selectConfig);
+
+  const phoneNumber = `tel:${order?.status !== 'pickup'
+    ? `+${order?.sender_phone?.country_code}${order?.sender_phone?.number}`
+    : `+${order?.receiver_phone?.country_code}${order?.receiver_phone?.number}`
+    }`;
 
   const makeCall = async () => {
     try {
@@ -42,11 +48,13 @@ const AcceptedOrderModal = ({order, changeOrder, loading, insets}) => {
     }
   };
 
-  const phoneNumberSms = `sms:${
-    order?.status !== 'pickup'
-      ? `+${order?.sender_phone?.country_code}${order?.sender_phone?.number}`
-      : `+${order?.receiver_phone?.country_code}${order?.receiver_phone?.number}`
-  }?body=Hello, this is a test message!`;
+
+
+
+  const phoneNumberSms = `sms:${order?.status !== 'pickup'
+    ? `+${order?.sender_phone?.country_code}${order?.sender_phone?.number}`
+    : `+${order?.receiver_phone?.country_code}${order?.receiver_phone?.number}`
+    }?body=Hello, this is a test message!`;
 
   const sendSms = async () => {
     try {
@@ -61,167 +69,242 @@ const AcceptedOrderModal = ({order, changeOrder, loading, insets}) => {
     }
   };
 
+  const openMaps = async () => {
+    const lat =
+      order?.status !== 'pickup'
+        ? order?.sender_latitude
+        : order?.receiver_latitude;
+    const lng =
+      order?.status !== 'pickup'
+        ? order?.sender_longitude
+        : order?.receiver_longitude;
+    const label = order?.status !== 'pickup' ? 'Pickup' : 'Dropoff';
+
+    // default: iOS -> apple, Android -> google
+    const app =
+      config?.externalMap ||
+      (Platform.OS === 'ios' ? 'apple' : 'google');
+
+    if (!lat || !lng) {
+      Alert.alert('Error', 'Location coordinates not available.');
+      return;
+    }
+
+    try {
+      await openExternalMap(app, lat, lng, label);
+    } catch (err) {
+      console.error('Failed to open map:', err);
+      Alert.alert('Error', t('mapAppNotInstalled', { app }));
+    }
+  };
+
+
   return (
     <View style={styles.modal}>
       <View
-        style={[
-          styles.container,
-          isAndroid15Plus && {
-            bottom: hp(insets.bottom * 0.18),
-          },
-        ]}>
+        style={[styles.container, isAndroid15Plus && { marginBottom: hp(6) }]}>
         <View style={styles.userContainer}>
-          <CustomText style={styles.text} numberOfLines={1}>
-            {order?.status !== 'pickup'
-              ? order?.sender_full_name
-              : order?.receiver_full_name}
-          </CustomText>
-        </View>
-        <View
-          style={[
-            styles.userContainer,
-            {flexDirection: 'column', marginTop: hp(0.5)},
-          ]}>
-          <View style={styles.textContainer}>
-            <CustomText
-              style={styles.textInfo}
-              numberOfLines={showAddress ? 10 : 2}>
-              {t('address')}:{' '}
-              {order?.status !== 'pickup'
-                ? order?.sender_address_json?.street +
-                  ' ' +
-                  order?.sender_address_json?.house_number +
-                  ', ' +
-                  order?.sender_address_json?.postal_code
-                : order?.receiver_address_json?.street +
-                  ' ' +
-                  order?.receiver_address_json?.house_number +
-                  ', ' +
-                  order?.receiver_address_json?.postal_code}
+          <View style={styles.imageContainer}></View>
+          <View>
+            <CustomText style={styles.text} numberOfLines={1}>
+              {order?.sender?.first_name + ' ' + order?.sender?.last_name}
             </CustomText>
-            <TouchableOpacity onPress={() => SetShowAddress(!showAddress)}>
-              <CustomText style={styles.moreText}>
-                {!showAddress ? t('moreInfo') : t('lessInfo')}
+            <View style={styles.rowTime}>
+              <ClockIcon width={wp(4.4)} height={wp(4.4)}></ClockIcon>
+              <CustomText style={styles.textTime}>
+                {timeAgoShort(order?.timestamp)}
               </CustomText>
-            </TouchableOpacity>
-            {showAddress && (
-              <>
-                <CustomText style={styles.textInfo}>
-                  {t('postalCode')} :{' '}
-                  {order?.status !== 'pickup'
-                    ? order?.sender_address_json?.postal_code
-                    : order?.receiver_address_json?.postal_code}
-                </CustomText>
-                <CustomText style={styles.textInfo}>
-                  {t('houseNumber')}:{' '}
-                  {order?.status !== 'pickup'
-                    ? order?.sender_address_json?.house_number
-                    : order?.receiver_address_json?.house_number}
-                </CustomText>
-                <CustomText style={styles.textInfo}>
-                  {t('Entrance')}:{' '}
-                  {order?.status !== 'pickup'
-                    ? order?.sender_address_json?.entrance
-                    : order?.receiver_address_json?.entrance}
-                </CustomText>
-                <CustomText style={styles.textInfo}>
-                  {t('Floor')} :{' '}
-                  {order?.status !== 'pickup'
-                    ? order?.sender_address_json?.floor
-                    : order?.receiver_address_json?.floor}
-                </CustomText>
-                <CustomText style={styles.textInfo}>
-                  {t('Door')}:{' '}
-                  {order?.status !== 'pickup'
-                    ? order?.sender_address_json?.apartment_door
-                    : order?.receiver_address_json?.apartment_door}
-                </CustomText>
-                <CustomText style={styles.textInfo}>
-                  {t('Extradetails')}:{' '}
-                  {order?.status !== 'pickup'
-                    ? order?.sender_address_json?.address_extra_details
-                    : order?.receiver_address_json?.address_extra_details}
-                </CustomText>
-                <CustomText style={styles.textType}>
-                  {t('PackageType')}: {order?.delivery_package?.title}
-                </CustomText>
-                <View style={styles.iconContainer}>
-                  {order?.status == 'pickup' &&
-                    order?.receiver_phone?.number && (
-                      <>
-                        <TouchableOpacity
-                          onPress={sendSms}
-                          style={styles.buttonIcon}>
-                          <Message width={wp(7)} height={wp(7)} />
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          onPress={makeCall}
-                          style={styles.buttonIcon}>
-                          <PhoneCall width={wp(7)} height={wp(7)} />
-                        </TouchableOpacity>
-                      </>
-                    )}
-                  {order?.status == 'accepted' &&
-                    order?.sender_phone?.number && (
-                      <>
-                        <TouchableOpacity
-                          onPress={sendSms}
-                          style={styles.buttonIcon}>
-                          <Message width={wp(7)} height={wp(7)} />
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          onPress={makeCall}
-                          style={styles.buttonIcon}>
-                          <PhoneCall width={wp(7)} height={wp(7)} />
-                        </TouchableOpacity>
-                      </>
-                    )}
-                  <TouchableOpacity
-                    onPress={() => {
-                      openGoogleMaps({
-                        lat:
-                          order?.status !== 'pickup'
-                            ? order.sender_latitude
-                            : order.receiver_latitude,
-                        lng:
-                          order?.status !== 'pickup'
-                            ? order.sender_longitude
-                            : order.receiver_longitude,
-                        label: 'Pickup #1024',
-                        mode: 'd',
-                      });
-                    }}
-                    style={styles.buttonIcon}>
-                    <OpenMap width={wp(8.5)} height={wp(8.5)} />
-                  </TouchableOpacity>
-                </View>
-              </>
-            )}
+            </View>
+          </View>
+          <TouchableOpacity
+            onPress={sendSms}
+            style={[
+              styles.buttonCall1,
+              { backgroundColor: colors.black, marginRight: wp(2) },
+            ]}>
+            <MessageIcon1 width={wp(5)} height={wp(5)}></MessageIcon1>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={makeCall} style={styles.buttonCall1}>
+            <PhoneIcon width={wp(5)} height={wp(5)}></PhoneIcon>
+          </TouchableOpacity>
+        </View>
+        <View style={styles.rowStreet}>
+          <PinLocation width={wp(4)} height={wp(4)}></PinLocation>
+          <View style={[styles.rowText, { marginLeft: wp(0.9) }]}>
+            <CustomText style={styles.textInfo1}>{t('address')}:</CustomText>
+            <CustomText style={[styles.textInfo, { maxWidth: wp(75), lineHeight: hp(2.3) }]} numberOfLines={4}>
+              {(order?.status !== 'pickup'
+                ? order?.sender_address_json?.full_address
+                : order?.receiver_address_json?.full_address) ?? '-'}
+            </CustomText>
           </View>
         </View>
+        {!less && (
+          <>
+            <View style={styles.addressContainer}>
+              <View style={styles.rowTextContainer}>
+                {/* <View style={styles.rowText}>
+                  <CustomText style={styles.textInfo1}>
+                    {t('postalCode')}:
+                  </CustomText>
+                  <CustomText style={styles.textInfo}>
+                    {(order?.status !== 'pickup'
+                      ? order?.sender_address_json?.postal_code
+                      : order?.receiver_address_json?.postal_code) ?? '-'}
+                  </CustomText>
+                </View> */}
+                <View style={styles.rowText}>
+                  <CustomText style={styles.textInfo1}>
+                    {t('houseNumber')}:
+                  </CustomText>
+                  <CustomText style={styles.textInfo}>
+                    {(order?.status !== 'pickup'
+                      ? order?.sender_address_json?.house_number
+                      : order?.receiver_address_json?.house_number) ?? '-'}
+                  </CustomText>
+                </View>
+                <View style={styles.rowText}>
+                  <CustomText style={styles.textInfo1}>
+                    {t('Entrance')}:
+                  </CustomText>
+                  <CustomText style={styles.textInfo}>
+                    {(order?.status !== 'pickup'
+                      ? order?.sender_address_json?.entrance
+                      : order?.receiver_address_json?.entrance) ?? '-'}
+                  </CustomText>
+                </View>
+                <View style={styles.rowText}>
+                  <CustomText style={styles.textInfo1}>
+                    {t('Floor')}:
+                  </CustomText>
+                  <CustomText style={styles.textInfo}>
+                    {(order?.status !== 'pickup'
+                      ? order?.sender_address_json?.floor
+                      : order?.receiver_address_json?.floor) ?? '-'}
+                  </CustomText>
+                </View>
+                <View style={styles.rowText}>
+                  <CustomText style={styles.textInfo1}>{t('Door')}:</CustomText>
+                  <CustomText style={styles.textInfo}>
+                    {(order?.status !== 'pickup'
+                      ? order?.sender_address_json?.apartment_door
+                      : order?.receiver_address_json?.apartment_door) ?? '-'}
+                  </CustomText>
+                </View>
+                {(order?.sender_address_json?.address_extra_details ||
+                  order?.receiver_address_json?.address_extra_details) && <View style={styles.rowText}>
+                    <CustomText style={styles.textInfo1}>
+                      {t('Extradetails')}:
+                    </CustomText>
+                    <CustomText style={[styles.textInfo, { width: wp(70), lineHeight: hp(2.5) }]}>
+                      {(order?.status !== 'pickup'
+                        ? order?.sender_address_json?.address_extra_details
+                        : order?.receiver_address_json?.address_extra_details) ??
+                        '-'}
+                    </CustomText>
+                  </View>}
+              </View>
+            </View>
+            {/* <View style={{ alignItems: "flex-end", marginRight: wp(3), marginBottom: hp(1.5) }}>
+              <TouchableOpacity onPress={openMaps} style={[styles.buttonCall, { backgroundColor: colors.black }]}>
+                <MapIcon width={wp(5)} height={wp(5)}></MapIcon>
+              </TouchableOpacity>
+            </View> */}
+            {order?.status == 'accepted' && order?.sender_phone?.number && (
+              <View style={{ flexDirection: "row" }}>
+                <View style={[styles.row, { marginBottom: hp(0) }]}>
+                  <View style={[styles.row, { marginBottom: 0 }]}>
+                    <TinyProfile width={wp(4.5)} height={wp(4.5)}></TinyProfile>
+                    <CustomText style={styles.textReciever} numberOfLines={1}>
+                      {order?.sender_full_name}
+                    </CustomText>
+                  </View>
+                  <TouchableOpacity onPress={makeCall} style={styles.buttonCall}>
+                    <PhoneIcon></PhoneIcon>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+            {order?.status == 'pickup' && order?.receiver_phone?.number && (
+              <View style={{ flexDirection: "row" }}>
+                <View style={[styles.row, { marginBottom: hp(0) }]}>
+                  <View style={[styles.row, { marginBottom: 0 }]}>
+                    <TinyProfile width={wp(4.5)} height={wp(4.5)}></TinyProfile>
+                    <CustomText style={styles.textReciever} numberOfLines={1}>
+                      {order?.receiver_full_name}
+                    </CustomText>
+                  </View>
+                  <TouchableOpacity onPress={makeCall} style={styles.buttonCall}>
+                    <PhoneIcon></PhoneIcon>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+          </>
+        )}
+        <TouchableOpacity
+          onPress={() => {
+            setLess(!less)
+            onModalPosition(!less)
+          }}
+          style={styles.lessContainer}>
+          <CustomText style={styles.textLess}>
+            {less ? t('moreInfo') : t('lessInfo')}
+          </CustomText>
+          <ArrowUp width={wp(5.5)} height={wp(5.5)}></ArrowUp>
+        </TouchableOpacity>
+        <View
+          style={[
+            styles.line,
+
+            (order?.tags?.length ||
+              order?.need_special_equipment ||
+              order?.is_secure) && { marginBottom: hp(0) },
+          ]}
+        />
+        {(order?.tags?.length ||
+          order?.need_special_equipment ||
+          order?.is_secure) && (
+            <View style={styles.tagContainer}>
+              {order?.tags?.map(item => {
+                return (
+                  <View style={styles.tagBox}>
+                    <CustomText style={styles.textTag}>
+                      {normalizeLabel(item)}
+                    </CustomText>
+                  </View>
+                );
+              })}
+              {order?.need_special_equipment && (
+                <View style={styles.tagBox}>
+                  <CustomText style={styles.textTag}>
+                    {normalizeLabel(order?.need_special_equipment)}
+                  </CustomText>
+                </View>
+              )}
+              {order?.is_secure && (
+                <View style={styles.tagBox}>
+                  <CustomText style={styles.textTag}>{t('isSecure')}</CustomText>
+                </View>
+              )}
+            </View>
+          )}
         <View style={styles.rowButton}>
           {order?.status == 'accepted' && (
             <SwipeButton
               title={t('PickedUp')}
-              titleColor="#fff"
-              height={hp(5.5)}
-              titleFontSize={wp(4.3)}
               onSwipeSuccess={() => changeOrder('pickup', false)}
-              width={wp(60)}
-              railBackgroundColor="#303030ff"
-              railBorderColor="#303030ff"
-              railFillBackgroundColor="#ffe71046"
-              railFillBorderColor="#303030ff"
-              thumbIconBackgroundColor="#EFF65C"
-              thumbIconBorderColor="#303030ff"
+              height={Math.max(hp(5), 55)}
+              width={wp(77)}
+              thumbSize={Math.max(wp(5), 45)}
+              railBackgroundColor={colors.white}
+              thumbBackgroundColor={colors.black}
+              titleColor={colors.black}
             />
           )}
           {order?.status == 'pickup' && (
             <SwipeButton
               title={t('dropOff')}
-              titleColor="#fff"
-              height={hp(5.5)}
-              titleFontSize={wp(4)}
               onSwipeSuccess={() => {
                 if (order?.is_secure) {
                   changeOrder('completed', true);
@@ -229,26 +312,18 @@ const AcceptedOrderModal = ({order, changeOrder, loading, insets}) => {
                   changeOrder('completed', false);
                 }
               }}
-              width={wp(60)}
-              shouldResetAfterSuccess
-              railBackgroundColor="#303030ff"
-              railBorderColor="#303030ff"
-              railFillBackgroundColor="#ffe71046"
-              railFillBorderColor="#303030ff"
-              thumbIconBackgroundColor="#EFF65C"
-              thumbIconBorderColor="#303030ff"
+              height={Math.max(hp(5), 55)}
+              width={wp(77)}
+              thumbSize={Math.max(wp(5), 45)}
+              railBackgroundColor={colors.white}
+              thumbBackgroundColor={colors.black}
+              titleColor={colors.black}
             />
           )}
           <TouchableOpacity
             onPress={() => changeOrder('cancel', false)}
             style={[styles.buttonPick, styles.cancelButton]}>
-            <CustomText
-              style={[
-                styles.textPick,
-                {color: colors.white, marginLeft: 0, fontSize: wp(4)},
-              ]}>
-              Cancel
-            </CustomText>
+            <CancelIcon width={wp(7)} height={wp(7)}></CancelIcon>
           </TouchableOpacity>
         </View>
       </View>
@@ -260,15 +335,133 @@ export default memo(AcceptedOrderModal);
 
 const styles = StyleSheet.create({
   container: {
-    width: wp(92),
-    backgroundColor: '#3030309a',
-    borderRadius: wp(6),
+    width: wp(100),
+    backgroundColor: colors.white,
+    borderTopLeftRadius: wp(5),
+    borderTopRightRadius: wp(5),
+    paddingBottom: Platform.OS === 'ios' ? hp(6) : hp(1),
     position: 'absolute',
-    bottom: hp(4),
-    paddingBottom: hp(1),
+  },
+  lessContainer: {
+    width: wp(91),
+    height: hp(4.5),
+    borderRadius: wp(2.5),
+    backgroundColor: colors.neutral100,
+    marginHorizontal: wp(4.5),
+    marginBottom: hp(1.5),
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: wp(3),
+    marginTop: hp(1)
+  },
+  rowTime: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  textLess: {
+    fontFamily: 'YaldeviJaffna-Bold',
+    color: colors.black,
+    fontSize: wp(4.5),
+  },
+  textTime: {
+    color: colors.neutral400,
+    marginLeft: wp(1),
+  },
+  imageContainer: {
+    width: wp(16),
+    height: wp(16),
+    borderRadius: wp(50),
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: colors.blue2,
+    marginRight: wp(2),
+  },
+  rowStreet: {
+    flexDirection: 'row',
+    marginLeft: wp(4),
+    alignItems: 'center',
+    marginTop: hp(2),
+  },
+  addressContainer: {
+    marginBottom: hp(0),
+  },
+  rowTextContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginLeft: wp(8.7),
+    justifyContent: 'space-between',
+  },
+  rowText: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: wp(5),
+  },
+  buttonCall: {
+    width: wp(10),
+    height: wp(10),
+    borderRadius: wp(20),
+    backgroundColor: colors.neutral300,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: wp(2),
+  },
+  buttonCall1: {
+    width: wp(12),
+    height: wp(12),
+    borderRadius: wp(20),
+    backgroundColor: colors.neutral300,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  textReciever: {
+    fontFamily: 'YaldeviJaffna-Bold',
+    color: colors.black,
+    marginLeft: wp(2),
+    width: wp(72.5),
+    fontSize: wp(4.3),
+  },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginHorizontal: wp(2),
+    marginBottom: hp(1.5),
+  },
+  line: {
+    width: wp(91),
+    height: wp(0.3),
+    backgroundColor: colors.neutral100,
+    marginHorizontal: wp(4.5),
+    marginBottom: hp(1.5),
+  },
+  tagContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginHorizontal: wp(4),
+    marginTop: hp(1.5),
+    height: hp(3.5),
+    marginBottom: hp(1),
+  },
+  textTag: {
+    color: colors.neutral700,
+    fontSize: wp(3.5),
+  },
+  tagBox: {
+    height: hp(3.5),
+    backgroundColor: colors.neutral100,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: wp(2),
+    paddingHorizontal: wp(2),
+    marginRight: wp(2),
+  },
+  buttonContainer: {
+    borderRadius: wp(3),
+    height: hp(5.8),
+    paddingHorizontal: wp(1),
+    width: wp(77),
     borderWidth: wp(0.5),
-    borderColor: '#303030ff',
-    paddingHorizontal: wp(1.5),
   },
   moreText: {
     color: '#000000ff',
@@ -278,44 +471,53 @@ const styles = StyleSheet.create({
     marginBottom: hp(1.5),
   },
   rowButton: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: hp(0),
   },
   cancelButton: {
-    width: wp(20),
+    width: Math.max(hp(5), 55),
+    height: Math.max(hp(5), 55),
     marginLeft: wp(1),
-    backgroundColor: '#ff8800ff',
-    borderRadius: wp(7),
+    backgroundColor: 'transparent',
+    borderRadius: wp(3),
+    borderColor: colors.error900,
+    borderWidth: wp(0.5),
+    marginRight: wp(1.5),
   },
   modal: {
     alignItems: 'center',
     justifyContent: 'flex-end',
-    bottom: hp(7),
-  },
-  imageContainer: {
-    width: wp(17),
-    height: wp(17),
-    borderRadius: wp(50),
-    backgroundColor: '#EFF65C',
+    bottom: hp(0),
   },
   userContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: hp(1.3),
-    marginHorizontal: wp(5),
+    justifyContent: 'center',
+    height: hp(9),
+    backgroundColor: colors.neutral100,
   },
   text: {
-    color: '#EFF65C',
-    fontWeight: '900',
-    fontSize: wp(5),
-    width: wp(85),
+    color: colors.neutral900,
+    fontFamily: 'YaldeviJaffna-Bold',
+    fontSize: wp(5.5),
+    width: wp(46),
+    marginRight: wp(2),
   },
   textInfo: {
-    fontSize: wp(5),
-    color: colors.white,
-    fontWeight: '600',
+    fontSize: wp(4.5),
+    color: colors.neutral800,
     textAlign: 'left',
+    marginLeft: wp(1.3),
+    fontFamily: 'arial',
+    lineHeight: hp(3),
+  },
+  textInfo1: {
+    fontSize: wp(4.2),
+    color: colors.neutral500,
+    textAlign: 'left',
+    lineHeight: hp(3),
   },
   iconContainer: {
     flex: 1,
@@ -334,9 +536,6 @@ const styles = StyleSheet.create({
     marginHorizontal: wp(4),
     borderWidth: wp(0.5),
     borderColor: '#303030ff',
-  },
-  textContainer: {
-    flex: 2,
   },
   textType: {
     color: colors.white,

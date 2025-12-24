@@ -4,7 +4,13 @@ import { createSlice } from "@reduxjs/toolkit";
 const initialStateObject = {
    allTypes: null,
    userProfile: null,
-   selectVehicle:null
+   selectVehicle:null,
+   socketStatus:false,
+   seeOnboarding:false,
+   selectVehicleVisible:false,
+   vehicleData:null,
+   externalMap: 'google',
+   mapStyle: 'light',
 
 };
 
@@ -20,6 +26,36 @@ export const configSlice = createSlice({
             allTypes: action.payload,
          };
       },
+      setSocketStatus: (state, action) => {
+         return {
+            ...state,
+            socketStatus: action.payload,
+         };
+      },
+      setVehicleData: (state, action) => {
+         return {
+            ...state,
+            vehicleData: action.payload,
+         };
+      },
+      setMapStyle: (state, action) => {
+         return {
+            ...state,
+            mapStyle: action.payload,
+         };
+      },
+      setSelectVehicleVisible: (state, action) => {
+         return {
+            ...state,
+            selectVehicleVisible: action.payload,
+         };
+      },
+      setExternalMap: (state, action) => {
+         return {
+            ...state,
+            externalMap: action.payload,
+         };
+      },
       setUserProfile: (state, action) => {
          return {
             ...state,
@@ -32,8 +68,24 @@ export const configSlice = createSlice({
             selectVehicle: action.payload,
          };
       },
+      setSeeOnboarding: (state) => {
+         return {
+            ...state,
+            seeOnboarding: true
+         };
+      },
       logouConfig: () => {
-         return initialStateObject
+           return {
+           allTypes: null,
+           userProfile: null,
+           selectVehicle:null,
+           socketStatus:false,
+           seeOnboarding:true,
+           selectVehicleVisible:false,
+           vehicleData:null,
+           externalMap: 'google',
+           mapStyle: 'light',
+         };
       },
    },
 });
@@ -42,7 +94,13 @@ export const {
    setAllTypes,
    logouConfig,
    setUserProfile,
-   setSelectVehicle
+   setSelectVehicle,
+   setSocketStatus,
+   setSeeOnboarding,
+   setSelectVehicleVisible,
+   setVehicleData,
+   setExternalMap,
+   setMapStyle
 } = configSlice.actions;
 
 export default configSlice.reducer;

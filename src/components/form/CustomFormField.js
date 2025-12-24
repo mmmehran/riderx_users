@@ -40,7 +40,7 @@ const CustomFormField = ({
                     {star && <CustomText style={styles.star}>*</CustomText>}
                 </View>
             }
-            <View style={[styles.inputContainer, stylesInput, password && styles.disableContainer,
+            <View style={[styles.inputContainer, stylesInput,
             !errors[name] || !touched[name] ? null : styles.errorStyle,
             noIcon && { paddingLeft: wp(2) }
             ]}>
@@ -48,7 +48,7 @@ const CustomFormField = ({
                 <TextInput
                     {...otherprops}
                     onChangeText={handleChange(name)}
-                    placeholderTextColor={colors.text}
+                    placeholderTextColor={colors.neutral400}
                     placeholder={inputName}
                     value={otherprops?.value}
                     onFocus={() => setFocus(true)}
@@ -58,7 +58,7 @@ const CustomFormField = ({
                     }}
                     style={[styles.input, input,
                     noIcon && { width: wp(85) },
-                    password && { width: wp(75) },
+                    password && { width: wp(72), paddingRight:wp(2) },
                     eye && { width: wp(63) }]}
                     secureTextEntry={password ? !showPassword : false}
                 ></TextInput>
@@ -89,37 +89,33 @@ export default CustomFormField;
 
 const styles = StyleSheet.create({
     inputContainer: {
-        width: wp(89),
-        height: hp(6),
-        backgroundColor: colors.darkGray,
+        width: wp(92),
+        height: hp(5.4),
+        backgroundColor: colors.white,
         paddingVertical: hp(0),
-        marginHorizontal: wp(5.5),
+        marginHorizontal: wp(4),
         borderRadius: wp(3),
         flexDirection: "row",
         alignItems: "center",
-        paddingHorizontal: wp(4),
-        marginTop:hp(0.5)
+        marginTop:hp(0.5),
+        borderWidth:wp(0.33),
+        borderColor:colors.neutral200,
+        paddingLeft:wp(3)
     },
     errorStyle: {
-        borderColor: colors.red
+        borderColor: colors.error900
     },
     input: {
-        height: hp(6),
-        color: colors.text,
+        height: hp(5.4),
+        color: colors.neutral900,
         textAlign: "left",
-        width: wp(80),
-        paddingHorizontal: wp(4),
-        fontSize: wp(3.5),
-        fontFamily: "Poppins-Regular",
-    },
-    disableContainer: {
-        paddingLeft: wp(3),
-        backgroundColor: colors.disableFill,
-        borderWidth: 0
+        width: wp(77),
+        fontSize: wp(3.8),
+    fontFamily: 'arial',
+        marginLeft:wp(2),
     },
     title: {
         fontSize: wp(3.5),
-        fontFamily: "Poppins-Regular",
         marginLeft: wp(5.5),
         marginBottom: hp(0.5)
     },
@@ -127,7 +123,7 @@ const styles = StyleSheet.create({
         flexDirection: "row"
     },
     star: {
-        color: colors.red,
+        color: colors.error900,
         marginLeft: wp(1)
     }
 });

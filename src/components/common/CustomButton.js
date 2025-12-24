@@ -33,13 +33,13 @@ export default CustomButton
 
 const styles = StyleSheet.create({
     container: {
-        width: wp(89),
-        height: hp(6),
-        backgroundColor: colors.blue,
-        borderRadius: wp(20),
+        width: wp(92),
+        height: hp(5.4),
+        backgroundColor: colors.black,
+        borderRadius: wp(3),
         justifyContent: "center",
         alignItems: "center",
-        marginHorizontal: wp(5.5),
+        marginHorizontal: wp(4),
         flexDirection: "row",
     },
     text: {

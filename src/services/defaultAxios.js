@@ -1,6 +1,9 @@
 import axios from "axios";
+import { API_URL_TEST, API_URL_PROD } from "@env";
 import store from "../redux/store";
 import errorHandler from '../utils/errorHandler';
+import {version} from '../../package.json';
+import {Platform} from 'react-native'
 
 const instance = axios.create();
 const instanceWithAuthorization = axios.create();
@@ -8,17 +11,30 @@ const emptyInstance = axios.create();
 
 store.subscribe(() => {
    const accessToken = store.getState().auth.token
+   const emailUser = store.getState().auth.email
    updateAuthToken(accessToken);
+   addEmailUser(emailUser);
 });
 
+export const addEmailUser = (email) => {
+   if (email)
+        instanceWithAuthorization.defaults.headers.common["user-email"] = email
+};
+
 export const setConfigTest = () => {
-   instance.defaults.baseURL = "https://t3.riderx.me/api/v1/"
-   instanceWithAuthorization.defaults.baseURL = "https://t3.riderx.me/api/v1/"
+   instance.defaults.baseURL = API_URL_TEST
+   instanceWithAuthorization.defaults.baseURL = API_URL_TEST
+   instanceWithAuthorization.defaults.headers.common["app-version"] = version
+   instanceWithAuthorization.defaults.headers.common["app-platform"] = Platform?.OS
+   instanceWithAuthorization.defaults.headers.common["app-platform-version"] = Platform?.constants?.Version
 };
 
 export const setConfig = () => {
-   instance.defaults.baseURL = "https://gearbox.riderx.me/api/v1/"
-   instanceWithAuthorization.defaults.baseURL = "https://gearbox.riderx.me/api/v1/"
+   instance.defaults.baseURL = API_URL_PROD
+   instanceWithAuthorization.defaults.baseURL = API_URL_PROD
+   instanceWithAuthorization.defaults.headers.common["app-version"] = version
+   instanceWithAuthorization.defaults.headers.common["app-platform"] =  Platform?.OS
+   instanceWithAuthorization.defaults.headers.common["app-platform-version"] = Platform?.constants?.Version
 };
 
 export const addContentTypeFormData = () => {
@@ -27,6 +43,10 @@ export const addContentTypeFormData = () => {
 
 export const addContentTypeJson = () => {
    instanceWithAuthorization.defaults.headers.post["Content-Type"] = "application/json"
+};
+
+export const addContentTypeJsonAuth = () => {
+   instance.defaults.headers.post["Accept"] = "application/json"
 };
 
 

@@ -7,6 +7,11 @@ import {
   View,
 } from 'react-native';
 import colors from '../../config/colors';
+import {
+  widthPercentageToDP as wp,
+  heightPercentageToDP as hp,
+} from 'react-native-responsive-screen';
+import {isAndroid15Plus} from '../../utils/helpers';
 
 const CustomScreen = ({ children }) => {
   return (
@@ -15,7 +20,7 @@ const CustomScreen = ({ children }) => {
         barStyle="dark-content"
         backgroundColor={colors.screenBackGround}
       />
-      <View style={styles.container}>
+      <View style={[styles.container, isAndroid15Plus && { marginBottom: hp(6) }]}>
         <SafeAreaView style={styles.screen}>{children}</SafeAreaView>
       </View>
     </>

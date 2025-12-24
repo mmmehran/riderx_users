@@ -1,42 +1,40 @@
 import React, {useEffect} from 'react';
-import {View, StyleSheet} from 'react-native';
+import {View, StyleSheet, ImageBackground, Platform} from 'react-native';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
 import {useNavigation} from '@react-navigation/native';
+import {useSelector} from 'react-redux';
 
-import CustomScreen from '../../components/common/CustomScreen';
-import CustomText from '../../components/common/CustomText';
 import routes from '../../navigation/routes';
-import {Logo} from '../../../assets/svg/index';
-import {version} from '../../../package.json';
 import colors from '../../config/colors';
+import {selectConfig} from '../../redux/reducers/configReducer';
+import {isAndroid15Plus} from '../../utils/helpers';
 
 const Splash = props => {
   const navigation = useNavigation();
+  const config = useSelector(selectConfig);
 
   useEffect(() => {
     setTimeout(() => {
-      navigation.navigate(routes.MAINNAVIGATOR);
+      if (config?.seeOnboarding) {
+        navigation.navigate(routes.MAINNAVIGATOR);
+      } else {
+        navigation.navigate(routes.ONBOARDING);
+      }
     }, 4000);
   }, []);
 
   return (
-    <CustomScreen>
-      <View style={styles.container}>
-        <Logo width={wp(50)} height={hp(20)} />
-      </View>
-      <View style={{marginBottom: hp(4), alignItems: 'center'}}>
-        <CustomText
-          style={[
-            styles.langText,
-            {color: colors.gray300, fontWeight: 'bold'},
-          ]}>
-          {version}
-        </CustomText>
-      </View>
-    </CustomScreen>
+    <View style={[styles.container, isAndroid15Plus && {marginBottom: hp(12)}]}>
+      <ImageBackground
+        style={{
+          width: wp(100),
+          height: hp(100),
+        }}
+        source={require('../../../assets/image/image.png')}></ImageBackground>
+    </View>
   );
 };
 
@@ -47,5 +45,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    color: colors.black,
   },
 });

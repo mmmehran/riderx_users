@@ -1,107 +1,171 @@
-import React, {useCallback, useState} from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View,
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
+  ImageBackground,
 } from 'react-native';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
-import {useTranslation} from 'react-i18next';
-import {KeyboardAwareScrollView} from 'react-native-keyboard-aware-scroll-view';
-import {useFocusEffect} from '@react-navigation/core';
+import { useTranslation } from 'react-i18next';
+import { useFocusEffect } from '@react-navigation/core';
+import { useDispatch, useSelector } from 'react-redux';
 
 import CustomScreen from '../../components/common/CustomScreen';
 import colors from '../../config/colors';
 import CustomText from '../../components/common/CustomText';
-import {Energy} from '../../../assets/svg/index';
 import CustomHeaderApp from '../../components/custom/CustomHeaderApp';
 import PaymentHistoryList from '../../components/list/PaymentHistoryList';
-import {getData} from '../../services/common.service';
+import { getData } from '../../services/common.service';
 import urls from '../../services/urls.json';
 import errorHandler from '../../utils/errorHandler';
+import { setUserWallet, authenticated } from '../../redux/reducers/authenticationReducer';
 
 const Report = props => {
-  const {t} = useTranslation();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
-  const [data, setData] = useState(null);
   const [dataTransaction, setDataTransaction] = useState(null);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const dispatch = useDispatch();
+  const user = useSelector(authenticated);
 
-  const getWallet = async () => {
-    setLoading(true);
-    const response = await getData(urls.GETWALLET);
-    if (response?.data?.status) {
-      setData(response?.data?.data);
-    } else {
-      errorHandler(response);
+  const getWallet = async (pageNumber = 1) => {
+    try {
+      if (pageNumber === 1) setLoading(true);
+
+      // main wallet data
+      if (pageNumber === 1) {
+        const response = await getData(urls.GETWALLET);
+        if (response?.data?.status) {
+          dispatch(setUserWallet(response?.data?.data));
+        } else {
+          errorHandler(response);
+        }
+      }
+
+      // transactions
+      const responseTransaction = await getData(
+        `${urls.GETWALLETTRANSACTION}/?page_size=5&page=${pageNumber}`,
+      );
+
+      if (responseTransaction?.data?.status) {
+        const newItems = responseTransaction?.data?.data?.items || [];
+
+        if (pageNumber === 1) {
+          setDataTransaction(responseTransaction?.data?.data);
+        } else {
+          setDataTransaction(prev => ({
+            ...(prev || {}),
+            items: [...(prev?.items || []), ...newItems],
+          }));
+        }
+
+        if (newItems.length < 5) {
+          setHasMore(false);
+        } else {
+          setHasMore(true);
+        }
+      } else {
+        errorHandler(responseTransaction);
+      }
+    } catch (e) {
+      console.log('getWallet error', e);
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
     }
-    const responseTransaction = await getData(urls.GETWALLETTRANSACTION);
-    if (responseTransaction?.data?.status) {
-      setDataTransaction(responseTransaction?.data?.data);
-    } else {
-      errorHandler(responseTransaction);
-    }
-    setLoading(false);
   };
 
   useFocusEffect(
     useCallback(() => {
-      getWallet();
+      setPage(1);
+      setHasMore(true);
+      getWallet(1);
     }, []),
   );
 
+  const loadMore = () => {
+    if (!loadingMore && hasMore && !loading) {
+      const nextPage = page + 1;
+      setLoadingMore(true);
+      setPage(nextPage);
+      getWallet(nextPage);
+    }
+  };
+
+  const renderFooter = () => {
+    if (!loadingMore) return null;
+    return (
+      <View style={{ paddingVertical: 20 }}>
+        <ActivityIndicator size="small" color="#000" />
+      </View>
+    );
+  };
+
+  const renderHeader = () => {
+    // make sure wallet is a proper array
+    const primaryWallet = Array.isArray(user?.wallet) ? user.wallet[0] : null;
+    const rawStatus = primaryWallet?.status ?? '';
+    const niceStatus =
+      typeof rawStatus === 'string' && rawStatus.length > 0
+        ? rawStatus.charAt(0).toUpperCase() + rawStatus.slice(1)
+        : '';
+
+    const balanceValue =
+      typeof primaryWallet?.balance === 'number'
+        ? primaryWallet.balance
+        : primaryWallet?.balance || 0;
+
+    return (
+      <>
+        <View style={styles.balanceContainer}>
+          <ImageBackground
+            resizeMode="cover"
+            source={require('../../../assets/image/walletCart.png')}
+            style={styles.balanceImage}>
+            <View style={styles.rowTop}>
+              <View style={styles.statusContainer}>
+                <View style={styles.dot} />
+                <CustomText>{niceStatus}</CustomText>
+              </View>
+            </View>
+            <View style={styles.rowBottom}>
+              <CustomText style={styles.textBalance}>
+                {t('SavingsCard')}
+              </CustomText>
+              <CustomText style={styles.textPrice}>
+                € {balanceValue}
+              </CustomText>
+            </View>
+          </ImageBackground>
+        </View>
+        <View style={styles.topContainer}>
+          <CustomText style={styles.textHistory}>{t('history')}</CustomText>
+        </View>
+      </>
+    );
+  };
+
   return (
     <CustomScreen>
-      <CustomHeaderApp title={t('wallet')}></CustomHeaderApp>
-      <KeyboardAwareScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{flexGrow: 1}}>
-        {loading ? (
-          <View
-            style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
-            <ActivityIndicator size={'large'} color={'#000'} />
-          </View>
-        ) : (
-          <>
-            <View style={styles.balanceContainer}>
-              <CustomText style={styles.textBalance}>{t('balance')}</CustomText>
-              <CustomText style={styles.textPrice}>
-                €{data[0]?.balance}
-              </CustomText>
-              {/* <CustomText
-                style={[
-                  styles.textBalance,
-                  {fontSize: wp(3.8), marginTop: hp(1)},
-                ]}>
-                {t('payOutSchedule')}: -
-              </CustomText> */}
-              {/* <TouchableOpacity style={styles.button}>
-                <CustomText style={styles.textButton}>
-                  {t('InstanceWithdraw')}
-                </CustomText>
-                <Energy width={wp(6.5)} height={wp(7)} />
-              </TouchableOpacity> */}
-            </View>
-            <View style={styles.topContainer}>
-              <CustomText style={[styles.textBalance, {fontSize: wp(4.5)}]}>
-                {t('PayoutActivity')}
-              </CustomText>
-              <TouchableOpacity>
-                <CustomText
-                  style={[
-                    styles.textBalance,
-                    {fontSize: wp(3.3), marginTop: hp(2.3)},
-                  ]}>
-                  {t('seeAll')}
-                </CustomText>
-              </TouchableOpacity>
-            </View>
-            <PaymentHistoryList data={dataTransaction?.items} />
-          </>
-        )}
-      </KeyboardAwareScrollView>
+      <CustomHeaderApp title={t('yourWallet')} />
+      {loading ? (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size={'large'} color={'#000'} />
+        </View>
+      ) : (
+        <PaymentHistoryList
+          data={dataTransaction?.items || []}
+          ListHeaderComponent={renderHeader}
+          onEndReached={loadMore}
+          ListFooterComponent={renderFooter}
+        />
+      )}
     </CustomScreen>
   );
 };
@@ -111,21 +175,68 @@ export default Report;
 const styles = StyleSheet.create({
   balanceContainer: {
     marginTop: hp(2),
-    width: wp(100),
-    backgroundColor: 'rgba(234, 234, 234, 0.5)',
-    paddingLeft: wp(5),
+    width: wp(94),
+    borderRadius: wp(2),
+    borderColor: colors.neutral100,
+    borderWidth: wp(0.3),
+    marginHorizontal: wp(3),
+    alignItems: 'center',
+    paddingVertical: hp(1.3),
+  },
+  rowBottom: {
+    flex: 2,
+    justifyContent: 'flex-end',
     paddingBottom: hp(2),
   },
+  dot: {
+    width: wp(1.8),
+    height: wp(1.8),
+    borderRadius: wp(5),
+    backgroundColor: colors.neonTeal300,
+    marginRight: wp(1.5),
+  },
+  statusContainer: {
+    height: hp(3.2),
+    borderColor: colors.neutral200,
+    borderWidth: wp(0.3),
+    borderRadius: wp(2),
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.white,
+    paddingHorizontal: wp(2.5),
+    flexDirection: 'row',
+    marginTop: hp(3),
+    marginRight: wp(5),
+  },
+  textSeeAll: {
+    fontSize: wp(4.5),
+    color: colors.neonTeal400,
+    fontFamily: 'YaldeviJaffna-Bold',
+  },
+  textHistory: {
+    fontSize: wp(4.5),
+    color: colors.neutral800,
+    fontFamily: 'YaldeviJaffna-Bold',
+  },
+  rowTop: {
+    flex: 1,
+    alignItems: 'flex-end',
+  },
   textBalance: {
-    fontSize: wp(5),
-    fontWeight: 'bold',
-    marginTop: hp(2),
-    color: colors.gray400,
+    fontSize: wp(4.5),
+    marginTop: hp(4),
+    color: colors.neutral100,
+    marginLeft: wp(5),
+  },
+  balanceImage: {
+    width: wp(88),
+    height: hp(24),
   },
   textPrice: {
-    fontSize: wp(10),
-    fontWeight: '900',
-    color: colors.black,
+    fontSize: wp(9),
+    color: colors.white,
+    fontFamily: 'arial',
+    marginLeft: wp(5),
   },
   button: {
     width: wp(43),
@@ -144,10 +255,8 @@ const styles = StyleSheet.create({
   },
   topContainer: {
     justifyContent: 'space-between',
-    alignItems: 'center',
     flexDirection: 'row',
-    height: hp(5),
-    width: wp(88),
-    marginHorizontal: wp(6),
+    marginHorizontal: wp(4.5),
+    marginTop: hp(3),
   },
 });

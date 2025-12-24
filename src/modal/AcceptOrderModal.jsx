@@ -1,37 +1,28 @@
-import React, {memo, useRef, useEffect, useState, useMemo} from 'react';
-import {StyleSheet, View, TouchableOpacity, Animated} from 'react-native';
+import React, { memo, useEffect, useState, useMemo } from 'react';
+import { StyleSheet, View } from 'react-native';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
-import {useTranslation} from 'react-i18next';
+import { useTranslation } from 'react-i18next';
 import axios from 'axios';
-import SwipeButton from 'rn-swipe-button';
+import SwipeButton from '../components/common/SwipeButton';
 
-import CustomModal from '../components/common/CustomModal';
 import colors from '../config/colors';
 import CustomText from '../components/common/CustomText';
-import {Line2, StarIcon} from '../../assets/svg/index';
-import {isAndroid15Plus} from '../utils/helpers';
+import { AddressLine, BlueCircle } from '../../assets/svg/index';
+import { normalizeLabel } from '../utils/helpers';
+
 const MAPBOX_TOKEN =
   'pk.eyJ1IjoiYnl0ZWJyaWRnZXIiLCJhIjoiY21kZzVoNnU2MGlhcDJpcGVuNGV1amYxdyJ9.YMqlR9OovVOp-pm9yGK7eA';
 
-/**
- * Pass user's camera/location from parent:
- *   <AcceptOrderModal userCoord={[lng, lat]} ... />
- */
 const AcceptOrderModal = ({
-  isVisible,
-  onClose,
   onAccept,
   order,
-  insets,
   pickUpTime,
   userCoord, // <-- [lng, lat] from parent (Mapbox camera / user location)
 }) => {
-  const progressAnim = useRef(new Animated.Value(0)).current;
-  const animationRef = useRef(null);
-  const {t} = useTranslation();
+  const { t } = useTranslation();
 
   // mins/km calculated here (no geolocation inside the modal)
   const [userToPickupKm, setUserToPickupKm] = useState(null);
@@ -67,12 +58,12 @@ const AcceptOrderModal = ({
     try {
       const res = await axios.get(buildDirectionsUrl(a, b));
       const r = res?.data?.routes?.[0];
-      if (!r) return {km: null, mins: null};
+      if (!r) return { km: null, mins: null };
       const km = (r.distance ?? 0) / 1000; // meters -> km
       const mins = Math.max(1, Math.round((r.duration ?? 0) / 60)); // seconds -> mins
-      return {km, mins};
+      return { km, mins };
     } catch {
-      return {km: null, mins: null};
+      return { km: null, mins: null };
     }
   };
 
@@ -86,7 +77,6 @@ const AcceptOrderModal = ({
       setPickupToDropKm(null);
       setPickupToDropMins(null);
 
-      if (!isVisible) return;
       if (!userCoord || !pickupCoord || !dropCoord) return;
 
       const [leg1, leg2] = await Promise.all([
@@ -104,29 +94,11 @@ const AcceptOrderModal = ({
     return () => {
       cancelled = true;
     };
-  }, [isVisible, userCoord, pickupCoord, dropCoord]);
+  }, [userCoord, pickupCoord, dropCoord]);
 
   useEffect(() => {
     userToPickupMins && pickUpTime(userToPickupMins);
   }, [userToPickupMins]);
-
-  // Accept/Auto-close animation
-  useEffect(() => {
-    if (isVisible) {
-      progressAnim.setValue(0);
-      animationRef.current = Animated.timing(progressAnim, {
-        toValue: 1,
-        duration: 15000, // 15 seconds
-        useNativeDriver: false,
-      });
-      animationRef.current.start(() => onClose?.());
-    } else {
-      progressAnim.setValue(0);
-    }
-    return () => {
-      animationRef.current?.stop();
-    };
-  }, [isVisible]);
 
   const handleAccept = () => {
     onAccept?.();
@@ -134,115 +106,84 @@ const AcceptOrderModal = ({
 
   const fmtLeg = (mins, km) => {
     if (mins == null || km == null) return '-';
-    return `${mins} ${t('mins') || 'mins'} (${km} ${t('km') || 'km'}) ${
-      t('away') || 'away'
-    }`;
+    return `${mins} ${t('mins')} - ${km} ${t('km')}`;
   };
 
   return (
-    <CustomModal
-      style={[
-        styles.modal,
-        isAndroid15Plus && {
-          bottom: hp(insets.bottom * 0.15),
-        },
-      ]}
-      isVisible={isVisible}
-      backdropOpacity={0}>
+    <View style={[styles.modal]}>
       <View style={styles.container}>
         <View style={styles.headerContainer}>
-          <View style={styles.deliveryContainer}>
-            <CustomText style={styles.textDelivery}>{t('delivery')}</CustomText>
+          <AddressLine width={wp(6)} height={hp(7.6)}></AddressLine>
+          <View style={{ marginTop: hp(1.5) }}>
+            <View style={styles.row}>
+              <CustomText style={styles.textAddress} numberOfLines={1}>
+                {pickupLabel}
+              </CustomText>
+              <View style={styles.durationContainer}>
+                <BlueCircle></BlueCircle>
+                <CustomText style={styles.textTime}>
+                  {fmtLeg(userToPickupMins, userToPickupKm)}
+                </CustomText>
+              </View>
+            </View>
+            <View style={styles.row}>
+              <CustomText style={styles.textAddress} numberOfLines={1}>
+                {dropLabel}
+              </CustomText>
+              <View style={styles.durationContainer}>
+                <BlueCircle></BlueCircle>
+                <CustomText style={styles.textTime}>
+                  {fmtLeg(pickupToDropMins, pickupToDropKm)}
+                </CustomText>
+              </View>
+            </View>
           </View>
-          <TouchableOpacity onPress={onClose} style={styles.closeContainer}>
-            <CustomText style={[styles.textDelivery, {fontSize: wp(5)}]}>
-              x
-            </CustomText>
-          </TouchableOpacity>
         </View>
-        <View style={{flexDirection: 'row', alignItems: 'center'}}>
-          <CustomText style={styles.textPrice}>€{order?.rider_fee}</CustomText>
-          <CustomText
-            numberOfLines={1}
-            style={[
-              styles.title,
-              {
-                marginLeft: wp(2),
-                fontSize: wp(5),
-                color: colors.gray300,
-                marginTop: hp(1.5),
-              },
-            ]}>
-            {' '}
-            + €{(order?.rider_fee * 0.2).toFixed(2)} {t('vat')}
-          </CustomText>
-        </View>
-
-        <View style={styles.starContainer}>
-          <StarIcon />
-          <CustomText style={styles.textStar}>{order?.id}</CustomText>
-        </View>
-
         <View style={styles.line} />
-
-        <View style={styles.addressContainer}>
-          <View style={styles.circle}>
-            <Line2 />
-          </View>
-          <View>
-            {/* User -> Pickup */}
-            <CustomText style={styles.textTop}>
-              {fmtLeg(userToPickupMins, userToPickupKm)}
-            </CustomText>
-            <CustomText
-              numberOfLines={3}
-              style={[
-                styles.textTop,
-                {
-                  color: 'rgba(70, 67, 67, 0.84)',
-                  marginTop: hp(0.3),
-                  width: wp(60),
-                },
-              ]}>
-              {pickupLabel}
-            </CustomText>
-
-            {/* Pickup -> Drop */}
-            <CustomText style={[styles.textTop, {marginTop: hp(4)}]}>
-              {fmtLeg(pickupToDropMins, pickupToDropKm)}
-            </CustomText>
-            <CustomText
-              numberOfLines={3}
-              style={[
-                styles.textTop,
-                {
-                  color: 'rgba(70, 67, 67, 0.84)',
-                  marginTop: hp(0.3),
-                  width: wp(60),
-                },
-              ]}>
-              {dropLabel}
-            </CustomText>
-          </View>
+        <View style={styles.tagContainer}>
+          {order?.tags?.map(item => {
+            return (
+              <View style={styles.tagBox}>
+                <CustomText style={styles.textTag}>
+                  {normalizeLabel(item)}
+                </CustomText>
+              </View>
+            );
+          })}
+          {order?.need_special_equipment && (
+            <View style={styles.tagBox}>
+              <CustomText style={styles.textTag}>
+                {normalizeLabel(order?.need_special_equipment)}
+              </CustomText>
+            </View>
+          )}
+          {order?.is_secure && (
+            <View style={styles.tagBox}>
+              <CustomText style={styles.textTag}>{t('isSecure')}</CustomText>
+            </View>
+          )}
         </View>
         <View style={styles.buttonWrapper}>
+          <View style={{ width: wp(21), alignItems: 'center', marginRight: wp(1.5) }}>
+            <CustomText style={styles.textPrice} numberOfLines={1}>
+              €{order?.rider_fee}
+            </CustomText>
+            <CustomText style={styles.textPrice1}>{t('price')}</CustomText>
+          </View>
+
           <SwipeButton
-            title={t('SlidetoAccept')}
-            titleColor="#fff"
-            height={hp(5.5)}
-            titleFontSize={wp(4)}
+            title={t('Accept')}
             onSwipeSuccess={handleAccept}
-            width={wp(75)}
-            railBackgroundColor="#303030ff"
-            railBorderColor="#303030ff"
-            railFillBackgroundColor="#ffe71046"
-            railFillBorderColor="#303030ff"
-            thumbIconBackgroundColor="#FFE710"
-            thumbIconBorderColor="#303030ff"
+            height={Math.max(hp(5), 55)}
+            width={wp(73.5)}
+            thumbSize={Math.max(wp(5), 45)}
+            railBackgroundColor={colors.black}
+            thumbBackgroundColor={colors.neonYellow}
+            titleColor="#fff"
           />
         </View>
       </View>
-    </CustomModal>
+    </View>
   );
 };
 
@@ -250,24 +191,74 @@ export default memo(AcceptOrderModal);
 
 const styles = StyleSheet.create({
   container: {
-    width: wp(84),
-    height: hp(54),
+    width: wp(100),
+    // height: hp(26),
     backgroundColor: colors.white,
+    borderTopLeftRadius: wp(4),
+    borderTopRightRadius: wp(4),
+    paddingBottom: hp(1),
+    elevation: 5
+  },
+  swipeCapture: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  tagContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginHorizontal: wp(4),
+    marginTop: hp(1)
+  },
+  textTag: {
+    color: colors.neutral700,
+    fontSize: wp(3.5),
+  },
+  tagBox: {
+    height: hp(3.5),
+    backgroundColor: colors.neutral100,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: wp(2),
+    paddingHorizontal: wp(2),
+    marginRight: wp(2),
+  },
+  buttonContainer: {
     borderRadius: wp(3),
-    borderWidth: wp(1),
-    borderColor: '#FFE710',
+    height: Math.max(hp(7), 60),
+    marginTop: hp(1),
+    paddingHorizontal: wp(1),
+    width: wp(73.5),
   },
-  textTop: {
-    fontSize: wp(3.8),
-    fontWeight: '900',
+  row: {
+    flexDirection: 'row',
     marginLeft: wp(2),
-    marginTop: hp(0.3),
+    marginBottom: hp(1.5),
   },
-  textButton: {
-    fontSize: wp(5.3),
+  textAddress: {
+    fontFamily: 'arial',
     color: colors.black,
-    fontWeight: '900',
-    zIndex: 1,
+    width: wp(50),
+    marginTop: hp(0.54),
+  },
+  textTime: {
+    fontFamily: 'arial',
+    color: colors.black,
+    fontSize: wp(3.5),
+    marginLeft: wp(0.1),
+    marginRight: wp(1)
+  },
+  durationContainer: {
+    width: wp(34),
+    height: hp(3.2),
+    borderWidth: wp(0.3),
+    borderColor: colors.neutral200,
+    borderRadius: wp(2),
+    marginLeft: wp(2),
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexDirection: 'row',
+    paddingHorizontal: wp(2),
+    overflow: "hidden"
   },
   circle: {
     width: wp(2),
@@ -276,34 +267,22 @@ const styles = StyleSheet.create({
     borderRadius: wp(50),
     marginTop: hp(1),
   },
-  addressContainer: {
-    flexDirection: 'row',
-    marginTop: hp(1),
-    marginLeft: wp(7),
-    height: hp(22),
-  },
   modal: {
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    bottom: hp(7),
+    bottom: hp(6),
+    position: 'absolute',
   },
   headerContainer: {
     flexDirection: 'row',
-    marginTop: hp(2),
-    justifyContent: 'space-between',
-  },
-  deliveryContainer: {
-    width: wp(26),
-    height: hp(3.8),
-    backgroundColor: '#FFE710',
     justifyContent: 'center',
-    borderRadius: wp(1),
-    marginLeft: wp(3),
-    paddingLeft: wp(2),
+    alignItems: 'center',
+    marginTop: hp(0.5),
   },
   buttonWrapper: {
-    marginHorizontal: wp(2),
+    marginLeft: wp(2),
     marginTop: hp(2),
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: hp(2)
   },
   button: {
     flex: 1,
@@ -314,49 +293,26 @@ const styles = StyleSheet.create({
     position: 'relative',
     overflow: 'hidden',
   },
-  textDelivery: {
-    fontSize: wp(5.8),
-    color: colors.black,
-    fontWeight: 'bold',
-    textAlign: 'left',
-  },
   textPrice: {
-    fontSize: wp(10),
+    fontSize: wp(7),
     color: colors.black,
-    fontWeight: '900',
-    marginLeft: wp(3),
-    marginTop: hp(1.5),
+    fontFamily: 'arial',
+    marginLeft: wp(1),
+    lineHeight: hp(3.5),
+    width: wp(23),
+    textAlign: 'center',
+    fontWeight: "bold"
   },
-  closeContainer: {
-    width: wp(8),
-    height: wp(8),
-    backgroundColor: '#F4F4F4',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: wp(50),
-    marginRight: wp(5),
-  },
-  starContainer: {
-    width: wp(13),
-    height: hp(2.5),
-    backgroundColor: '#D9D9D98A',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: wp(5),
-    marginTop: hp(0.5),
-  },
-  textStar: {
-    fontSize: wp(3.5),
-    color: colors.black,
-    fontWeight: '900',
-    marginLeft: wp(0.5),
+  textPrice1: {
+    fontSize: wp(4),
+    color: colors.neutral500,
+    fontFamily: 'arial',
+    marginLeft: wp(2),
   },
   line: {
-    width: wp(74),
-    height: wp(0.2),
-    backgroundColor: '#00000094',
-    marginTop: hp(3),
-    marginHorizontal: wp(3.5),
+    width: wp(91),
+    height: wp(0.3),
+    backgroundColor: colors.neutral100,
+    marginHorizontal: wp(4.5),
   },
 });

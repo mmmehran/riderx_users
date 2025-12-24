@@ -5,7 +5,7 @@ import { Platform } from 'react-native';
 
 export const isAndroid = Platform.OS === 'android';
 export const apiLevel = isAndroid ? Number(Platform.Version) : 0;
-export const isAndroid15Plus = isAndroid && apiLevel === 35;
+export const isAndroid15Plus = isAndroid && apiLevel >= 35;
 
 
 export const showError = (text) => {
@@ -23,6 +23,42 @@ export const showToastWarning = (message, type = "warning") => {
         type: type,
         text2: message,
     });
+}
+
+
+export const timeAgoShort = (isoString, now = new Date()) => {
+  // "2025-10-28T14:13:51.774352+01:00" -> "11 min ago"
+  // Normalize fractional seconds to max 3 digits so Date() parses reliably
+  const safe = isoString.replace(/(\.\d{3})\d+/, '$1');
+
+  const then = new Date(safe);
+  if (isNaN(then)) return ''; // invalid input
+
+  let diffMs = now - then; // positive => past, negative => future
+  const past = diffMs >= 0;
+  diffMs = Math.abs(diffMs);
+
+  const sec = Math.floor(diffMs / 1000);
+  if (sec < 60) return past ? `${sec}s ago` : `in ${sec}s`;
+
+  const min = Math.floor(sec / 60);
+  if (min < 60) return past ? `${min} min ago` : `in ${min} min`;
+
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return past ? `${hr} h ago` : `in ${hr} h`;
+
+  const day = Math.floor(hr / 24);
+  if (day < 7) return past ? `${day} d ago` : `in ${day} d`;
+
+  const wk = Math.floor(day / 7);
+  if (wk < 5) return past ? `${wk} wk ago` : `in ${wk} wk`;
+
+  const mo = Math.floor(day / 30);
+  if (mo < 12) return past ? `${mo} mo ago` : `in ${mo} mo`;
+
+  const yr = Math.floor(day / 365);
+  return past ? `${yr} yr ago` : `in ${yr} yr`;
+
 }
 
 export const isoWithOffsetPlusMinutes = (minutes = 0) => {
@@ -65,6 +101,23 @@ export const formatDdMon = (iso) => {
     const d = new Date(iso);
   const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   return `${String(d.getDate()).padStart(2,"0")} ${months[d.getMonth()]}`;
+}
+
+export const  normalizeLabel = (s = "") => {
+  // drop a leading boolean-y "is"/"has" (isSecure -> Secure, hasGPS -> GPS)
+  const dropped = s.replace(/^(is|has)(?=[A-Z_-\s])/i, "");
+
+  // split camelCase into words
+  const splitCamel = dropped.replace(/([a-z])([A-Z])/g, "$1 $2");
+
+  // unify separators to space
+  const spaced = splitCamel.replace(/[_-]+/g, " ").trim();
+
+  // title-case words, but keep all-caps (e.g., GPS) as-is
+  return spaced
+    .split(/\s+/)
+    .map(w => (/[A-Z]{2,}/.test(w) ? w : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()))
+    .join(" ");
 }
 
 
@@ -119,4 +172,8 @@ export const  parseSocketUrl = (full) => {
       .reduce((acc,[k,v]) => (k==='roomId'? decodeURIComponent(v||''):acc), null);
     return { baseUrl: urlPart, roomId };
   }
+}
+
+export const capitalizeFirstLetter = (string) => {
+    return string ? string.charAt(0).toUpperCase() + string.slice(1) : "";
 }

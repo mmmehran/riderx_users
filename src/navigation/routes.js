@@ -12,7 +12,19 @@ export default Object.freeze({
     WALLET:"wallet",
     SENDER:"sender",
     CHOOSEVEHICLE:"chooseVehicle",
-    SIGNUPSENDER:"signUpSender"
+    SIGNUPSENDER:"signUpSender",
+    ONBOARDING:"onBoarding",
+    ORDERSTATUS:"orderStatus",
+    RESETPASSWORDEMAIL:"resetPasswordEmail",
+    RESETPASSWORDOTP:"resetPasswordOtp",
+    RESETPASSWORD:"resetPassword",
+    MYACCOUNT:"myAccount",
+    CHANGELANGUAGE:"changeLanguage",
+    CHANGEPASSWORD:"changePassword",
+    EDITMYACCOUNT:"editMyAccount",
+    APPSETTINGS:"appSettings",
+    SELECTEXTERNALMAP:"selectExternalMap",
+    MAPSTYLE:"mapStyle"
    
 
  

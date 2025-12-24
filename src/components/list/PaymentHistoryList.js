@@ -4,12 +4,16 @@ import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-nat
 
 import PaymentHistoryListRenderItem from '../renderItems/PaymentHistoryListRenderItem';
 
-const PaymentHistoryList = ({ data }) => {
+const PaymentHistoryList = ({ data, ListHeaderComponent, onEndReached, ListFooterComponent }) => {
 
     return (
         <View style={styles.main}>
              <FlatList
                 data={data}
+                ListHeaderComponent={ListHeaderComponent}
+                onEndReached={onEndReached}
+                onEndReachedThreshold={0.5}
+                ListFooterComponent={ListFooterComponent}
                 renderItem={({ item, index }) => {
                     return (
                         <PaymentHistoryListRenderItem
@@ -18,9 +22,9 @@ const PaymentHistoryList = ({ data }) => {
                         ></PaymentHistoryListRenderItem>
                     )
                 }}
-                keyExtractor={item => item.id}
+                keyExtractor={(item, index) => index.toString()}
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={{ paddingBottom: hp(2) }}
+                contentContainerStyle={{ paddingBottom: hp(5) }}
             /> 
         </View>
     )
@@ -30,7 +34,7 @@ export default memo(PaymentHistoryList);
 
 const styles = StyleSheet.create({
     main: {
-        marginTop:hp(2),
+        marginTop:hp(0),
         marginBottom:hp(2)
     }
 
