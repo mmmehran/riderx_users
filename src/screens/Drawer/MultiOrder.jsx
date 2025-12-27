@@ -1,54 +1,50 @@
-import React, { useCallback, useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, StyleSheet, ActivityIndicator, Image } from 'react-native';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
-import { useDispatch, useSelector } from 'react-redux';
-import { useFocusEffect } from '@react-navigation/core';
+import { useSelector } from 'react-redux';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 
 import CustomScreen from '../../components/common/CustomScreen';
 import colors from '../../config/colors';
-import CustomText from '../../components/common/CustomText';
-import {
-  TickYellow,
-  EditIcon,
-  FileGray,
-  FileGreen,
-  FileRed,
-  LanguageIcon,
-  NotificationIcon,
-  PasswordIcon,
-  ArrowRightGray,
-  LogoutIcon,
-} from '../../../assets/svg/index';
 import CustomHeaderApp from '../../components/custom/CustomHeaderApp';
-import { postData, getData } from '../../services/common.service';
-import urls from '../../services/urls.json';
+import { getData } from '../../services/common.service';
 import errorHandler from '../../utils/errorHandler';
-import {
-  logout,
-  authenticated,
-} from '../../redux/reducers/authenticationReducer';
-import { logouConfig } from '../../redux/reducers/configReducer';
+import { selectConfig } from '../../redux/reducers/configReducer';
 import routes from '../../navigation/routes';
 import MultiOrderRenderItem from '../../components/renderItems/MultiOrderRenderItem';
 
-const MultiOrder = () => {
+const MultiOrder = ({ route }) => {
   const navigation = useNavigation();
   const { t } = useTranslation();
-  const user = useSelector(authenticated);
-  const dispatch = useDispatch();
   const [loading, setLoading] = useState(true);
-  const [lastPackageData, setLastPackageData] = useState(null);
+  const [multiOrder, setMultiOrder] = useState(null);
+  const config = useSelector(selectConfig);
+
+  const getOrder = async () => {
+    setLoading(true);
+    const response = await getData(`vehicle/${config?.selectVehicle?.id}/optimal_route?new_delivery_id=${route?.params?.data[0]?.id}`);
+    if (response?.data?.status) {
+      setMultiOrder(response?.data?.data)
+    }
+    else errorHandler(response);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    getOrder();
+  }, []);
 
 
-
-
-
+  const handleAcceptOrder = async () => {
+    setLoading(true);
+    navigation.navigate(routes.HOMEMAIN, { multi: "acceptNewOrder", order: route?.params?.data[0] })
+    setLoading(false);
+  };
 
   return (
     <CustomScreen>
@@ -56,9 +52,14 @@ const MultiOrder = () => {
       <KeyboardAwareScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ flexGrow: 1 }}>
-        <MultiOrderRenderItem item={[
-          {}
-        ]} />
+        {loading ?
+          <View>
+            <ActivityIndicator size="large" color={colors.primary} />
+          </View>
+          : <MultiOrderRenderItem item={route?.params?.data[0]} multi={true}
+            multiOrder={multiOrder ?? null}
+            handleAccept={handleAcceptOrder}
+          />}
       </KeyboardAwareScrollView>
     </CustomScreen>
   );

@@ -1,21 +1,65 @@
-import React, { memo } from 'react';
+import React, { memo, useState, useEffect } from 'react';
+import axios from 'axios';
 import { View, StyleSheet } from 'react-native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
 import CustomText from '../common/CustomText';
 import colors from '../../config/colors';
-import { AddressCircle, UserIcon } from '../../../assets/svg/index';
 import { isoTo12Hour, formatDdMon, capitalizeFirstLetter } from '../../utils/helpers'
 import { useTranslation } from 'react-i18next';
 import SwipeButton from '../common/SwipeButton';
 
-const ReportListRenderItem = ({ item }) => {
+const MAPBOX_TOKEN =
+    'pk.eyJ1IjoiYnl0ZWJyaWRnZXIiLCJhIjoiY21kZzVoNnU2MGlhcDJpcGVuNGV1amYxdyJ9.YMqlR9OovVOp-pm9yGK7eA';
+
+const ReportListRenderItem = ({ item, multi = false, multiOrder, handleAccept }) => {
+
+    // START: Route calculation state
+    const [distanceKm, setDistanceKm] = useState(null);
+    const [durationMins, setDurationMins] = useState(null);
+
+    const buildDirectionsUrl = (a, b) =>
+        `https://api.mapbox.com/directions/v5/mapbox/driving/${a[0]},${a[1]};${b[0]},${b[1]}?geometries=geojson&overview=false&access_token=${MAPBOX_TOKEN}`;
+
+    const fetchLegMetrics = async (a, b) => {
+        try {
+            const res = await axios.get(buildDirectionsUrl(a, b));
+            const r = res?.data?.routes?.[0];
+            if (!r) return { km: null, mins: null };
+            const km = (r.distance ?? 0) / 1000; // meters -> km
+            const mins = Math.max(1, Math.round((r.duration ?? 0) / 60)); // seconds -> mins
+            return { km, mins };
+        } catch {
+            return { km: null, mins: null };
+        }
+    };
+
+    useEffect(() => {
+        if (!multi) return;
+        const getMetrics = async () => {
+            const sLat = Number(item?.sender_latitude);
+            const sLon = Number(item?.sender_longitude);
+            const rLat = Number(item?.receiver_latitude);
+            const rLon = Number(item?.receiver_longitude);
+
+            if (Number.isFinite(sLat) && Number.isFinite(sLon) && Number.isFinite(rLat) && Number.isFinite(rLon)) {
+                const { km, mins } = await fetchLegMetrics([sLon, sLat], [rLon, rLat]);
+                setDistanceKm(km != null ? Number(km.toFixed(1)) : null);
+                setDurationMins(mins);
+            }
+        };
+        getMetrics();
+    }, [item, multi]);
+    // END: Route calculation logic
 
     let num = parseFloat(item?.mileage);
     let formatted = Number(num.toFixed(1))
     const { t } = useTranslation();
 
-
+    const fmtLeg = (mins, km) => {
+        if (mins == null || km == null) return '-';
+        return `${mins} ${t('mins')} - ${km} ${t('km')}`;
+    };
 
 
     return (
@@ -37,7 +81,7 @@ const ReportListRenderItem = ({ item }) => {
                         <CustomText numberOfLines={1} style={styles.title}>{capitalizeFirstLetter(item?.sender?.first_name) + " " + capitalizeFirstLetter(item?.sender?.last_name)}</CustomText>
                         <View style={styles.kmContainer}>
                             <View style={styles.circle}></View>
-                            <CustomText numberOfLines={1} style={styles.dec}> {item?.delivery_package?.title} - {formatted} Km</CustomText>
+                            <CustomText numberOfLines={1} style={styles.dec}>{!multi ? `${item?.delivery_package?.title} - ${formatted} Km` : fmtLeg(durationMins, distanceKm)}</CustomText>
                         </View>
                     </View>
                 </View>
@@ -49,94 +93,38 @@ const ReportListRenderItem = ({ item }) => {
                                 <View style={styles.lineSuc}></View>
                             </View>
                             <View>
-                                <CustomText style={styles.textStart}>{t("start")}</CustomText>
-                                <CustomText numberOfLines={1} style={styles.address}>{item?.sender_address_json?.full_address}</CustomText>
+                                <CustomText style={styles.textStart}>{multiOrder[0]?.type === "sender" ? t("pickup") : t("dropOff")}</CustomText>
+                                <CustomText numberOfLines={1} style={styles.address}>{multiOrder[0]?.full_address}</CustomText>
                                 <View style={styles.line}></View>
                             </View>
                         </View>
-                        <View style={styles.rowContianer}>
-                            <View style={{ alignItems: "center" }}>
-                                <View style={styles.circleSuc1}>
-                                    <View style={styles.mainCircle}></View>
+                        {multiOrder?.slice(1, multiOrder?.length).map((order, index) => {
+                            return (
+                                <View style={styles.rowContianer}>
+                                    <View style={{ alignItems: "center" }}>
+                                        <View style={styles.circleSuc1}>
+                                            <View style={styles.mainCircle}></View>
+                                        </View>
+                                        {index !== multiOrder?.length - 2 && <View style={styles.lineSuc}></View>}
+                                    </View>
+                                    <View>
+                                        <CustomText style={styles.textStart}>{order?.type === "sender" ? t("pickup") : t("dropOff")}</CustomText>
+                                        <CustomText numberOfLines={1} style={styles.address}>{order?.full_address}</CustomText>
+                                        {index !== multiOrder?.length - 2 && <View style={styles.line}></View>
+                                        }
+                                    </View>
                                 </View>
-                                <View style={styles.lineSuc}></View>
-                            </View>
-                            <View>
-                                <CustomText style={styles.textStart}>{t("end")}</CustomText>
-                                <CustomText numberOfLines={1} style={styles.address}>{item?.sender_address_json?.full_address}</CustomText>
-                                <View style={styles.line}></View>
-                            </View>
-                        </View>
-                        <View style={styles.rowContianer}>
-                            <View style={{ alignItems: "center" }}>
-                                <View style={styles.circleSuc1}>
-                                    <View style={styles.mainCircle}></View>
-                                </View>
-                                <View style={styles.lineSuc}></View>
-                            </View>
-                            <View>
-                                <CustomText style={styles.textStart}>{t("end")}</CustomText>
-                                <CustomText numberOfLines={1} style={styles.address}>{item?.sender_address_json?.full_address}</CustomText>
-                                <View style={styles.line}></View>
-                            </View>
-                        </View>
-                        <View style={styles.rowContianer}>
-                            <View style={{ alignItems: "center" }}>
-                                <View style={styles.circleSuc1}>
-                                    <View style={styles.mainCircle}></View>
-                                </View>
-                                <View style={styles.lineSuc}></View>
-                            </View>
-                            <View>
-                                <CustomText style={styles.textStart}>{t("end")}</CustomText>
-                                <CustomText numberOfLines={1} style={styles.address}>{item?.sender_address_json?.full_address}</CustomText>
-                                <View style={styles.line}></View>
-                            </View>
-                        </View>
-                        <View style={styles.rowContianer}>
-                            <View style={{ alignItems: "center" }}>
-                                <View style={styles.circleSuc1}>
-                                    <View style={styles.mainCircle}></View>
-                                </View>
-                                <View style={styles.lineSuc}></View>
-                            </View>
-                            <View>
-                                <CustomText style={styles.textStart}>{t("end")}</CustomText>
-                                <CustomText numberOfLines={1} style={styles.address}>{item?.sender_address_json?.full_address}</CustomText>
-                                <View style={styles.line}></View>
-                            </View>
-                        </View>
-                        <View style={styles.rowContianer}>
-                            <View style={{ alignItems: "center" }}>
-                                <View style={styles.circleSuc1}>
-                                    <View style={styles.mainCircle}></View>
-                                </View>
-                                <View style={styles.lineSuc}></View>
-                            </View>
-                            <View>
-                                <CustomText style={styles.textStart}>{t("end")}</CustomText>
-                                <CustomText numberOfLines={1} style={styles.address}>{item?.sender_address_json?.full_address}</CustomText>
-                                <View style={styles.line}></View>
-                            </View>
-                        </View>
-                        <View style={styles.rowContianer}>
-                            <View style={styles.circleSuc1}>
-                                <View style={styles.mainCircle}></View>
-                            </View>
-                            <View>
-                                <CustomText style={styles.textStart}>{t("end")}</CustomText>
-                                <CustomText numberOfLines={1} style={styles.address}>{item?.sender_address_json?.full_address}</CustomText>
-                            </View>
-                        </View>
+                            )
+                        })}
                     </View>
                 </View>
                 <View style={styles.priceRow}>
-                    <CustomText numberOfLines={1} style={styles.title}>€{item?.rider_fee}</CustomText>
+                    <CustomText numberOfLines={1} style={styles.title}>+€{item?.rider_fee}</CustomText>
                     <CustomText numberOfLines={1} style={[styles.title, { marginLeft: wp(2), fontSize: wp(3.6), color: colors.gray300 }]}>  + €{(item?.rider_fee * 0.2).toFixed(2)}  {t("vat")}</CustomText>
                 </View>
                 <SwipeButton
                     title={t('Accept')}
-                    //  onSwipeSuccess={handleAccept}
+                    onSwipeSuccess={handleAccept}
                     height={Math.max(hp(5), 55)}
                     width={wp(80)}
                     thumbSize={Math.max(wp(5), 45)}
@@ -144,7 +132,7 @@ const ReportListRenderItem = ({ item }) => {
                     thumbBackgroundColor={colors.neonYellow}
                     titleColor="#fff"
                 />
-            </View>
+            </View >
         </>
     )
 }

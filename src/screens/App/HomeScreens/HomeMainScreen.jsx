@@ -11,6 +11,7 @@ import {
   ToastAndroid,
   Image,
   Animated,
+  ActivityIndicator,
 } from 'react-native';
 
 const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
@@ -201,6 +202,7 @@ const HomeMainScreen = ({ route }) => {
   const [isAccepted, setIsAccepted] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [pickUpTimeUpdate, setPickUpTimeUpdate] = useState(null);
+  const [showNewOrderBanner, setShowNewOrderBanner] = useState(false);
   const pickUpTimesRef = useRef(new Map());
 
   const { t } = useTranslation();
@@ -227,6 +229,7 @@ const HomeMainScreen = ({ route }) => {
   const [followMode, setFollowMode] = useState('course');
   const [bearing, setBearing] = useState(0);
   const [completeOrderPrice, setCompleteOrderPrice] = useState(0);
+  const [suggestOrder, setSuggestOrder] = useState(null);
 
   // ETA state
   const [etaSec, setEtaSec] = useState(null);
@@ -362,6 +365,15 @@ const HomeMainScreen = ({ route }) => {
     dispatch(setSocketStatus(socketConnected));
   }, [socketConnected, dispatch]);
 
+  useEffect(() => {
+    if (route?.params?.multi === 'acceptNewOrder' && route?.params?.order) {
+      const { order } = route.params;
+      changeStatusOrderAccept(order, 'accepted');
+      // Clear params to prevent re-triggering if possible, or reliance on dependency change
+      navigation.setParams({ multi: null, order: null });
+    }
+  }, [route?.params]);
+
   /* ───────── Sockets ───────── */
   useEffect(() => {
     const rawUrl = user?.socketio;
@@ -375,10 +387,21 @@ const HomeMainScreen = ({ route }) => {
 
     const anyLogger = async (event, payload) => {
       if (event === 'delivery_create_by_sender') {
-        if (selectedOrderRef.current != null) return;
+        const orders = [payload?.message].filter(Boolean);
+        if (selectedOrderRef.current != null) {
+          playDing();
+          setSuggestOrder(orders)
+          if (showNewOrderBanner) {
+            setShowNewOrderBanner(false);
+            setTimeout(() => setShowNewOrderBanner(true), 100);
+
+          } else {
+            setShowNewOrderBanner(true);
+          }
+          return;
+        }
         setCurrentOrderIndex(null);
         setShowAcceptOrder(false);
-        const orders = [payload?.message].filter(Boolean);
         setData(orders);
         if (orders.length > 0) {
           const isActive = appStateRef.current === 'active';
@@ -1397,34 +1420,41 @@ const HomeMainScreen = ({ route }) => {
   const slideAnim = useRef(new Animated.Value(-wp(100))).current;
 
   useEffect(() => {
-    Animated.sequence([
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 1300,
-        useNativeDriver: true,
-      }),
-      Animated.delay(8000),
-      Animated.timing(slideAnim, {
-        toValue: wp(100),
-        duration: 500,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, []);
+    if (showNewOrderBanner) {
+      slideAnim.setValue(-wp(100));
+      Animated.sequence([
+        Animated.timing(slideAnim, {
+          toValue: 0,
+          duration: 1300,
+          useNativeDriver: true,
+        }),
+        Animated.delay(10000),
+        Animated.timing(slideAnim, {
+          toValue: wp(100),
+          duration: 500,
+          useNativeDriver: true,
+        }),
+      ]).start(({ finished }) => {
+        if (finished) {
+          setShowNewOrderBanner(false);
+        }
+      });
+    }
+  }, [showNewOrderBanner]);
 
   return (
     <>
       <View style={[styles.container, isAndroid15Plus && { marginBottom: hp(6) }]}>
         <CustomHeader onRefreshPress={onPressMyLocation} order={selectedOrder} />
-        <AnimatedTouchableOpacity
+        {showNewOrderBanner && <AnimatedTouchableOpacity
           activeOpacity={0.7}
-          onPress={() => navigation.navigate(routes.NEXTTRIP)}
+          onPress={() => navigation.navigate(routes.NEXTTRIP, { data: suggestOrder })}
           style={[styles.nextTripContainer, { transform: [{ translateX: slideAnim }] }]}>
           <CustomText style={styles.textTrip}>{t("nextTrip")}</CustomText>
           <View style={{ marginTop: hp(0.2) }}>
             <ArrowRightWhite1 width={wp(6)} height={wp(6)} />
           </View>
-        </AnimatedTouchableOpacity>
+        </AnimatedTouchableOpacity>}
         <View style={styles.mapWrap}>
           {hasLocPerm ? (
             <>
@@ -1656,6 +1686,11 @@ const HomeMainScreen = ({ route }) => {
         onCancel={() => setConfirmCompleteModalVisible(false)}
         onConfirm={() => setConfirmCompleteModalVisible(false)}
       />
+      {loadingChangeStatus && !selectedOrder && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      )}
     </>
   );
 };
@@ -1740,5 +1775,12 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     alignItems: 'center',
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    // backgroundColor: 'rgba(0,0,0,0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10000,
   },
 });
