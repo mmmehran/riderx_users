@@ -366,8 +366,9 @@ const HomeMainScreen = ({ route }) => {
   }, [socketConnected, dispatch]);
 
   useEffect(() => {
-    if (route?.params?.multi === 'acceptNewOrder' && route?.params?.order) {
-      const { order } = route.params;
+    if (route?.params?.multi === 'acceptNewOrder' && route?.params?.order && route?.params?.multiOrder) {
+      const { order, multiOrder } = route.params;
+      console.log(multiOrder)
       changeStatusOrderAccept(order, 'accepted');
       // Clear params to prevent re-triggering if possible, or reliance on dependency change
       navigation.setParams({ multi: null, order: null });
@@ -1442,6 +1443,8 @@ const HomeMainScreen = ({ route }) => {
     }
   }, [showNewOrderBanner]);
 
+
+  console.log(selectedOrder)
   return (
     <>
       <View style={[styles.container, isAndroid15Plus && { marginBottom: hp(6) }]}>

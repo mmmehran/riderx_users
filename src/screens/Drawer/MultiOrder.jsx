@@ -42,7 +42,7 @@ const MultiOrder = ({ route }) => {
 
   const handleAcceptOrder = async () => {
     setLoading(true);
-    navigation.navigate(routes.HOMEMAIN, { multi: "acceptNewOrder", order: route?.params?.data[0] })
+    navigation.navigate(routes.HOMEMAIN, { multi: "acceptNewOrder", order: route?.params?.data[0], multiOrder })
     setLoading(false);
   };
 
