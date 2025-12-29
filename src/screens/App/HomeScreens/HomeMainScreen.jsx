@@ -366,12 +366,11 @@ const HomeMainScreen = ({ route }) => {
   }, [socketConnected, dispatch]);
 
   useEffect(() => {
-    if (route?.params?.multi === 'acceptNewOrder' && route?.params?.order && route?.params?.multiOrder) {
-      const { order, multiOrder } = route.params;
-      console.log(multiOrder)
+    if (route?.params?.multi === 'acceptNewOrder' && route?.params?.order) {
+      const { order } = route.params;
       changeStatusOrderAccept(order, 'accepted');
       // Clear params to prevent re-triggering if possible, or reliance on dependency change
-      navigation.setParams({ multi: null, order: null });
+      navigation.setParams({ order: null });
     }
   }, [route?.params]);
 
@@ -745,19 +744,15 @@ const HomeMainScreen = ({ route }) => {
     });
 
     if (response?.data?.status) {
-
       const responseMergeOrder = await getData(`vehicle/${config?.selectVehicle?.id}/optimal_route?new_delivery_id=${order?.id}`);
       if (responseMergeOrder?.data?.status) {
-        console.log(responseMergeOrder?.data?.data)
         const responseDetailOrder = await getData(`${urls.GETLASTDELIVERYDETAIL}?id=${responseMergeOrder?.data?.data[0]?.id}`);
         if (responseDetailOrder?.data?.status) {
-          console.log(responseDetailOrder?.data?.data)
           setSelectedOrder(responseDetailOrder?.data?.data);
         }
         else errorHandler(responseDetailOrder);
       }
       else errorHandler(responseMergeOrder);
-      //console.log(response?.data?.data);
 
       if (status === 'accepted') {
         setMapHeight(60);
