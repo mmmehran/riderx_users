@@ -734,7 +734,6 @@ const HomeMainScreen = ({ route }) => {
 
   const changeStatusOrderAccept = async (order, status, pin, valueResoan) => {
     status !== 'cancel' && setLoadingChangeStatus(true);
-
     const response = await sendData(urls.CHANGESTATUSORDER, {
       vehicle_id: config?.selectVehicle?.id,
       delivery_id: order?.id,
@@ -746,7 +745,19 @@ const HomeMainScreen = ({ route }) => {
     });
 
     if (response?.data?.status) {
-      setSelectedOrder(response?.data?.data);
+
+      const responseMergeOrder = await getData(`vehicle/${config?.selectVehicle?.id}/optimal_route?new_delivery_id=${order?.id}`);
+      if (responseMergeOrder?.data?.status) {
+        console.log(responseMergeOrder?.data?.data)
+        const responseDetailOrder = await getData(`${urls.GETLASTDELIVERYDETAIL}?id=${responseMergeOrder?.data?.data[0]?.id}`);
+        if (responseDetailOrder?.data?.status) {
+          console.log(responseDetailOrder?.data?.data)
+          setSelectedOrder(responseDetailOrder?.data?.data);
+        }
+        else errorHandler(responseDetailOrder);
+      }
+      else errorHandler(responseMergeOrder);
+      //console.log(response?.data?.data);
 
       if (status === 'accepted') {
         setMapHeight(60);
