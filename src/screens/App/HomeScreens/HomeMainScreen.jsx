@@ -731,8 +731,10 @@ const HomeMainScreen = ({ route }) => {
     [requireVehicleOrToast],
   );
 
+  console.log(selectedOrder)
   const changeStatusOrderAccept = async (order, status, pin, valueResoan) => {
-    status !== 'cancel' && setLoadingChangeStatus(true);
+    console.log(status)
+    // status !== 'cancel' && setLoadingChangeStatus(true);
     const response = await sendData(urls.CHANGESTATUSORDER, {
       vehicle_id: config?.selectVehicle?.id,
       delivery_id: order?.id,
@@ -744,45 +746,47 @@ const HomeMainScreen = ({ route }) => {
     });
 
     if (response?.data?.status) {
-      const responseMergeOrder = await getData(`vehicle/${config?.selectVehicle?.id}/optimal_route?new_delivery_id=${order?.id}`);
+      const responseMergeOrder = await getData(status == 'accepted' ? `vehicle/${config?.selectVehicle?.id}/optimal_route?new_delivery_id=${order?.id}` : `vehicle/${config?.selectVehicle?.id}/optimal_route`);
       if (responseMergeOrder?.data?.status) {
-        const responseDetailOrder = await getData(`${urls.GETLASTDELIVERYDETAIL}?id=${responseMergeOrder?.data?.data[0]?.id}`);
-        if (responseDetailOrder?.data?.status) {
-          setSelectedOrder(responseDetailOrder?.data?.data);
+        console.log(responseMergeOrder?.data?.data)
+        if (responseMergeOrder?.data?.data?.length) {
+          const responseDetailOrder = await getData(`${urls.GETLASTDELIVERYDETAIL}?id=${responseMergeOrder?.data?.data[0]?.id}`);
+          if (responseDetailOrder?.data?.status) {
+            if (status === 'accepted') {
+              setMapHeight(60);
+              setIsAccepted(true);
+              setShowAcceptOrder(false);
+              setCurrentOrderIndex(null);
+              setIsNavOn(true);
+              setIsFollowing(true);
+              setFollowMode('course');
+            }
+            setSelectedOrder(responseDetailOrder?.data?.data);
+            showToastWarning(t('goNextTrip'))
+          }
+          else errorHandler(responseDetailOrder);
+        } else {
+          if (
+            ['completed', 'cancel', 'request_new_driver', 'shipment_destroyed', 'address_not_found'].includes(status)
+          ) {
+            status === 'completed' && setCompleteOrderPrice(order?.rider_fee || 0);
+            setMapHeight(100);
+            resetRoute();
+            setSelectedOrder(null);
+            setIsNavOn(false);
+            setIsFollowing(false);
+            status !== 'completed' && showToast(t('cancelOrder'));
+            status === 'completed' && setConfirmCompleteModalVisible(true);
+          }
         }
-        else errorHandler(responseDetailOrder);
       }
       else errorHandler(responseMergeOrder);
-
-      if (status === 'accepted') {
-        setMapHeight(60);
-        setIsAccepted(true);
-        setShowAcceptOrder(false);
-        setCurrentOrderIndex(null);
-        setIsNavOn(true);
-        setIsFollowing(true);
-        setFollowMode('course');
-      }
-
-      if (
-        ['completed', 'cancel', 'request_new_driver', 'shipment_destroyed', 'address_not_found'].includes(status)
-      ) {
-        status === 'completed' && setCompleteOrderPrice(order?.rider_fee || 0);
-        setMapHeight(100);
-        resetRoute();
-        setSelectedOrder(null);
-        setIsNavOn(false);
-        setIsFollowing(false);
-        status !== 'completed' && showToast(t('cancelOrder'));
-        status === 'completed' && setConfirmCompleteModalVisible(true);
-      }
     } else {
       errorHandler(response);
-      status !== 'cancel' && setLoadingChangeStatus(false);
+      // status !== 'cancel' && setLoadingChangeStatus(false);
       return;
     }
-
-    status !== 'cancel' && setLoadingChangeStatus(false);
+    // status !== 'cancel' && setLoadingChangeStatus(false);
   };
 
   const currentOrder = currentOrderIndex !== null ? data[currentOrderIndex] : null;
@@ -1450,7 +1454,6 @@ const HomeMainScreen = ({ route }) => {
   }, [showNewOrderBanner]);
 
 
-  console.log(selectedOrder)
   return (
     <>
       <View style={[styles.container, isAndroid15Plus && { marginBottom: hp(6) }]}>
@@ -1621,6 +1624,7 @@ const HomeMainScreen = ({ route }) => {
 
       {selectedOrder && (
         <AcceptedOrderModal
+          key={selectedOrder?.id}
           insets={insets}
           changeOrder={(status, pin) => {
             setCurrentStatus(status);
@@ -1639,7 +1643,7 @@ const HomeMainScreen = ({ route }) => {
           onModalPosition={value => {
             !value ? setMapHeight(60) : setMapHeight(100);
           }}
-          loading={loadingChangeStatus}
+        // loading={loadingChangeStatus}
         />
       )}
 
@@ -1695,11 +1699,7 @@ const HomeMainScreen = ({ route }) => {
         onCancel={() => setConfirmCompleteModalVisible(false)}
         onConfirm={() => setConfirmCompleteModalVisible(false)}
       />
-      {loadingChangeStatus && !selectedOrder && (
-        <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
-      )}
+
     </>
   );
 };

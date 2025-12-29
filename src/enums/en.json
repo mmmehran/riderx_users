@@ -173,5 +173,6 @@
   "darkMode":"Dark Mode",
   "lightMode":"Light Mode",
   "Unfinished":"Unfinished",
-  "nextTrip":"Next trip suggestion"
+  "nextTrip":"Next trip suggestion",
+  "goNextTrip":"Go to next route"
 }
