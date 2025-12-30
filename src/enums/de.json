@@ -172,5 +172,8 @@
   "mapStyle": "Kartenstil",
   "darkMode": "Dunkler Modus",
   "lightMode": "Heller Modus",
-  "Unfinished": "Unvollständig"
+  "Unfinished": "Unvollständig",
+  "nextTrip": "Vorschlag für nächste Fahrt",
+  "goNextTrip": "Zur nächsten Route gehen",
+  "orderSteps": "Bestellschritte"
 }

@@ -172,7 +172,10 @@
   "mapStyle": "Harita Stili",
   "darkMode": "Karanlık Mod",
   "lightMode": "Aydınlık Mod",
-  "Unfinished": "Tamamlanmamış"
+  "Unfinished": "Tamamlanmamış",
+  "nextTrip": "Sonraki yolculuk önerisi",
+  "goNextTrip": "Sonraki rotaya git",
+  "orderSteps": "Sipariş adımları"
 
 
 }

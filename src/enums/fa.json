@@ -172,7 +172,8 @@
   "mapStyle": "استایل نقشه",
   "darkMode": "حالت تاریک",
   "lightMode": "حالت روشن",
-  "Unfinished": "ناتمام"
-
-
+  "Unfinished": "ناتمام",
+  "nextTrip": "پیشنهاد سفر بعدی",
+  "goNextTrip": "رفتن به مسیر بعدی",
+  "orderSteps": "مراحل سفارش"
 }
