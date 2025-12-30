@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Text } from 'react-native';
+import { StyleSheet, View, Text, ActivityIndicator } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   useSharedValue,
@@ -28,32 +28,40 @@ const SwipeButton = ({
   titleColor = '#fff',
 }) => {
   const [swiped, setSwiped] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const X = useSharedValue(0);
   const H_PADDING = 5; // Padding inside the rail
   const SWIPE_RANGE = width - thumbSize - H_PADDING * 2;
 
   const handleComplete = async () => {
     if (onSwipeSuccess) {
+      setIsLoading(true);
       try {
         await onSwipeSuccess();
       } catch (error) {
         console.error('Swipe action failed:', error);
       }
+      setTimeout(() => {
+        setIsLoading(false);
+        setSwiped(false);
+        X.value = withSpring(0);
+      }, 1500);
+    } else {
+      setSwiped(false);
+      X.value = withSpring(0);
     }
-    setSwiped(false);
-    X.value = withSpring(0);
   };
 
   const pan = Gesture.Pan()
     .onUpdate(e => {
-      if (swiped) return;
+      if (swiped || isLoading) return;
       let newValue = e.translationX;
       if (newValue < 0) newValue = 0;
       if (newValue > SWIPE_RANGE) newValue = SWIPE_RANGE;
       X.value = newValue;
     })
     .onEnd(() => {
-      if (swiped) return;
+      if (swiped || isLoading) return;
       if (X.value > SWIPE_RANGE * 0.6) {
         runOnJS(handleComplete)();
         X.value = withSpring(SWIPE_RANGE, { damping: 20, stiffness: 400 });
@@ -97,9 +105,13 @@ const SwipeButton = ({
             borderWidth: wp(0.5)
           }
         ]}>
-        <Animated.Text style={[styles.text, animatedTextStyle, { color: titleColor }]}>
-          {title}
-        </Animated.Text>
+        {isLoading ? (
+          <ActivityIndicator size="small" color={titleColor} />
+        ) : (
+          <Animated.Text style={[styles.text, animatedTextStyle, { color: titleColor }]}>
+            {title}
+          </Animated.Text>
+        )}
       </Animated.View>
 
       <GestureDetector gesture={pan}>
