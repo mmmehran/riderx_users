@@ -143,8 +143,9 @@ const styles = StyleSheet.create({
   },
   text: {
     fontWeight: 'bold',
-    fontSize: wp(4),
-    fontFamily: 'arial',
+    fontSize: wp(4.5),
+    fontFamily: 'YaldeviJaffna-Bold',
+
   },
 });
 

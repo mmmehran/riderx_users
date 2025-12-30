@@ -10,7 +10,11 @@ import {
   BackHandler,
   ToastAndroid,
   Image,
+  Animated,
+  ActivityIndicator,
 } from 'react-native';
+
+const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
@@ -33,7 +37,7 @@ import SelectVehicleModal from '../../../modal/SelectVehicleModal';
 import TinderCarousel from '../../../components/custom/TinderCarousel';
 import { MAP_BOX_TOKEN } from '@env';
 
-import { LocationPin, Update } from '../../../../assets/svg/index';
+import { LocationPin, Update, ArrowRightWhite1 } from '../../../../assets/svg/index';
 import CustomHeader from '../../../components/custom/CustomHeader';
 import CustomAvailableRider from '../../../components/custom/CustomAvailableRider';
 import { getData, sendData } from '../../../services/common.service';
@@ -198,6 +202,7 @@ const HomeMainScreen = ({ route }) => {
   const [isAccepted, setIsAccepted] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [pickUpTimeUpdate, setPickUpTimeUpdate] = useState(null);
+  const [showNewOrderBanner, setShowNewOrderBanner] = useState(false);
   const pickUpTimesRef = useRef(new Map());
 
   const { t } = useTranslation();
@@ -224,6 +229,7 @@ const HomeMainScreen = ({ route }) => {
   const [followMode, setFollowMode] = useState('course');
   const [bearing, setBearing] = useState(0);
   const [completeOrderPrice, setCompleteOrderPrice] = useState(0);
+  const [suggestOrder, setSuggestOrder] = useState(null);
 
   // ETA state
   const [etaSec, setEtaSec] = useState(null);
@@ -359,6 +365,15 @@ const HomeMainScreen = ({ route }) => {
     dispatch(setSocketStatus(socketConnected));
   }, [socketConnected, dispatch]);
 
+  useEffect(() => {
+    if (route?.params?.multi === 'acceptNewOrder' && route?.params?.order) {
+      const { order } = route.params;
+      changeStatusOrderAccept(order, 'accepted');
+      // Clear params to prevent re-triggering if possible, or reliance on dependency change
+      navigation.setParams({ order: null });
+    }
+  }, [route?.params]);
+
   /* ───────── Sockets ───────── */
   useEffect(() => {
     const rawUrl = user?.socketio;
@@ -372,10 +387,21 @@ const HomeMainScreen = ({ route }) => {
 
     const anyLogger = async (event, payload) => {
       if (event === 'delivery_create_by_sender') {
-        if (selectedOrderRef.current != null) return;
+        const orders = [payload?.message].filter(Boolean);
+        if (selectedOrderRef.current != null) {
+          playDing();
+          setSuggestOrder(orders)
+          if (showNewOrderBanner) {
+            setShowNewOrderBanner(false);
+            setTimeout(() => setShowNewOrderBanner(true), 100);
+
+          } else {
+            setShowNewOrderBanner(true);
+          }
+          return;
+        }
         setCurrentOrderIndex(null);
         setShowAcceptOrder(false);
-        const orders = [payload?.message].filter(Boolean);
         setData(orders);
         if (orders.length > 0) {
           const isActive = appStateRef.current === 'active';
@@ -705,9 +731,10 @@ const HomeMainScreen = ({ route }) => {
     [requireVehicleOrToast],
   );
 
+  console.log(selectedOrder)
   const changeStatusOrderAccept = async (order, status, pin, valueResoan) => {
-    status !== 'cancel' && setLoadingChangeStatus(true);
-
+    console.log(status)
+    // status !== 'cancel' && setLoadingChangeStatus(true);
     const response = await sendData(urls.CHANGESTATUSORDER, {
       vehicle_id: config?.selectVehicle?.id,
       delivery_id: order?.id,
@@ -719,30 +746,41 @@ const HomeMainScreen = ({ route }) => {
     });
 
     if (response?.data?.status) {
-      setSelectedOrder(response?.data?.data);
-
-      if (status === 'accepted') {
-        setMapHeight(60);
-        setIsAccepted(true);
-        setShowAcceptOrder(false);
-        setCurrentOrderIndex(null);
-        setIsNavOn(true);
-        setIsFollowing(true);
-        setFollowMode('course');
+      const responseMergeOrder = await getData(status == 'accepted' ? `vehicle/${config?.selectVehicle?.id}/optimal_route?new_delivery_id=${order?.id}` : `vehicle/${config?.selectVehicle?.id}/optimal_route`);
+      if (responseMergeOrder?.data?.status) {
+        console.log(responseMergeOrder?.data?.data)
+        if (responseMergeOrder?.data?.data?.length) {
+          const responseDetailOrder = await getData(`${urls.GETLASTDELIVERYDETAIL}?id=${responseMergeOrder?.data?.data[0]?.id}`);
+          if (responseDetailOrder?.data?.status) {
+            if (status === 'accepted') {
+              setMapHeight(60);
+              setIsAccepted(true);
+              setShowAcceptOrder(false);
+              setCurrentOrderIndex(null);
+              setIsNavOn(true);
+              setIsFollowing(true);
+              setFollowMode('course');
+            }
+            setSelectedOrder(responseDetailOrder?.data?.data);
+            showToastWarning(t('goNextTrip'))
+          }
+          else errorHandler(responseDetailOrder);
+        } else {
+          if (
+            ['completed', 'cancel', 'request_new_driver', 'shipment_destroyed', 'address_not_found'].includes(status)
+          ) {
+            status === 'completed' && setCompleteOrderPrice(order?.rider_fee || 0);
+            setMapHeight(100);
+            resetRoute();
+            setSelectedOrder(null);
+            setIsNavOn(false);
+            setIsFollowing(false);
+            status !== 'completed' && showToast(t('cancelOrder'));
+            status === 'completed' && setConfirmCompleteModalVisible(true);
+          }
+        }
       }
-
-      if (
-        ['completed', 'cancel', 'request_new_driver', 'shipment_destroyed', 'address_not_found'].includes(status)
-      ) {
-        status === 'completed' && setCompleteOrderPrice(order?.rider_fee || 0);
-        setMapHeight(100);
-        resetRoute();
-        setSelectedOrder(null);
-        setIsNavOn(false);
-        setIsFollowing(false);
-        status !== 'completed' && showToast(t('cancelOrder'));
-        status === 'completed' && setConfirmCompleteModalVisible(true);
-      }
+      else errorHandler(responseMergeOrder);
     } else {
       if (response?.status == 400) {
         removeOrderById(order?.id);
@@ -753,8 +791,7 @@ const HomeMainScreen = ({ route }) => {
       status !== 'cancel' && setLoadingChangeStatus(false);
       return;
     }
-
-    status !== 'cancel' && setLoadingChangeStatus(false);
+    // status !== 'cancel' && setLoadingChangeStatus(false);
   };
 
   const currentOrder = currentOrderIndex !== null ? data[currentOrderIndex] : null;
@@ -1384,15 +1421,57 @@ const HomeMainScreen = ({ route }) => {
     if (config?.selectVehicle) getVehicleStatus();
   }, []);
 
+
+  const formatDistance = (distanceInMeters) => {
+    if (distanceInMeters >= 1000) {
+      return (distanceInMeters / 1000).toFixed(1) + ' km';
+    }
+    return distanceInMeters + ' m';
+  }
+
   const etaMinutes =
     etaSec != null && Number.isFinite(etaSec) ? Math.max(1, Math.round(etaSec / 60)) : null;
 
   /* ───────── Render ───────── */
+  const slideAnim = useRef(new Animated.Value(-wp(100))).current;
+
+  useEffect(() => {
+    if (showNewOrderBanner) {
+      slideAnim.setValue(-wp(100));
+      Animated.sequence([
+        Animated.timing(slideAnim, {
+          toValue: 0,
+          duration: 1300,
+          useNativeDriver: true,
+        }),
+        Animated.delay(10000),
+        Animated.timing(slideAnim, {
+          toValue: wp(100),
+          duration: 500,
+          useNativeDriver: true,
+        }),
+      ]).start(({ finished }) => {
+        if (finished) {
+          setShowNewOrderBanner(false);
+        }
+      });
+    }
+  }, [showNewOrderBanner]);
+
+
   return (
     <>
       <View style={[styles.container, isAndroid15Plus && { marginBottom: hp(6) }]}>
         <CustomHeader onRefreshPress={onPressMyLocation} order={selectedOrder} />
-
+        {showNewOrderBanner && <AnimatedTouchableOpacity
+          activeOpacity={0.7}
+          onPress={() => navigation.navigate(routes.NEXTTRIP, { data: suggestOrder })}
+          style={[styles.nextTripContainer, { transform: [{ translateX: slideAnim }] }]}>
+          <CustomText style={styles.textTrip}>{t("nextTrip")}</CustomText>
+          <View style={{ marginTop: hp(0.2) }}>
+            <ArrowRightWhite1 width={wp(6)} height={wp(6)} />
+          </View>
+        </AnimatedTouchableOpacity>}
         <View style={styles.mapWrap}>
           {hasLocPerm ? (
             <>
@@ -1489,14 +1568,13 @@ const HomeMainScreen = ({ route }) => {
           ) : (
             <View style={styles.map} />
           )}
-
           <View style={styles.overlay} pointerEvents="box-none">
             {banner?.primary ? (
               <View style={styles.banner} pointerEvents="none">
                 <CustomText style={styles.bannerTitle}>{banner.primary}</CustomText>
                 {!!banner.distance && (
                   <CustomText style={styles.bannerSub}>
-                    {banner.distance} m{etaMinutes != null ? `  •  ~${etaMinutes} min` : ''}
+                    {formatDistance(banner.distance)} {etaMinutes != null ? `  •  ~${etaMinutes} min` : ''}
                   </CustomText>
                 )}
               </View>
@@ -1552,6 +1630,7 @@ const HomeMainScreen = ({ route }) => {
 
       {selectedOrder && (
         <AcceptedOrderModal
+          key={selectedOrder?.id}
           insets={insets}
           changeOrder={(status, pin) => {
             setCurrentStatus(status);
@@ -1570,7 +1649,7 @@ const HomeMainScreen = ({ route }) => {
           onModalPosition={value => {
             !value ? setMapHeight(60) : setMapHeight(100);
           }}
-          loading={loadingChangeStatus}
+        // loading={loadingChangeStatus}
         />
       )}
 
@@ -1626,6 +1705,7 @@ const HomeMainScreen = ({ route }) => {
         onCancel={() => setConfirmCompleteModalVisible(false)}
         onConfirm={() => setConfirmCompleteModalVisible(false)}
       />
+
     </>
   );
 };
@@ -1634,6 +1714,27 @@ export default HomeMainScreen;
 
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  nextTripContainer: {
+    width: wp(50),
+    height: hp(4.8),
+    backgroundColor: colors.black,
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: wp(2.5),
+    borderColor: colors.neonYellow,
+    borderWidth: wp(0.6),
+    position: "absolute",
+    top: hp(11),
+    left: wp(4),
+    zIndex: 999,
+    flexDirection: "row"
+  },
+  textTrip: {
+    color: colors.white,
+    fontSize: wp(4),
+    fontWeight: "bold",
+    marginRight: wp(1)
+  },
   button1: {
     width: wp(10.5),
     height: wp(10.5),
@@ -1661,7 +1762,7 @@ const styles = StyleSheet.create({
   map: { width: wp(100), height: hp(100) },
   overlay: {
     position: 'absolute',
-    top: hp(11),
+    top: hp(15),
     left: wp(2.3),
     right: wp(2.3),
     bottom: 0,
@@ -1689,5 +1790,12 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     alignItems: 'center',
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    // backgroundColor: 'rgba(0,0,0,0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10000,
   },
 });
