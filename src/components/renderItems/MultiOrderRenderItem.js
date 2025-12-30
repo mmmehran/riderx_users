@@ -12,7 +12,7 @@ import SwipeButton from '../common/SwipeButton';
 const MAPBOX_TOKEN =
     'pk.eyJ1IjoiYnl0ZWJyaWRnZXIiLCJhIjoiY21kZzVoNnU2MGlhcDJpcGVuNGV1amYxdyJ9.YMqlR9OovVOp-pm9yGK7eA';
 
-const ReportListRenderItem = ({ item, multi = false, multiOrder, handleAccept }) => {
+const ReportListRenderItem = ({ item, multi = false, multiOrder, handleAccept, show = false }) => {
 
     // START: Route calculation state
     const [distanceKm, setDistanceKm] = useState(null);
@@ -122,7 +122,7 @@ const ReportListRenderItem = ({ item, multi = false, multiOrder, handleAccept })
                     <CustomText numberOfLines={1} style={styles.title}>+€{item?.rider_fee}</CustomText>
                     <CustomText numberOfLines={1} style={[styles.title, { marginLeft: wp(2), fontSize: wp(3.6), color: colors.gray300 }]}>  + €{(item?.rider_fee * 0.2).toFixed(2)}  {t("vat")}</CustomText>
                 </View>
-                <SwipeButton
+                {!show ? <SwipeButton
                     title={t('Accept')}
                     onSwipeSuccess={handleAccept}
                     height={Math.max(hp(5), 55)}
@@ -131,7 +131,7 @@ const ReportListRenderItem = ({ item, multi = false, multiOrder, handleAccept })
                     railBackgroundColor={colors.black}
                     thumbBackgroundColor={colors.neonYellow}
                     titleColor="#fff"
-                />
+                /> : null}
             </View >
         </>
     )
@@ -244,7 +244,7 @@ const styles = StyleSheet.create({
         color: colors.neutral800,
         fontSize: wp(3.8),
         fontFamily: 'YaldeviJaffna-Bold',
-        width: wp(80),
+        width: wp(74),
     },
     icon: {
         marginTop: hp(0.5)

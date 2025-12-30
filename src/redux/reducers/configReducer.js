@@ -4,13 +4,14 @@ import { createSlice } from "@reduxjs/toolkit";
 const initialStateObject = {
    allTypes: null,
    userProfile: null,
-   selectVehicle:null,
-   socketStatus:false,
-   seeOnboarding:false,
-   selectVehicleVisible:false,
-   vehicleData:null,
+   selectVehicle: null,
+   socketStatus: false,
+   seeOnboarding: false,
+   selectVehicleVisible: false,
+   vehicleData: null,
    externalMap: 'google',
    mapStyle: 'light',
+   selectedOrder: null
 
 };
 
@@ -30,6 +31,12 @@ export const configSlice = createSlice({
          return {
             ...state,
             socketStatus: action.payload,
+         };
+      },
+      setSelectedOrder1: (state, action) => {
+         return {
+            ...state,
+            selectedOrder: action.payload,
          };
       },
       setVehicleData: (state, action) => {
@@ -75,16 +82,17 @@ export const configSlice = createSlice({
          };
       },
       logouConfig: () => {
-           return {
-           allTypes: null,
-           userProfile: null,
-           selectVehicle:null,
-           socketStatus:false,
-           seeOnboarding:true,
-           selectVehicleVisible:false,
-           vehicleData:null,
-           externalMap: 'google',
-           mapStyle: 'light',
+         return {
+            allTypes: null,
+            userProfile: null,
+            selectVehicle: null,
+            socketStatus: false,
+            seeOnboarding: true,
+            selectVehicleVisible: false,
+            vehicleData: null,
+            externalMap: 'google',
+            mapStyle: 'light',
+            selectedOrder: null
          };
       },
    },
@@ -100,7 +108,8 @@ export const {
    setSelectVehicleVisible,
    setVehicleData,
    setExternalMap,
-   setMapStyle
+   setMapStyle,
+   setSelectedOrder1
 } = configSlice.actions;
 
 export default configSlice.reducer;

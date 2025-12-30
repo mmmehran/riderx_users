@@ -65,6 +65,7 @@ const MultiOrder = ({ route }) => {
           : <MultiOrderRenderItem item={route?.params?.data[0]} multi={true}
             multiOrder={multiOrder ?? null}
             handleAccept={handleAcceptOrder}
+            show={route?.params?.show}
           />}
       </KeyboardAwareScrollView>
     </CustomScreen>

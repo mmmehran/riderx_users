@@ -62,6 +62,7 @@ import {
   setSocketStatus,
   setSelectVehicleVisible,
   setVehicleData,
+  setSelectedOrder1
 } from '../../../redux/reducers/configReducer';
 import ConfirmModal from '../../../modal/ConfirmModal';
 import ConfirmCancelDeliveryModal from '../../../modal/ConfirmCancelDeliveryModal';
@@ -759,6 +760,7 @@ const HomeMainScreen = ({ route }) => {
               setFollowMode('course');
             }
             setSelectedOrder(responseDetailOrder?.data?.data);
+            dispatch(setSelectedOrder1(responseDetailOrder?.data?.data))
             status === 'completed' ?
               showToast(`${t('anamount')} ${order?.rider_fee} ${t("hasBeen")}`)
               : showToastWarning(t('goNextTrip'))
@@ -777,6 +779,7 @@ const HomeMainScreen = ({ route }) => {
             setIsFollowing(false);
             status !== 'completed' && showToast(t('cancelOrder'));
             status === 'completed' && setConfirmCompleteModalVisible(true);
+            dispatch(setSelectedOrder1(null))
           }
         }
       }
@@ -1465,7 +1468,7 @@ const HomeMainScreen = ({ route }) => {
         <CustomHeader onRefreshPress={onPressMyLocation} order={selectedOrder} />
         {showNewOrderBanner && <AnimatedTouchableOpacity
           activeOpacity={0.7}
-          onPress={() => navigation.navigate(routes.NEXTTRIP, { data: suggestOrder })}
+          onPress={() => navigation.navigate(routes.NEXTTRIP, { data: suggestOrder, show: false })}
           style={[styles.nextTripContainer, { transform: [{ translateX: slideAnim }] }]}>
           <CustomText style={styles.textTrip}>{t("nextTrip")}</CustomText>
           <View style={{ marginTop: hp(0.2) }}>

@@ -174,5 +174,6 @@
   "lightMode":"Light Mode",
   "Unfinished":"Unfinished",
   "nextTrip":"Next trip suggestion",
-  "goNextTrip":"Go to next route"
+  "goNextTrip":"Go to next route",
+  "orderSteps":"Order steps"
 }

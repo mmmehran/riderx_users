@@ -73,6 +73,12 @@ const LoginEmail = props => {
       icon: <Settings width={wp(6)} height={wp(6)}></Settings>,
       onPress: () => props?.navigation.navigate(routes.APPSETTINGS),
     },
+    {
+      id: 5,
+      name: t('orderSteps'),
+      icon: <FindRide width={wp(6)} height={wp(6)}></FindRide>,
+      onPress: () => props?.navigation.navigate(routes.NEXTTRIP, { data: [config?.selectedOrder], show: true }),
+    },
 
     //   id: 4,
     //   name: t('VehicleInfo'),
@@ -234,7 +240,7 @@ const LoginEmail = props => {
           </View>
         </TouchableOpacity>
         <View style={styles.rowContainer}>
-          {data.map(item => (
+          {data.filter(item => item.id !== 5 || config?.selectedOrder).map(item => (
             <TouchableOpacity
               onPress={item.onPress}
               key={item.id}
