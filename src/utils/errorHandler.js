@@ -7,12 +7,12 @@ import { logouConfig } from "../redux/reducers/configReducer";
 
 export const errorHandler = async (error) => {
 
-   console.log(error?.response?.data)
- 
+   // console.log(error?.response?.data)
+
    if (error?.response?.status == 401) {
       showError("Please login or signup again");
-       store.dispatch(logout())
-       store.dispatch(logouConfig())
+      store.dispatch(logout())
+      store.dispatch(logouConfig())
    }
    if (error.message === "Network Error") {
       showError("Network connection error!");

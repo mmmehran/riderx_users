@@ -32,11 +32,16 @@ const SwipeButton = ({
   const H_PADDING = 5; // Padding inside the rail
   const SWIPE_RANGE = width - thumbSize - H_PADDING * 2;
 
-  const handleComplete = () => {
-    setSwiped(true);
+  const handleComplete = async () => {
     if (onSwipeSuccess) {
-      onSwipeSuccess();
+      try {
+        await onSwipeSuccess();
+      } catch (error) {
+        console.error('Swipe action failed:', error);
+      }
     }
+    setSwiped(false);
+    X.value = withSpring(0);
   };
 
   const pan = Gesture.Pan()

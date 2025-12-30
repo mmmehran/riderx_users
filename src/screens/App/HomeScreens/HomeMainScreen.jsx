@@ -782,8 +782,13 @@ const HomeMainScreen = ({ route }) => {
       }
       else errorHandler(responseMergeOrder);
     } else {
-      errorHandler(response);
-      // status !== 'cancel' && setLoadingChangeStatus(false);
+      if (response?.status == 400) {
+        removeOrderById(order?.id);
+        showToastWarning(`${t('deliveryId')} ${order?.id} ${t('acceptByAnother')}`);
+      } else {
+        errorHandler(response);
+      }
+      status !== 'cancel' && setLoadingChangeStatus(false);
       return;
     }
     // status !== 'cancel' && setLoadingChangeStatus(false);
@@ -1472,6 +1477,7 @@ const HomeMainScreen = ({ route }) => {
             <>
               <Mapbox.MapView
                 key={mapMountKey}
+                scaleBarEnabled={false}
                 styleURL={config?.mapStyle == 'dark' ? Mapbox.StyleURL.Dark : Mapbox.StyleURL.Light}
                 zoomEnabled
                 rotateEnabled
