@@ -34,8 +34,8 @@ const SwipeButton = ({
   const SWIPE_RANGE = width - thumbSize - H_PADDING * 2;
 
   const handleComplete = async () => {
+    setIsLoading(true);
     if (onSwipeSuccess) {
-      setIsLoading(true);
       try {
         await onSwipeSuccess();
       } catch (error) {
@@ -49,6 +49,7 @@ const SwipeButton = ({
     } else {
       setSwiped(false);
       X.value = withSpring(0);
+      setIsLoading(false);
     }
   };
 
