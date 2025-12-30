@@ -759,7 +759,10 @@ const HomeMainScreen = ({ route }) => {
               setFollowMode('course');
             }
             setSelectedOrder(responseDetailOrder?.data?.data);
-            showToastWarning(t('goNextTrip'))
+            status === 'completed' ?
+              showToast(`${t('anamount')} ${order?.rider_fee} ${t("hasBeen")}`)
+              : showToastWarning(t('goNextTrip'))
+
           }
           else errorHandler(responseDetailOrder);
         } else {
