@@ -98,7 +98,7 @@ const ReportListRenderItem = ({ item, multi = false, multiOrder, handleAccept })
                                 <View style={styles.line}></View>
                             </View>
                         </View>
-                        {multiOrder?.slice(1, multiOrder?.length).map((order, index) => {
+                        {multiOrder?.slice(1, multiOrder?.length)?.map((order, index) => {
                             return (
                                 <View style={styles.rowContianer}>
                                     <View style={{ alignItems: "center" }}>

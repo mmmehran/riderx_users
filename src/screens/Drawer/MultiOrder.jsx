@@ -26,23 +26,25 @@ const MultiOrder = ({ route }) => {
   const [multiOrder, setMultiOrder] = useState(null);
   const config = useSelector(selectConfig);
 
-  const getOrder = async () => {
-    setLoading(true);
-    const response = await getData(`vehicle/${config?.selectVehicle?.id}/optimal_route?new_delivery_id=${route?.params?.data[0]?.id}`);
-    if (response?.data?.status) {
-      setMultiOrder(response?.data?.data)
-    }
-    else errorHandler(response);
-    setLoading(false);
-  };
-
-
   useFocusEffect(
     useCallback(() => {
-      getOrder();
-    }, []),
-  );
+      const getOrder = async () => {
+        setLoading(true);
+        const vehicleId = config?.selectVehicle?.id;
+        const deliveryId = route?.params?.data?.[0]?.id;
+        if (vehicleId && deliveryId) {
+          const response = await getData(`vehicle/${vehicleId}/optimal_route?new_delivery_id=${deliveryId}`);
+          if (response?.data?.status) {
+            setMultiOrder(response?.data?.data)
+          }
+          else errorHandler(response);
+        }
+        setLoading(false);
+      };
 
+      getOrder();
+    }, [config?.selectVehicle?.id, route?.params?.data]),
+  );
 
   const handleAcceptOrder = async () => {
     setLoading(true);
