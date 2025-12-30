@@ -101,7 +101,7 @@ const AcceptOrderModal = ({
   }, [userToPickupMins]);
 
   const handleAccept = () => {
-    onAccept?.();
+    return onAccept?.();
   };
 
   const fmtLeg = (mins, km) => {

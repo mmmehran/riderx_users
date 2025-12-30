@@ -1,6 +1,6 @@
-import React, {useState, useEffect} from 'react';
-import {StyleSheet, View, Text} from 'react-native';
-import {Gesture, GestureDetector} from 'react-native-gesture-handler';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, View, Text } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -15,7 +15,7 @@ import {
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
 import colors from '../../config/colors';
-import {IconButton} from '../../../assets/svg/index';
+import { IconButton } from '../../../assets/svg/index';
 
 const SwipeButton = ({
   onSwipeSuccess,
@@ -32,11 +32,16 @@ const SwipeButton = ({
   const H_PADDING = 5; // Padding inside the rail
   const SWIPE_RANGE = width - thumbSize - H_PADDING * 2;
 
-  const handleComplete = () => {
-    setSwiped(true);
+  const handleComplete = async () => {
     if (onSwipeSuccess) {
-      onSwipeSuccess();
+      try {
+        await onSwipeSuccess();
+      } catch (error) {
+        console.error('Swipe action failed:', error);
+      }
     }
+    setSwiped(false);
+    X.value = withSpring(0);
   };
 
   const pan = Gesture.Pan()
@@ -51,7 +56,7 @@ const SwipeButton = ({
       if (swiped) return;
       if (X.value > SWIPE_RANGE * 0.6) {
         runOnJS(handleComplete)();
-        X.value = withSpring(SWIPE_RANGE, {damping: 20, stiffness: 400});
+        X.value = withSpring(SWIPE_RANGE, { damping: 20, stiffness: 400 });
       } else {
         X.value = withSpring(0);
       }
@@ -59,7 +64,7 @@ const SwipeButton = ({
 
   const animatedThumbStyle = useAnimatedStyle(() => {
     return {
-      transform: [{translateX: X.value}],
+      transform: [{ translateX: X.value }],
     };
   });
 
@@ -81,17 +86,18 @@ const SwipeButton = ({
   });
 
   return (
-    <View style={[styles.container, {width, height}]}>
+    <View style={[styles.container, { width, height }]}>
       <Animated.View
         style={[
           styles.rail,
           animatedRailStyle,
-          {borderRadius: wp(3.5)},
-          {borderColor:colors.neutral900,
-            borderWidth:wp(0.5)
+          { borderRadius: wp(3.5) },
+          {
+            borderColor: colors.neutral900,
+            borderWidth: wp(0.5)
           }
         ]}>
-        <Animated.Text style={[styles.text, animatedTextStyle, {color: titleColor}]}>
+        <Animated.Text style={[styles.text, animatedTextStyle, { color: titleColor }]}>
           {title}
         </Animated.Text>
       </Animated.View>

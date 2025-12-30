@@ -102,7 +102,7 @@ export default function SignUpSender({ route }) {
       });
       const { user, email, fullName, identityToken, authorizationCode } =
         appleResponse;
-      setConfigTest();
+      setConfig();
       await new Promise(r => setTimeout(r, 300));
       const response = await postData(
         urls.SOCIALLOGINAPPLE,

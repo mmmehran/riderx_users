@@ -744,7 +744,12 @@ const HomeMainScreen = ({ route }) => {
         status === 'completed' && setConfirmCompleteModalVisible(true);
       }
     } else {
-      errorHandler(response);
+      if (response?.status == 400) {
+        removeOrderById(order?.id);
+        showToastWarning(`${t('deliveryId')} ${order?.id} ${t('acceptByAnother')}`);
+      } else {
+        errorHandler(response);
+      }
       status !== 'cancel' && setLoadingChangeStatus(false);
       return;
     }
@@ -1393,6 +1398,7 @@ const HomeMainScreen = ({ route }) => {
             <>
               <Mapbox.MapView
                 key={mapMountKey}
+                scaleBarEnabled={false}
                 styleURL={config?.mapStyle == 'dark' ? Mapbox.StyleURL.Dark : Mapbox.StyleURL.Light}
                 zoomEnabled
                 rotateEnabled
