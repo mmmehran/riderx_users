@@ -731,9 +731,7 @@ const HomeMainScreen = ({ route }) => {
     [requireVehicleOrToast],
   );
 
-  console.log(selectedOrder)
   const changeStatusOrderAccept = async (order, status, pin, valueResoan) => {
-    console.log(status)
     // status !== 'cancel' && setLoadingChangeStatus(true);
     const response = await sendData(urls.CHANGESTATUSORDER, {
       vehicle_id: config?.selectVehicle?.id,
@@ -748,7 +746,6 @@ const HomeMainScreen = ({ route }) => {
     if (response?.data?.status) {
       const responseMergeOrder = await getData(status == 'accepted' ? `vehicle/${config?.selectVehicle?.id}/optimal_route?new_delivery_id=${order?.id}` : `vehicle/${config?.selectVehicle?.id}/optimal_route`);
       if (responseMergeOrder?.data?.status) {
-        console.log(responseMergeOrder?.data?.data)
         if (responseMergeOrder?.data?.data?.length) {
           const responseDetailOrder = await getData(`${urls.GETLASTDELIVERYDETAIL}?id=${responseMergeOrder?.data?.data[0]?.id}`);
           if (responseDetailOrder?.data?.status) {

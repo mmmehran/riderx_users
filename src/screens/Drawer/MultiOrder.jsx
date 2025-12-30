@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { View, StyleSheet, ActivityIndicator, Image } from 'react-native';
 import {
   widthPercentageToDP as wp,
@@ -8,6 +8,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { useSelector } from 'react-redux';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import { useFocusEffect } from '@react-navigation/core';
 
 import CustomScreen from '../../components/common/CustomScreen';
 import colors from '../../config/colors';
@@ -35,9 +36,12 @@ const MultiOrder = ({ route }) => {
     setLoading(false);
   };
 
-  useEffect(() => {
-    getOrder();
-  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      getOrder();
+    }, []),
+  );
 
 
   const handleAcceptOrder = async () => {
