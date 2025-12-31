@@ -666,22 +666,28 @@ const HomeMainScreen = ({ route }) => {
 
   /* ───────── Data fetchers ───────── */
   const getLastDelivery = async () => {
-    const response = await getData(urls.GETLASTDELIVERY);
-    if (response?.data?.status) {
-      const orders = response?.data?.data?.items || [];
-      if (orders.length > 0) {
-        setSelectedOrder(orders[0]);
-        setIsAccepted(true);
-        setShowAcceptOrder(false);
-        setIsNavOn(true);
-        setIsFollowing(true);
-        setFollowMode('course');
+    const responseMergeOrder = await getData(`vehicle/${config?.selectVehicle?.id}/optimal_route`);
+    if (responseMergeOrder?.data?.status) {
+      if (responseMergeOrder?.data?.data?.length) {
+        const responseDetailOrder = await getData(`${urls.GETLASTDELIVERYDETAIL}?id=${responseMergeOrder?.data?.data[0]?.id}`);
+        if (responseDetailOrder?.data?.status) {
+          setMapHeight(60);
+          setIsAccepted(true);
+          setShowAcceptOrder(false);
+          setCurrentOrderIndex(null);
+          setIsNavOn(true);
+          setIsFollowing(true);
+          setFollowMode('course');
+          setSelectedOrder(responseDetailOrder?.data?.data);
+          dispatch(setSelectedOrder1(responseDetailOrder?.data?.data))
+          showToastWarning(t('goNextTrip'))
+
+        } else errorHandler(responseDetailOrder);
       } else {
         getDeliveryLists();
       }
-    } else {
-      errorHandler(response);
     }
+    else errorHandler(responseMergeOrder);
   };
 
   const getDeliveryLists = async () => {
