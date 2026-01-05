@@ -72,6 +72,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: "flex-start",
         flex: 10,
+        marginLeft: wp(4)
     },
     button: {
         width: wp(8.5),

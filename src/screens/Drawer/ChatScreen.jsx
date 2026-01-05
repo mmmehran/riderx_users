@@ -1,45 +1,122 @@
-import React, { useCallback, useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   StyleSheet,
+  FlatList,
+  TextInput,
   TouchableOpacity,
-  ActivityIndicator,
-  ImageBackground,
+  KeyboardAvoidingView,
+  Platform,
+  Text,
 } from 'react-native';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
 import { useTranslation } from 'react-i18next';
-import { useFocusEffect } from '@react-navigation/core';
-import { useDispatch, useSelector } from 'react-redux';
 
 import CustomScreen from '../../components/common/CustomScreen';
-import colors from '../../config/colors';
 import CustomText from '../../components/common/CustomText';
+import colors from '../../config/colors';
 import CustomHeaderChat from '../../components/custom/CustomHeaderChat';
-import PaymentHistoryList from '../../components/list/PaymentHistoryList';
-import { getData } from '../../services/common.service';
-import urls from '../../services/urls.json';
-import errorHandler from '../../utils/errorHandler';
-import { setUserWallet, authenticated } from '../../redux/reducers/authenticationReducer';
+import { Message1, VoiceIcon, ArrowSend } from '../../../assets/svg';
 
-const ChatScreen = props => {
+
+// Dummy data for initial visualization
+const INITIAL_MESSAGES = [
+  { id: '1', text: 'Hello! How are you?', sender: 'other', time: '10:00 AM' },
+  { id: '2', text: 'I am good, thanks! How about you?', sender: 'me', time: '10:01 AM' },
+  { id: '3', text: 'I am doing great. Are you ready for the ride?', sender: 'other', time: '10:02 AM' },
+  { id: '4', text: 'Yes, I will be there in 5 minutes.', sender: 'me', time: '10:03 AM' },
+];
+
+const ChatScreen = () => {
   const { t } = useTranslation();
-  const [loading, setLoading] = useState(true);
-  const [dataTransaction, setDataTransaction] = useState(null);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const dispatch = useDispatch();
-  const user = useSelector(authenticated);
+  const [messages, setMessages] = useState(INITIAL_MESSAGES);
+  const [inputText, setInputText] = useState('');
+  const flatListRef = useRef(null);
 
+  const sendMessage = () => {
+    if (inputText.trim().length === 0) return;
 
+    const newMessage = {
+      id: Date.now().toString(),
+      text: inputText,
+      sender: 'me',
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    };
+
+    setMessages((prev) => [...prev, newMessage]);
+    setInputText('');
+
+    // Scroll to bottom after state update
+    setTimeout(() => {
+      flatListRef.current?.scrollToEnd({ animated: true });
+    }, 100);
+  };
+
+  const renderItem = ({ item }) => {
+    const isMe = item.sender === 'me';
+    return (
+      <View style={[
+        styles.messageContainer,
+        isMe ? styles.myMessageContainer : styles.otherMessageContainer
+      ]}>
+        <View style={[
+          styles.messageBubble,
+          isMe ? styles.myMessageBubble : styles.otherMessageBubble
+        ]}>
+          <CustomText style={[
+            styles.messageText
+          ]}>
+            {item.text}
+          </CustomText>
+        </View>
+      </View>
+    );
+  };
 
   return (
     <CustomScreen>
-      <CustomHeaderChat title={t('yourWallet')} />
+      <CustomHeaderChat />
+      <View style={styles.container}>
+        <FlatList
+          ref={flatListRef}
+          data={messages}
+          keyExtractor={(item) => item.id}
+          renderItem={renderItem}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+        />
 
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 10 : 0}
+        >
+          <View style={styles.inputContainer}>
+            <View style={styles.input}>
+              <TextInput
+                style={styles.input1}
+                value={inputText}
+                onChangeText={setInputText}
+                placeholder={"Type a message"}
+                placeholderTextColor={colors.neutral400}
+                returnKeyType="send"
+                onSubmitEditing={sendMessage}
+              >
+              </TextInput>
+              <TouchableOpacity onPress={sendMessage} style={styles.sendButton1}>
+                <ArrowSend width={wp(5)} height={wp(5)} />
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity
+              style={styles.sendButton}>
+              <VoiceIcon width={wp(11.5)} height={wp(11.5)} />
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </View>
     </CustomScreen>
   );
 };
@@ -47,90 +124,96 @@ const ChatScreen = props => {
 export default ChatScreen;
 
 const styles = StyleSheet.create({
-  balanceContainer: {
-    marginTop: hp(2),
-    width: wp(94),
-    borderRadius: wp(2),
-    borderColor: colors.neutral100,
-    borderWidth: wp(0.3),
-    marginHorizontal: wp(3),
-    alignItems: 'center',
-    paddingVertical: hp(1.3),
+  container: {
+    flex: 1,
+    backgroundColor: colors.white,
   },
-  rowBottom: {
-    flex: 2,
+  listContent: {
+    paddingHorizontal: wp(4),
+    paddingBottom: hp(2),
+    paddingTop: hp(1),
+  },
+  messageContainer: {
+    marginVertical: hp(0.6),
+    flexDirection: 'row',
+    width: '100%',
+  },
+  myMessageContainer: {
     justifyContent: 'flex-end',
+  },
+  otherMessageContainer: {
+    justifyContent: 'flex-start',
+  },
+  messageBubble: {
+    maxWidth: wp(75),
+    paddingVertical: hp(1.3),
+    paddingHorizontal: wp(4),
+    borderRadius: wp(7),
+  },
+  myMessageBubble: {
+    backgroundColor: "#B4E0D7", // Fallback if neonTeal300 is undefined or use a different color
+    borderBottomRightRadius: wp(0.5),
+  },
+  otherMessageBubble: {
+    backgroundColor: colors.neutral100,
+    borderBottomLeftRadius: wp(0.5),
+  },
+  messageText: {
+    fontSize: wp(4),
+    lineHeight: wp(5),
+    color: colors.neutral800
+  },
+  myMessageText: {
+    color: colors.white,
+  },
+  otherMessageText: {
+    color: colors.neutral900,
+  },
+  timeText: {
+    fontSize: wp(3),
+    marginTop: hp(0.5),
+    textAlign: 'right',
+  },
+  myTimeText: {
+    color: 'rgba(255, 255, 255, 0.7)',
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: wp(3),
+    backgroundColor: colors.white,
     paddingBottom: hp(2),
   },
-  dot: {
-    width: wp(1.8),
-    height: wp(1.8),
-    borderRadius: wp(5),
-    backgroundColor: colors.neonTeal300,
-    marginRight: wp(1.5),
-  },
-  statusContainer: {
-    height: hp(3.2),
-    borderColor: colors.neutral200,
-    borderWidth: wp(0.3),
-    borderRadius: wp(2),
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.white,
-    paddingHorizontal: wp(2.5),
-    flexDirection: 'row',
-    marginTop: hp(3),
-    marginRight: wp(5),
-  },
-  textSeeAll: {
-    fontSize: wp(4.5),
-    color: colors.neonTeal400,
-    fontFamily: 'YaldeviJaffna-Bold',
-  },
-  textHistory: {
-    fontSize: wp(4.5),
-    color: colors.neutral800,
-    fontFamily: 'YaldeviJaffna-Bold',
-  },
-  rowTop: {
+  input: {
     flex: 1,
-    alignItems: 'flex-end',
+    height: hp(5.5),
+    backgroundColor: colors.white,
+    borderRadius: wp(3),
+    paddingHorizontal: wp(4),
+    fontSize: wp(4),
+    color: colors.neutral900,
+    marginRight: wp(3),
+    borderWidth: 1,
+    borderColor: colors.neutral200,
+    flexDirection: "row"
   },
-  textBalance: {
-    fontSize: wp(4.5),
-    marginTop: hp(4),
-    color: colors.neutral100,
-    marginLeft: wp(5),
+  input1: {
+    height: hp(5.5),
+    fontSize: wp(4),
+    color: colors.neutral900,
+    width: wp(62)
   },
-  balanceImage: {
-    width: wp(88),
-    height: hp(24),
-  },
-  textPrice: {
-    fontSize: wp(9),
-    color: colors.white,
-    fontFamily: 'arial',
-    marginLeft: wp(5),
-  },
-  button: {
-    width: wp(43),
-    height: hp(3),
-    backgroundColor: colors.gray500,
+  sendButton: {
+    width: hp(5.5),
+    height: hp(5.5),
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: wp(50),
-    marginTop: hp(3),
-    flexDirection: 'row',
+    borderRadius: wp(3),
   },
-  textButton: {
-    fontSize: wp(3.7),
-    color: colors.black,
-    fontWeight: '900',
-  },
-  topContainer: {
-    justifyContent: 'space-between',
-    flexDirection: 'row',
-    marginHorizontal: wp(4.5),
-    marginTop: hp(3),
+  sendButton1: {
+    width: hp(5.5),
+    height: hp(5.5),
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
