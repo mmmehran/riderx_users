@@ -433,6 +433,17 @@ const HomeMainScreen = ({ route }) => {
         const removedId = payload?.message?.id;
         removeOrderById(removedId);
         showToastWarning(`${t('deliveryId')} ${payload?.message?.id} ${t('acceptByAnother')}`);
+      } else if (event === 'chat_new_message') {
+        const message = payload?.message?.message?.content;
+        const senderId = payload?.message?.message?.sender?.id;
+        await showLocalNotification({
+          title: t('newMessage'),
+          body: message,
+          data: {
+            type: 'chat',
+            senderId: String(senderId),
+          },
+        });
       }
     };
     s.onAny(anyLogger);

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -7,56 +7,106 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
-  Text,
+  ActivityIndicator,
 } from 'react-native';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
 import { useTranslation } from 'react-i18next';
+import { useRoute } from '@react-navigation/native';
+import { useSelector } from 'react-redux';
 
 import CustomScreen from '../../components/common/CustomScreen';
 import CustomText from '../../components/common/CustomText';
 import colors from '../../config/colors';
 import CustomHeaderChat from '../../components/custom/CustomHeaderChat';
-import { Message1, VoiceIcon, ArrowSend } from '../../../assets/svg';
-
-
-// Dummy data for initial visualization
-const INITIAL_MESSAGES = [
-  { id: '1', text: 'Hello! How are you?', sender: 'other', time: '10:00 AM' },
-  { id: '2', text: 'I am good, thanks! How about you?', sender: 'me', time: '10:01 AM' },
-  { id: '3', text: 'I am doing great. Are you ready for the ride?', sender: 'other', time: '10:02 AM' },
-  { id: '4', text: 'Yes, I will be there in 5 minutes.', sender: 'me', time: '10:03 AM' },
-];
+import { VoiceIcon, ArrowSend } from '../../../assets/svg';
+import { postData, getData } from '../../services/common.service';
+import urls from '../../services/urls.json';
+import errorHandler from '../../utils/errorHandler';
+import { selectConfig } from '../../redux/reducers/configReducer';
+import { authenticated } from '../../redux/reducers/authenticationReducer';
+import { postFormData } from '../../services/file.services';
 
 const ChatScreen = () => {
   const { t } = useTranslation();
-  const [messages, setMessages] = useState(INITIAL_MESSAGES);
+  const route = useRoute();
+  const { senderId } = route.params || {};
+
+  const user = useSelector(authenticated);
+  const config = useSelector(selectConfig);
+
+  const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [partner, setPartner] = useState(null);
+  const [chatId, setChatId] = useState(null);
   const flatListRef = useRef(null);
 
-  const sendMessage = () => {
-    if (inputText.trim().length === 0) return;
+  useEffect(() => {
+    if (senderId) {
+      startChat();
+    }
+  }, [senderId]);
 
-    const newMessage = {
-      id: Date.now().toString(),
-      text: inputText,
-      sender: 'me',
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    };
+  const startChat = async () => {
+    setLoading(true);
+    const response = await postData(urls.STARTPRIVATECHAT, { user_id: senderId });
+    if (response?.data?.status) {
+      const chatDetail = response.data.data;
+      setChatId(chatDetail.id);
+      const participants = chatDetail.participants;
+      const otherUser = participants.find(p => String(p.user.id) === String(senderId));
+      if (otherUser) {
+        setPartner(otherUser.user);
+      } else {
+        setPartner(participants[0].user);
+      }
+      await fetchMessages(chatDetail.id);
+    } else {
+      errorHandler(response);
+    }
+    setLoading(false);
+  };
 
-    setMessages((prev) => [...prev, newMessage]);
-    setInputText('');
+  const fetchMessages = async (chatId) => {
+    const response = await getData(`${urls.GETCHATMSGS}${chatId}/messages/?vehicle_id=${config?.selectVehicle?.id}`);
+    if (response?.data?.status) {
+      setMessages([...response.data.data.items].reverse());
+    } else {
+      errorHandler(response);
+    }
+  };
 
-    // Scroll to bottom after state update
-    setTimeout(() => {
-      flatListRef.current?.scrollToEnd({ animated: true });
-    }, 100);
+  const sendMessage = async () => {
+    if (inputText.trim().length === 0 || !chatId) return;
+    try {
+      const formData = new FormData();
+      formData.append('content', inputText);
+      const url = `${urls.GETCHATMSGS}${chatId}/send_message?vehicle_id=${config?.selectVehicle?.id}`;
+      const response = await postFormData(url, formData);
+      if (response && response.data && response.data.status) {
+        const newMessage = response.data.data;
+        setMessages((prev) => [...prev, newMessage]);
+        setInputText('');
+        setTimeout(() => {
+          flatListRef.current?.scrollToEnd({ animated: true });
+        }, 100);
+      } else {
+        console.log('Send Message Error Response:', response);
+        errorHandler(response || { message: 'Network Error' });
+      }
+    } catch (error) {
+      console.log('Send Message Catch Error:', error);
+      errorHandler(error);
+    }
   };
 
   const renderItem = ({ item }) => {
-    const isMe = item.sender === 'me';
+    const isMe = String(item.sender.id) === String(user.user_id);
+    const time = item.created_at ? new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+
     return (
       <View style={[
         styles.messageContainer,
@@ -64,12 +114,17 @@ const ChatScreen = () => {
       ]}>
         <View style={[
           styles.messageBubble,
-          isMe ? styles.myMessageBubble : styles.otherMessageBubble
+          isMe ? styles.myMessageBubble : styles.otherMessageBubble,
+          { alignItems: isMe ? 'flex-end' : 'flex-start' }
         ]}>
+          <CustomText style={styles.messageText}>
+            {item.content}
+          </CustomText>
           <CustomText style={[
-            styles.messageText
+            styles.timeText,
+            isMe ? styles.myTimeText : styles.otherTimeText
           ]}>
-            {item.text}
+            {time}
           </CustomText>
         </View>
       </View>
@@ -78,44 +133,56 @@ const ChatScreen = () => {
 
   return (
     <CustomScreen>
-      <CustomHeaderChat />
+      <CustomHeaderChat
+        name={partner ? `${partner.first_name} ${partner.last_name}` : ''}
+        image={partner?.profile_image}
+        status={partner ? 'Online' : 'Offline'}
+      />
       <View style={styles.container}>
-        <FlatList
-          ref={flatListRef}
-          data={messages}
-          keyExtractor={(item) => item.id}
-          renderItem={renderItem}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-          onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
-        />
-
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
-          keyboardVerticalOffset={Platform.OS === "ios" ? 10 : 0}
-        >
-          <View style={styles.inputContainer}>
-            <View style={styles.input}>
-              <TextInput
-                style={styles.input1}
-                value={inputText}
-                onChangeText={setInputText}
-                placeholder={"Type a message"}
-                placeholderTextColor={colors.neutral400}
-                returnKeyType="send"
-                onSubmitEditing={sendMessage}
-              >
-              </TextInput>
-              <TouchableOpacity onPress={sendMessage} style={styles.sendButton1}>
-                <ArrowSend width={wp(5)} height={wp(5)} />
-              </TouchableOpacity>
-            </View>
-            <TouchableOpacity
-              style={styles.sendButton}>
-              <VoiceIcon width={wp(11.5)} height={wp(11.5)} />
-            </TouchableOpacity>
+        {loading ? (
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+            <ActivityIndicator size="large" color={colors.neonTeal300} />
           </View>
-        </KeyboardAvoidingView>
+        ) : (
+          <>
+            <FlatList
+              ref={flatListRef}
+              data={messages}
+              keyExtractor={(item) => item.id}
+              renderItem={renderItem}
+              contentContainerStyle={styles.listContent}
+              showsVerticalScrollIndicator={false}
+              onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+            />
+
+            <KeyboardAvoidingView
+              behavior={Platform.OS === "ios" ? "padding" : undefined}
+              keyboardVerticalOffset={Platform.OS === "ios" ? 10 : 0}
+            >
+              <View style={styles.inputContainer}>
+                <View style={styles.input}>
+                  <TextInput
+                    style={styles.input1}
+                    value={inputText}
+                    onChangeText={setInputText}
+                    placeholder={"Type a message"}
+                    placeholderTextColor={colors.neutral400}
+                    returnKeyType="send"
+                    onSubmitEditing={sendMessage}
+                  >
+                  </TextInput>
+                  <TouchableOpacity onPress={sendMessage} style={styles.sendButton1}>
+                    <ArrowSend width={wp(5)} height={wp(5)} />
+                  </TouchableOpacity>
+                </View>
+                <TouchableOpacity
+                  style={styles.sendButton}>
+                  <VoiceIcon width={wp(11.5)} height={wp(11.5)} />
+                </TouchableOpacity>
+              </View>
+            </KeyboardAvoidingView>
+          </>
+        )}
       </View>
     </CustomScreen>
   );
@@ -151,7 +218,7 @@ const styles = StyleSheet.create({
     borderRadius: wp(7),
   },
   myMessageBubble: {
-    backgroundColor: "#B4E0D7", // Fallback if neonTeal300 is undefined or use a different color
+    backgroundColor: "#D1FFF4",
     borderBottomRightRadius: wp(0.5),
   },
   otherMessageBubble: {
@@ -172,10 +239,12 @@ const styles = StyleSheet.create({
   timeText: {
     fontSize: wp(3),
     marginTop: hp(0.5),
-    textAlign: 'right',
   },
   myTimeText: {
-    color: 'rgba(255, 255, 255, 0.7)',
+    color: colors.neutral600,
+  },
+  otherTimeText: {
+    color: colors.neutral500,
   },
   inputContainer: {
     flexDirection: 'row',

@@ -7,7 +7,7 @@ import colors from '../../config/colors';
 import { ArrowLeft1, Message1 } from '../../../assets/svg';
 import CustomText from '../common/CustomText';
 
-const CustomHeaderChat = ({ title, backPress }) => {
+const CustomHeaderChat = ({ title, backPress, name, image, status }) => {
     const navigation = useNavigation();
 
     return (
@@ -22,15 +22,21 @@ const CustomHeaderChat = ({ title, backPress }) => {
             </View>
             <View style={styles.center}>
                 <View style={styles.row}>
-                    <Image
-                        style={styles.image}
-                        source={require('../../../assets/image/waze.png')} />
-                    <View style={{ marginLeft: wp(2) }}>
-                        <CustomText style={styles.textName}>Gregory Smith</CustomText>
-                        <View style={styles.row}>
-                            <View style={styles.dot}></View>
-                            <CustomText style={styles.textStatus}>Online</CustomText>
+                    {image ? (
+                        <Image
+                            style={styles.image}
+                            source={{ uri: image }} />
+                    ) : (
+                        <View style={[styles.image, { backgroundColor: colors.neutral100, borderRadius: wp(5), justifyContent: 'center', alignItems: 'center' }]}>
+                            <CustomText style={{ fontSize: wp(4) }}>{name?.charAt(0)}</CustomText>
                         </View>
+                    )}
+                    <View style={{ marginLeft: wp(2) }}>
+                        <CustomText style={styles.textName}>{name || 'Chat'}</CustomText>
+                        {/* <View style={styles.row}>
+                            <View style={[styles.dot, { backgroundColor: status === 'Online' ? colors.neonTeal300 : colors.neutral400 }]}></View>
+                            <CustomText style={styles.textStatus}>{status || 'Offline'}</CustomText>
+                        </View> */}
                     </View>
                 </View>
             </View>
@@ -93,6 +99,7 @@ const styles = StyleSheet.create({
     image: {
         width: wp(9),
         height: wp(9),
+        borderRadius: wp(20),
     },
     row: {
         flexDirection: 'row',

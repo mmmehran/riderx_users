@@ -9,6 +9,7 @@ import {I18nextProvider} from 'react-i18next';
 import * as Sentry from '@sentry/react-native';
 import { navigationRef, navigate } from './src/navigation/navigationRef';
 import messaging from '@react-native-firebase/messaging';
+import notifee, { EventType } from '@notifee/react-native';
 
 
 import BaseNavigator from './src/navigation/BaseNavigator';
@@ -57,7 +58,7 @@ const App = () => {
     [],
   );
 
-const goToHomeMainWith = (data?: any) => {
+  const goToHomeMainWith = (data?: any) => {
     if (!data) return;
     navigate(routes.DRAWERNAVIGATOR, {
       screen: routes.HOMEMAIN,
@@ -65,10 +66,18 @@ const goToHomeMainWith = (data?: any) => {
     });
   };
 
+  const goToChatWith = (senderId: any) => {
+    if (!senderId) return;
+    navigate(routes.DRAWERNAVIGATOR, {
+      screen: routes.CHAT,
+      params: { senderId: String(senderId) },
+    });
+  };
+
   useEffect(() => {
     // 1) Cold start from a push
     messaging().getInitialNotification().then(initial => {
-    //  if (initial?.data) goToHomeMainWith(initial.data);
+      //  if (initial?.data) goToHomeMainWith(initial.data);
     });
 
     // 2) Background → foreground (user tapped)
@@ -76,8 +85,26 @@ const goToHomeMainWith = (data?: any) => {
       if (msg?.data) goToHomeMainWith(msg.data);
     });
 
+    // 3) Notifee Background/Foreground interaction
+    const unsubscribeNotifee = notifee.onForegroundEvent(({ type, detail }) => {
+      if (type === EventType.PRESS) {
+        const { notification } = detail;
+        if (notification?.data?.type === 'chat') {
+          goToChatWith(notification.data.senderId);
+        }
+      }
+    });
+
+    // // 4) Handle cold start from Notifee
+    // notifee.getInitialNotification().then(initial => {
+    //   if (initial?.notification?.data?.type === 'chat') {
+    //     goToChatWith(initial.notification.data.senderId);
+    //   }
+    // });
+
     return () => {
       unsubOpen();
+      unsubscribeNotifee();
     };
   }, []);
 

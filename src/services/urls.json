@@ -88,5 +88,7 @@
   "GETCONTACT": "Contact/GetAll",
   "PUTCONTACT": "Contact/Put",
 
-  "REFRESH_TOKEN": "/auth/reNewToken"
+  "REFRESH_TOKEN": "/auth/reNewToken",
+  "STARTPRIVATECHAT": "user/chats/private/start",
+  "GETCHATMSGS": "user/chats/"
 }
