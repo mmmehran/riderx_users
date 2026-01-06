@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import {
   View,
   StyleSheet,
@@ -16,6 +16,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useRoute } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
+import { useFocusEffect } from '@react-navigation/core';
 
 import CustomScreen from '../../components/common/CustomScreen';
 import CustomText from '../../components/common/CustomText';
@@ -44,11 +45,15 @@ const ChatScreen = () => {
   const [chatId, setChatId] = useState(null);
   const flatListRef = useRef(null);
 
-  useEffect(() => {
-    if (senderId) {
-      startChat();
-    }
-  }, [senderId]);
+  useFocusEffect(
+    useCallback(() => {
+      if (senderId) {
+        startChat();
+      }
+    }, [senderId]),
+  );
+
+
 
   const startChat = async () => {
     setLoading(true);
