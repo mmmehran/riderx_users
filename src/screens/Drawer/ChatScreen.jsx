@@ -15,7 +15,7 @@ import {
 } from 'react-native-responsive-screen';
 import { useTranslation } from 'react-i18next';
 import { useRoute } from '@react-navigation/native';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { useFocusEffect } from '@react-navigation/core';
 
 import CustomScreen from '../../components/common/CustomScreen';
@@ -29,6 +29,7 @@ import errorHandler from '../../utils/errorHandler';
 import { selectConfig } from '../../redux/reducers/configReducer';
 import { authenticated } from '../../redux/reducers/authenticationReducer';
 import { postFormData } from '../../services/file.services';
+import { addMessage, setMessages, selectChatMessages } from '../../redux/reducers/chatReducer';
 
 const ChatScreen = () => {
   const { t } = useTranslation();
@@ -37,12 +38,15 @@ const ChatScreen = () => {
 
   const user = useSelector(authenticated);
   const config = useSelector(selectConfig);
+  const dispatch = useDispatch();
 
-  const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
   const [partner, setPartner] = useState(null);
   const [chatId, setChatId] = useState(null);
+
+  const messages = useSelector(selectChatMessages(chatId));
+
   const flatListRef = useRef(null);
 
   useFocusEffect(
@@ -75,10 +79,13 @@ const ChatScreen = () => {
     setLoading(false);
   };
 
-  const fetchMessages = async (chatId) => {
-    const response = await getData(`${urls.GETCHATMSGS}${chatId}/messages/?vehicle_id=${config?.selectVehicle?.id}`);
+  const fetchMessages = async (currentChatId) => {
+    const response = await getData(`${urls.GETCHATMSGS}${currentChatId}/messages/?vehicle_id=${config?.selectVehicle?.id}`);
     if (response?.data?.status) {
-      setMessages([...response.data.data.items].reverse());
+      dispatch(setMessages({
+        chatId: currentChatId,
+        messages: [...response.data.data.items].reverse()
+      }));
     } else {
       errorHandler(response);
     }
@@ -93,7 +100,7 @@ const ChatScreen = () => {
       const response = await postFormData(url, formData);
       if (response && response.data && response.data.status) {
         const newMessage = response.data.data;
-        setMessages((prev) => [...prev, newMessage]);
+        dispatch(addMessage({ chatId, message: newMessage }));
         setInputText('');
         setTimeout(() => {
           flatListRef.current?.scrollToEnd({ animated: true });
@@ -177,7 +184,7 @@ const ChatScreen = () => {
                   >
                   </TextInput>
                   <TouchableOpacity onPress={sendMessage} style={styles.sendButton1}>
-                    <ArrowSend width={wp(5)} height={wp(5)} />
+                    <ArrowSend width={wp(4.5)} height={wp(4.5)} />
                   </TouchableOpacity>
                 </View>
                 <TouchableOpacity
@@ -260,33 +267,33 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    height: hp(5.5),
+    height: hp(5.1),
     backgroundColor: colors.white,
     borderRadius: wp(3),
-    paddingHorizontal: wp(4),
+    paddingHorizontal: wp(2),
     fontSize: wp(4),
     color: colors.neutral900,
-    marginRight: wp(3),
+    marginRight: wp(2),
     borderWidth: 1,
     borderColor: colors.neutral200,
     flexDirection: "row"
   },
   input1: {
-    height: hp(5.5),
+    height: hp(5.1),
     fontSize: wp(4),
     color: colors.neutral900,
-    width: wp(62)
+    width: wp(68)
   },
   sendButton: {
-    width: hp(5.5),
-    height: hp(5.5),
+    width: hp(6),
+    height: hp(5.1),
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: wp(3),
   },
   sendButton1: {
-    width: hp(5.5),
-    height: hp(5.5),
+    width: hp(3),
+    height: hp(5.1),
     justifyContent: 'center',
     alignItems: 'center',
   },

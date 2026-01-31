@@ -64,6 +64,7 @@ import {
   setVehicleData,
   setSelectedOrder1
 } from '../../../redux/reducers/configReducer';
+import { addMessage } from '../../../redux/reducers/chatReducer';
 import ConfirmModal from '../../../modal/ConfirmModal';
 import ConfirmCancelDeliveryModal from '../../../modal/ConfirmCancelDeliveryModal';
 import routes from '../../../navigation/routes';
@@ -434,14 +435,22 @@ const HomeMainScreen = ({ route }) => {
         removeOrderById(removedId);
         showToastWarning(`${t('deliveryId')} ${payload?.message?.id} ${t('acceptByAnother')}`);
       } else if (event === 'chat_new_message') {
-        const message = payload?.message?.message?.content;
-        const senderId = payload?.message?.message?.sender?.id;
+        const messageObj = payload?.message?.message;
+        const senderId = messageObj?.sender?.id;
+        const chatId = payload?.message?.chat_id;
+        console.log(payload?.message)
+
+        if (chatId) {
+          dispatch(addMessage({ chatId, message: messageObj }));
+        }
+
         await showLocalNotification({
-          title: t('newMessage'),
-          body: message,
+          title: `${messageObj?.sender?.first_name} ${messageObj?.sender?.last_name} ${t('newMessage')}`,
+          body: messageObj?.content,
           data: {
             type: 'chat',
             senderId: String(senderId),
+            chatId: String(chatId),
           },
         });
       }

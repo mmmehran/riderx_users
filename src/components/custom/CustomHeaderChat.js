@@ -33,10 +33,10 @@ const CustomHeaderChat = ({ title, backPress, name, image, status }) => {
                     )}
                     <View style={{ marginLeft: wp(2) }}>
                         <CustomText style={styles.textName}>{name || 'Chat'}</CustomText>
-                        {/* <View style={styles.row}>
+                        <View style={styles.row}>
                             <View style={[styles.dot, { backgroundColor: status === 'Online' ? colors.neonTeal300 : colors.neutral400 }]}></View>
                             <CustomText style={styles.textStatus}>{status || 'Offline'}</CustomText>
-                        </View> */}
+                        </View>
                     </View>
                 </View>
             </View>
@@ -65,12 +65,12 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     textStatus: {
-        fontSize: wp(3.3),
+        fontSize: wp(2.8),
         color: colors.neutral400,
         textAlign: 'left',
     },
     textName: {
-        fontSize: wp(4),
+        fontSize: wp(3.5),
         color: colors.neutral900,
         textAlign: 'left',
     },
@@ -97,8 +97,8 @@ const styles = StyleSheet.create({
         textAlign: 'left',
     },
     image: {
-        width: wp(9),
-        height: wp(9),
+        width: wp(8),
+        height: wp(8),
         borderRadius: wp(20),
     },
     row: {
@@ -106,10 +106,10 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     dot: {
-        width: wp(1.8),
-        height: wp(1.8),
+        width: wp(1.3),
+        height: wp(1.3),
         borderRadius: wp(5),
         backgroundColor: colors.neonTeal300,
-        marginRight: wp(1.5),
+        marginRight: wp(0.5),
     }
 });
