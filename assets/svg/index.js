@@ -98,3 +98,6 @@ export { default as Settings } from "./settings.svg";
 export { default as MapIcon } from "./mapIcon.svg";
 export { default as MapArrow } from "./mapArrow.svg";
 export { default as ArrowRightWhite1 } from "./arrowRightWhite1.svg";
+export { default as Message1 } from "./message1.svg";
+export { default as VoiceIcon } from "./voiceIcon.svg";
+export { default as ArrowSend } from "./arrowSend.svg";

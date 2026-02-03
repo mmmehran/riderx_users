@@ -6,6 +6,7 @@ import {
 } from 'react-native-responsive-screen';
 import SwipeButton from '../components/common/SwipeButton';
 import { useTranslation } from 'react-i18next';
+import { useNavigation } from '@react-navigation/native';
 
 import colors from '../config/colors';
 import CustomText from '../components/common/CustomText';
@@ -23,12 +24,14 @@ import { normalizeLabel, timeAgoShort, isAndroid15Plus } from '../utils/helpers'
 import { openExternalMap } from '../utils/externalMap';
 import { useSelector } from 'react-redux';
 import { selectConfig } from '../redux/reducers/configReducer';
+import routes from '../navigation/routes';
 
 
 const AcceptedOrderModal = ({ order, changeOrder, loading, insets, onModalPosition }) => {
   const { t } = useTranslation();
   const [less, setLess] = useState(false);
   const config = useSelector(selectConfig);
+  const navigation = useNavigation();
 
   const phoneNumber = `tel:${order?.status !== 'pickup'
     ? `+${order?.sender_phone?.country_code}${order?.sender_phone?.number}`
@@ -117,7 +120,11 @@ const AcceptedOrderModal = ({ order, changeOrder, loading, insets, onModalPositi
             </View>
           </View>
           <TouchableOpacity
-            onPress={sendSms}
+            onPress={() => {
+              //  const targetUserId = order?.status !== 'pickup' ? order?.sender?.id : order?.receiver?.id;
+              const targetUserId = order?.sender?.id
+              navigation.navigate(routes.CHAT, { senderId: String(targetUserId) });
+            }}
             style={[
               styles.buttonCall1,
               { backgroundColor: colors.black, marginRight: wp(2) },

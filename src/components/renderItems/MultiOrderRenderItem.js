@@ -71,7 +71,7 @@ const ReportListRenderItem = ({ item, multi = false, multiOrder, handleAccept, s
                         <CustomText style={styles.time}>{isoTo12Hour(item?.timestamp)}</CustomText>
                     </View>
                 </View>
-                <View style={styles.row}>
+                {!show && <View style={styles.row}>
                     <View style={styles.icon}>
                         <View style={styles.userIcon}>
                             <CustomText style={[styles.title, { color: "#122368" }]}>{capitalizeFirstLetter(item?.sender?.first_name).charAt(0) + "" + capitalizeFirstLetter(item?.sender?.last_name).charAt(0)}</CustomText>
@@ -84,7 +84,7 @@ const ReportListRenderItem = ({ item, multi = false, multiOrder, handleAccept, s
                             <CustomText numberOfLines={1} style={styles.dec}>{!multi ? `${item?.delivery_package?.title} - ${formatted} Km` : fmtLeg(durationMins, distanceKm)}</CustomText>
                         </View>
                     </View>
-                </View>
+                </View>}
                 <View style={styles.addressContainer}>
                     <View style={styles.iconLineContainer}>
                         <View style={styles.rowContianer}>
@@ -118,10 +118,10 @@ const ReportListRenderItem = ({ item, multi = false, multiOrder, handleAccept, s
                         })}
                     </View>
                 </View>
-                <View style={styles.priceRow}>
+                {!show && <View style={styles.priceRow}>
                     <CustomText numberOfLines={1} style={styles.title}>+€{item?.rider_fee}</CustomText>
                     <CustomText numberOfLines={1} style={[styles.title, { marginLeft: wp(2), fontSize: wp(3.6), color: colors.gray300 }]}>  + €{(item?.rider_fee * 0.2).toFixed(2)}  {t("vat")}</CustomText>
-                </View>
+                </View>}
                 {!show ? <SwipeButton
                     title={t('Accept')}
                     onSwipeSuccess={handleAccept}

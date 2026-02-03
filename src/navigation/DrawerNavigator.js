@@ -1,7 +1,7 @@
 import React from 'react';
 import { createDrawerNavigator } from "@react-navigation/drawer";
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
-import { useSelector} from 'react-redux';
+import { useSelector } from 'react-redux';
 
 import routes from "./routes";
 import colors from '../config/colors';
@@ -14,13 +14,14 @@ import Report from '../screens/Drawer/Report'
 import Wallet from '../screens/Drawer/Wallet'
 import ResetPassword from '../screens/Drawer/ResetPassword'
 import MyAccount from '../screens/Drawer/MyAccount'
-import {selectConfig} from '../redux/reducers/configReducer'
+import { selectConfig } from '../redux/reducers/configReducer'
 import Sender from '../screens/WebView/Sender'
 import EditMyAccount from '../screens/Drawer/EditMyAccount'
 import AppSettings from '../screens/Drawer/AppSettings'
 import SelectExternalMap from '../screens/Drawer/SelectExternalMap'
 import SelectMapStyle from '../screens/Drawer/SelectMapStyle'
 import MultiOrder from '../screens/Drawer/MultiOrder'
+import ChatScreen from '../screens/Drawer/ChatScreen'
 
 const Drawer = createDrawerNavigator();
 
@@ -29,7 +30,7 @@ const DrawerNavigator = () => {
 
     return (
         <Drawer.Navigator
-            initialRouteName={config?.selectVehicle == null ?   routes.CHOOSEVEHICLE  :  routes.HOMEMAIN}
+            initialRouteName={config?.selectVehicle == null ? routes.CHOOSEVEHICLE : routes.HOMEMAIN}
             screenOptions={{
                 headerShown: false,
                 drawerStyle: {
@@ -38,7 +39,7 @@ const DrawerNavigator = () => {
                 },
                 drawerPosition: "left",
                 drawerType: "slide",
-                 swipeEnabled: false, 
+                swipeEnabled: false,
             }}
             drawerContent={(props) => <DrawerScreen {...props}></DrawerScreen>}
         >
@@ -110,6 +111,11 @@ const DrawerNavigator = () => {
             <Drawer.Screen
                 name={routes.MAPSTYLE}
                 component={SelectMapStyle}
+                options={{ fullScreenGestureEnabled: false }}
+            />
+            <Drawer.Screen
+                name={routes.CHAT}
+                component={ChatScreen}
                 options={{ fullScreenGestureEnabled: false }}
             />
         </Drawer.Navigator>

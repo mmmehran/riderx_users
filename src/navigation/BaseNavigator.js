@@ -2,18 +2,18 @@ import React, { useEffect } from "react";
 import { AppState } from "react-native";
 import IdleTimerManager from "react-native-idle-timer";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { useSelector,useDispatch } from "react-redux";
-import { useNavigation } from "@react-navigation/native";
+import { useSelector, useDispatch } from "react-redux";
+import { useNavigation, CommonActions } from "@react-navigation/native";
 
 import SplashScreen from '../screens/Splash/Splash';
 import OnBoardingScreen from '../screens/OnBoarding/OnBoardingScreen';
 import MainNavigator from './MainNavigator';
 import useDidMountEffect from '../utils/customHooks/UseDidMountEffect';
-import {  authenticated} from '../redux/reducers/authenticationReducer';
-import {setConfig,setConfigTest} from '../services/defaultAxios'
+import { authenticated } from '../redux/reducers/authenticationReducer';
+import { setConfig, setConfigTest } from '../services/defaultAxios'
 import routes from "./routes";
-import {setSelectVehicle} from '../redux/reducers/configReducer';
-import { getData} from '../services/common.service';
+import { setSelectVehicle } from '../redux/reducers/configReducer';
+import { getData } from '../services/common.service';
 import urls from '../services/urls.json';
 import errorHandler from '../utils/errorHandler';
 
@@ -28,35 +28,34 @@ const BaseNavigator = () => {
     const response = await getData(`${urls.GETVEHICLE}?page=1`);
     if (response?.data?.status) {
       if (response?.data?.data?.items?.length == 1) {
-       await dispatch(setSelectVehicle(response?.data?.data?.items[0]));
+        await dispatch(setSelectVehicle(response?.data?.data?.items[0]));
       }
     } else {
       errorHandler(response);
     }
   };
 
-  const fetchRoute = async()=>{
-    if(user?.authenticated == true){
-      if(user?.is_rider){
-        await  getVehicle()
-        navigation.navigate(routes.DRAWERNAVIGATOR)
-      }else{
-        navigation.navigate(routes.SENDER)
-      }
-    }else{
-       navigation.navigate(routes.AUTHNAVIGATOR);
+  const fetchRoute = async () => {
+    if (user?.authenticated == true && user?.is_rider) {
+      await getVehicle();
     }
-  }
+    navigation.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [{ name: routes.MAINNAVIGATOR }],
+      })
+    );
+  };
 
   useDidMountEffect(() => {
     fetchRoute()
   }, [user?.authenticated]);
 
   useEffect(() => {
-    if( user?.authenticated && /^[^@\s]+@bb\.com$/i.test(user?.email)){
-        setConfigTest()
-    }else{
-        setConfig()
+    if (user?.authenticated && /^[^@\s]+@bb\.com$/i.test(user?.email)) {
+      setConfigTest()
+    } else {
+      setConfig()
     }
 
     const apply = (state) => {

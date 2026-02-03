@@ -175,5 +175,6 @@
   "Unfinished":"Unfinished",
   "nextTrip":"Next trip suggestion",
   "goNextTrip":"Go to next route",
-  "orderSteps":"Order steps"
+  "orderSteps":"Order steps",
+  "newMessage":"New Message"
 }
