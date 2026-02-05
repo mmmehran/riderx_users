@@ -175,7 +175,11 @@
   "Unfinished": "غير مكتمل",
   "nextTrip": "اقتراح الرحلة التالية",
   "goNextTrip": "الانتقال إلى المسار التالي",
-  "orderSteps": "خطوات الطلب"
+  "orderSteps": "خطوات الطلب",
+  "newMessage": "رسالة جديدة",
+  "messageList": "قائمة الرسائل",
+  "findHere": "ابحث هنا...",
+  "noChatsFound": "لم يتم العثور على محادثات"
 }
 
 

@@ -175,7 +175,9 @@
   "Unfinished": "Tamamlanmamış",
   "nextTrip": "Sonraki yolculuk önerisi",
   "goNextTrip": "Sonraki rotaya git",
-  "orderSteps": "Sipariş adımları"
-
-
+  "orderSteps": "Sipariş adımları",
+  "newMessage": "Yeni Mesaj",
+  "messageList": "Mesaj Listesi",
+  "findHere": "Burada bul...",
+  "noChatsFound": "Sohbet bulunamadı"
 }

@@ -22,6 +22,7 @@ import SelectExternalMap from '../screens/Drawer/SelectExternalMap'
 import SelectMapStyle from '../screens/Drawer/SelectMapStyle'
 import MultiOrder from '../screens/Drawer/MultiOrder'
 import ChatScreen from '../screens/Drawer/ChatScreen'
+import ChatListScreen from '../screens/Drawer/ChatListScreen'
 
 const Drawer = createDrawerNavigator();
 
@@ -116,6 +117,11 @@ const DrawerNavigator = () => {
             <Drawer.Screen
                 name={routes.CHAT}
                 component={ChatScreen}
+                options={{ fullScreenGestureEnabled: false }}
+            />
+            <Drawer.Screen
+                name={routes.CHATLIST}
+                component={ChatListScreen}
                 options={{ fullScreenGestureEnabled: false }}
             />
         </Drawer.Navigator>

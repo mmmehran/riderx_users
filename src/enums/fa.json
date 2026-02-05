@@ -175,5 +175,9 @@
   "Unfinished": "ناتمام",
   "nextTrip": "پیشنهاد سفر بعدی",
   "goNextTrip": "رفتن به مسیر بعدی",
-  "orderSteps": "مراحل سفارش"
+  "orderSteps": "مراحل سفارش",
+  "newMessage": "پیام جدید",
+  "messageList": "لیست پیام‌ها",
+  "findHere": "اینجا جستجو کنید...",
+  "noChatsFound": "گفتگویی یافت نشد"
 }

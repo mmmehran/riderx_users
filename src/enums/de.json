@@ -175,5 +175,9 @@
   "Unfinished": "Unvollständig",
   "nextTrip": "Vorschlag für nächste Fahrt",
   "goNextTrip": "Zur nächsten Route gehen",
-  "orderSteps": "Bestellschritte"
+  "orderSteps": "Bestellschritte",
+  "newMessage": "Neue Nachricht",
+  "messageList": "Nachrichtenliste",
+  "findHere": "Hier suchen...",
+  "noChatsFound": "Keine Chats gefunden"
 }

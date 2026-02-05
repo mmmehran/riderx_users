@@ -6,6 +6,7 @@ import { useNavigation } from "@react-navigation/native";
 import colors from '../../config/colors';
 import { ArrowLeft1, Message1 } from '../../../assets/svg';
 import CustomText from '../common/CustomText';
+import routes from '../../navigation/routes';
 
 const CustomHeaderChat = ({ title, backPress, name, image, status }) => {
     const navigation = useNavigation();
@@ -43,7 +44,7 @@ const CustomHeaderChat = ({ title, backPress, name, image, status }) => {
             <View style={[styles.left, { marginRight: wp(4.5), marginLeft: 0, alignItems: "flex-end" }]}>
                 <TouchableOpacity
                     activeOpacity={0.6}
-                    //  onPress={backPress ? backPress : () => navigation.goBack()}
+                    onPress={backPress ? backPress : () => navigation.navigate(routes.CHATLIST)}
                     style={styles.button}>
                     <Message1 width={wp(4)} height={wp(4)}></Message1>
                 </TouchableOpacity>

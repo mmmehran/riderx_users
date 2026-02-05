@@ -27,6 +27,7 @@ export default Object.freeze({
     MAPSTYLE: "mapStyle",
     NEXTTRIP: "nextTrip",
     CHAT: "chat",
+    CHATLIST: "chatList",
 
 
 

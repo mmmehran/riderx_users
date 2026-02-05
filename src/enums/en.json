@@ -176,5 +176,8 @@
   "nextTrip":"Next trip suggestion",
   "goNextTrip":"Go to next route",
   "orderSteps":"Order steps",
-  "newMessage":"New Message"
+  "newMessage":"New Message",
+  "messageList":"Message List",
+  "findHere":"Find here...",
+  "noChatsFound":"No chats found"
 }
