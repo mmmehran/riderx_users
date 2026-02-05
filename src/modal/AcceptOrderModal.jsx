@@ -141,9 +141,9 @@ const AcceptOrderModal = ({
         </View>
         <View style={styles.line} />
         <View style={styles.tagContainer}>
-          {order?.tags?.map(item => {
+          {order?.tags?.map((item, index) => {
             return (
-              <View style={styles.tagBox}>
+              <View key={index} style={styles.tagBox}>
                 <CustomText style={styles.textTag}>
                   {normalizeLabel(item)}
                 </CustomText>

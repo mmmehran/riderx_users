@@ -812,8 +812,10 @@ const HomeMainScreen = ({ route }) => {
       else errorHandler(responseMergeOrder);
     } else {
       if (response?.status == 400) {
-        removeOrderById(order?.id);
-        showToastWarning(`${t('deliveryId')} ${order?.id} ${t('acceptByAnother')}`);
+        if (response?.response?.data?.message == "Validation error : update delivery  Delivery Not Found") {
+          removeOrderById(order?.id);
+          showToastWarning(`${t('deliveryId')} ${order?.id} ${t('acceptByAnother')}`);
+        }
       } else {
         errorHandler(response);
       }
