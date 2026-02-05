@@ -101,3 +101,4 @@ export { default as ArrowRightWhite1 } from "./arrowRightWhite1.svg";
 export { default as Message1 } from "./message1.svg";
 export { default as VoiceIcon } from "./voiceIcon.svg";
 export { default as ArrowSend } from "./arrowSend.svg";
+export { default as SearchInput } from "./searchInput.svg";
