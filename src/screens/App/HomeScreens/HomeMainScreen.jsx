@@ -371,8 +371,12 @@ const HomeMainScreen = ({ route }) => {
     if (route?.params?.multi === 'acceptNewOrder' && route?.params?.order) {
       const { order } = route.params;
       changeStatusOrderAccept(order, 'accepted');
-      // Clear params to prevent re-triggering if possible, or reliance on dependency change
       navigation.setParams({ order: null });
+    }
+
+    if (route?.params?.refreshDeliveries) {
+      getDeliveryLists();
+      navigation.setParams({ refreshDeliveries: null });
     }
   }, [route?.params]);
 

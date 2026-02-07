@@ -74,24 +74,59 @@ const App = () => {
     });
   };
 
+  const handleNotificationPress = (data: any) => {
+    if (!data) return;
+    
+    // Check if there is an active order
+    const state = store.getState();
+    const hasActiveOrder = !!state.config.selectedOrder;
+
+    if (hasActiveOrder && data.id) {
+       // Navigate to MultiOrder screen (NEXTTRIP)
+       navigate(routes.DRAWERNAVIGATOR, {
+         screen: routes.NEXTTRIP,
+         params: { data: [data], show: false },
+       });
+    } else {
+       // Navigate to Home screen
+       goToHomeMainWith({ ...data, refreshDeliveries: true });
+    }
+  };
+
   useEffect(() => {
-    // 1) Cold start from a push
+    // 1) Cold start from a push (FCM)
     messaging().getInitialNotification().then(initial => {
-      //  if (initial?.data) goToHomeMainWith(initial.data);
+       console.log('FCM Initial Notification:', initial);
+       if (initial?.data) handleNotificationPress(initial.data);
     });
 
-    // 2) Background → foreground (user tapped)
+    // 2) Background → foreground (user tapped FCM)
     const unsubOpen = messaging().onNotificationOpenedApp(msg => {
-      if (msg?.data) goToHomeMainWith(msg.data);
+      console.log('FCM Background Notification:', msg);
+      if (msg?.data) handleNotificationPress(msg.data);
     });
 
     // 3) Notifee Background/Foreground interaction
     const unsubscribeNotifee = notifee.onForegroundEvent(({ type, detail }) => {
       if (type === EventType.PRESS) {
         const { notification } = detail;
+        console.log('Notifee Foreground/Background Press:', detail);
         if (notification?.data?.type === 'chat') {
           goToChatWith(notification.data.senderId);
+        } else if (notification?.data) {
+          handleNotificationPress(notification.data);
         }
+      }
+    });
+
+    // 4) Handle cold start from Notifee
+    notifee.getInitialNotification().then(initial => {
+      console.log('Notifee Initial Notification:', initial);
+      const data = initial?.notification?.data;
+      if (data?.type === 'chat') {
+        goToChatWith(data.senderId);
+      } else if (data) {
+        handleNotificationPress(data);
       }
     });
 
