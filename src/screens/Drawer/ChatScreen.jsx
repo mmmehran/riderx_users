@@ -159,7 +159,11 @@ const ChatScreen = () => {
             <ActivityIndicator size="large" color={colors.neonTeal300} />
           </View>
         ) : (
-          <>
+          <KeyboardAvoidingView
+            style={{ flex: 1 }}
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
+            keyboardVerticalOffset={Platform.OS === "ios" ? hp(8) : 0}
+          >
             <FlatList
               ref={flatListRef}
               data={messages}
@@ -170,33 +174,26 @@ const ChatScreen = () => {
               onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
             />
 
-            <KeyboardAvoidingView
-              behavior={Platform.OS === "ios" ? "padding" : undefined}
-              keyboardVerticalOffset={Platform.OS === "ios" ? 10 : 0}
-            >
-              <View style={styles.inputContainer}>
-                <View style={styles.input}>
-                  <TextInput
-                    style={styles.input1}
-                    value={inputText}
-                    onChangeText={setInputText}
-                    placeholder={"Type a message"}
-                    placeholderTextColor={colors.neutral400}
-                    returnKeyType="send"
-                    onSubmitEditing={sendMessage}
-                  >
-                  </TextInput>
-                  <TouchableOpacity onPress={sendMessage} style={styles.sendButton1}>
-                    <ArrowSend width={wp(4.5)} height={wp(4.5)} />
-                  </TouchableOpacity>
-                </View>
-                <TouchableOpacity
-                  style={styles.sendButton}>
-                  <VoiceIcon width={wp(11.5)} height={wp(11.5)} />
+            <View style={styles.inputContainer}>
+              <View style={styles.input}>
+                <TextInput
+                  style={styles.input1}
+                  value={inputText}
+                  onChangeText={setInputText}
+                  placeholder={"Type a message"}
+                  placeholderTextColor={colors.neutral400}
+                  returnKeyType="send"
+                  onSubmitEditing={sendMessage}
+                />
+                <TouchableOpacity onPress={sendMessage} style={styles.sendButton1}>
+                  <ArrowSend width={wp(4.5)} height={wp(4.5)} />
                 </TouchableOpacity>
               </View>
-            </KeyboardAvoidingView>
-          </>
+              <TouchableOpacity style={styles.sendButton}>
+                <VoiceIcon width={wp(11.5)} height={wp(11.5)} />
+              </TouchableOpacity>
+            </View>
+          </KeyboardAvoidingView>
         )}
       </View>
     </CustomScreen>
