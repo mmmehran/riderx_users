@@ -35,6 +35,7 @@ import {
   Services,
   Settings,
   Faq,
+  Message1
 } from '../../../assets/svg/index';
 import CustomAvailableRider from '../../components/custom/CustomAvailableRider1';
 import { sendData, getData } from '../../services/common.service';
@@ -78,6 +79,12 @@ const LoginEmail = props => {
       name: t('orderSteps'),
       icon: <FindRide width={wp(6)} height={wp(6)}></FindRide>,
       onPress: () => props?.navigation.navigate(routes.NEXTTRIP, { data: [config?.selectedOrder], show: true }),
+    },
+    {
+      id: 6,
+      name: t('messageList'),
+      icon: <Message1 width={wp(5.5)} height={wp(5.5)}></Message1>,
+      onPress: () => props?.navigation.navigate(routes.CHATLIST, { back: true }),
     },
 
     //   id: 4,

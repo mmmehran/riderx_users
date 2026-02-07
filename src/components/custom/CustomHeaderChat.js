@@ -44,7 +44,7 @@ const CustomHeaderChat = ({ title, backPress, name, image, status }) => {
             <View style={[styles.left, { marginRight: wp(4.5), marginLeft: 0, alignItems: "flex-end" }]}>
                 <TouchableOpacity
                     activeOpacity={0.6}
-                    onPress={backPress ? backPress : () => navigation.navigate(routes.CHATLIST)}
+                    onPress={() => navigation.navigate(routes.CHATLIST, { back: true })}
                     style={styles.button}>
                     <Message1 width={wp(4)} height={wp(4)}></Message1>
                 </TouchableOpacity>

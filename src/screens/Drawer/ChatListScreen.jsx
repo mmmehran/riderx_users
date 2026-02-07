@@ -30,7 +30,7 @@ import { authenticated } from '../../redux/reducers/authenticationReducer';
 import { timeAgoShort } from '../../utils/helpers';
 import routes from '../../navigation/routes';
 
-const ChatListScreen = () => {
+const ChatListScreen = ({ route }) => {
   const { t } = useTranslation();
   const navigation = useNavigation();
   const user = useSelector(authenticated);
@@ -40,6 +40,8 @@ const ChatListScreen = () => {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState('');
+
+  const back = route?.params?.back;
 
   const fetchChats = async () => {
     if (!refreshing) setLoading(true);
@@ -89,7 +91,7 @@ const ChatListScreen = () => {
     return (
       <TouchableOpacity
         style={styles.chatItem}
-        onPress={() => navigation.navigate(routes.CHAT, { senderId: partner?.id, chatId: item.id })}
+        onPress={() => navigation.navigate(routes.CHAT, { senderId: partner?.id, chatId: item.id, back: true })}
       >
         <View style={styles.avatarContainer}>
           {partner?.profile_image ? (
@@ -125,7 +127,7 @@ const ChatListScreen = () => {
   return (
     <CustomScreen>
       <CustomHeaderApp
-        backPress={() => navigation.navigate(routes.CHAT)}
+        backPress={() => navigation.goBack()}
         title={t('messageList')} />
       <View style={styles.container}>
         <View style={styles.searchContainer}>

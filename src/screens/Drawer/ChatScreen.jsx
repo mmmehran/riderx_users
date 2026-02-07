@@ -14,7 +14,7 @@ import {
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
 import { useTranslation } from 'react-i18next';
-import { useRoute } from '@react-navigation/native';
+import { useRoute, useNavigation } from '@react-navigation/native';
 import { useSelector, useDispatch } from 'react-redux';
 import { useFocusEffect } from '@react-navigation/core';
 
@@ -30,11 +30,13 @@ import { selectConfig } from '../../redux/reducers/configReducer';
 import { authenticated } from '../../redux/reducers/authenticationReducer';
 import { postFormData } from '../../services/file.services';
 import { addMessage, setMessages, selectChatMessages } from '../../redux/reducers/chatReducer';
+import routes from '../../navigation/routes';
 
 const ChatScreen = () => {
   const { t } = useTranslation();
   const route = useRoute();
-  const { senderId } = route.params || {};
+  const { senderId, back } = route.params || {};
+  const navigation = useNavigation();
 
   const user = useSelector(authenticated);
   const config = useSelector(selectConfig);
@@ -149,6 +151,7 @@ const ChatScreen = () => {
         name={partner ? `${partner.first_name} ${partner.last_name}` : ''}
         image={partner?.profile_image}
         status={partner ? 'Online' : 'Offline'}
+        backPress={() => navigation.goBack()}
       />
       <View style={styles.container}>
         {loading ? (
