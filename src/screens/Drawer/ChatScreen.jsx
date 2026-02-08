@@ -51,7 +51,10 @@ const ChatScreen = () => {
   const [chatId, setChatId] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
   const [playingVoiceId, setPlayingVoiceId] = useState(null);
+  const [voiceProgress, setVoiceProgress] = useState(0);
+  const [voiceDuration, setVoiceDuration] = useState(0);
   const soundRef = useRef(null);
+  const progressInterval = useRef(null);
 
   const messages = useSelector(selectChatMessages(chatId));
 
@@ -62,6 +65,13 @@ const ChatScreen = () => {
       if (senderId) {
         startChat();
       }
+      return () => {
+        clearInterval(progressInterval.current);
+        if (soundRef.current) {
+          soundRef.current.stop();
+          soundRef.current.release();
+        }
+      };
     }, [senderId]),
   );
 
@@ -133,6 +143,7 @@ const ChatScreen = () => {
     const playVoice = (url, msgId) => {
       if (playingVoiceId === msgId) {
         soundRef.current?.pause();
+        clearInterval(progressInterval.current);
         setPlayingVoiceId(null);
         return;
       }
@@ -140,15 +151,22 @@ const ChatScreen = () => {
       if (soundRef.current) {
         soundRef.current.stop();
         soundRef.current.release();
+        clearInterval(progressInterval.current);
       }
 
       setPlayingVoiceId(msgId);
+      setVoiceProgress(0);
+
       soundRef.current = new Sound(url, '', (error) => {
         if (error) {
           console.log('failed to load the sound', error);
           setPlayingVoiceId(null);
           return;
         }
+
+        const duration = soundRef.current.getDuration();
+        setVoiceDuration(duration);
+
         soundRef.current.play((success) => {
           if (success) {
             console.log('successfully finished playing');
@@ -156,7 +174,17 @@ const ChatScreen = () => {
             console.log('playback failed due to audio decoding errors');
           }
           setPlayingVoiceId(null);
+          setVoiceProgress(0);
+          clearInterval(progressInterval.current);
         });
+
+        progressInterval.current = setInterval(() => {
+          if (soundRef.current && soundRef.current.isPlaying()) {
+            soundRef.current.getCurrentTime((seconds) => {
+              setVoiceProgress(seconds);
+            });
+          }
+        }, 100);
       });
     };
 
@@ -186,12 +214,21 @@ const ChatScreen = () => {
                 style={styles.playButton}
               >
                 {playingVoiceId === item.id ? (
-                  <PauseIcon width={wp(6)} height={wp(6)} fill={isMe ? colors.white : colors.neonTeal500} />
+                  <PauseIcon width={wp(5)} height={wp(5)} fill={colors.neonTeal300} />
                 ) : (
-                  <PlayIcon width={wp(6)} height={wp(6)} fill={isMe ? colors.white : colors.neonTeal500} />
+                  <PlayIcon width={wp(5)} height={wp(5)} fill={colors.neonTeal300} />
                 )}
               </TouchableOpacity>
-              <View style={styles.voiceWaveform} />
+              <View style={styles.voiceWaveform}>
+                {playingVoiceId === item.id && (
+                  <View
+                    style={[
+                      styles.voiceProgressBar,
+                      { width: `${(voiceProgress / voiceDuration) * 100}%` }
+                    ]}
+                  />
+                )}
+              </View>
             </View>
           ) : (
             <CustomText style={styles.messageText}>
@@ -457,5 +494,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.1)',
     marginLeft: wp(3),
     borderRadius: wp(1),
+    overflow: 'hidden',
+  },
+  voiceProgressBar: {
+    height: '100%',
+    backgroundColor: colors.neonTeal300,
   },
 });
