@@ -8,6 +8,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import {
   widthPercentageToDP as wp,
@@ -17,12 +18,14 @@ import { useTranslation } from 'react-i18next';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { useSelector, useDispatch } from 'react-redux';
 import { useFocusEffect } from '@react-navigation/core';
+import Modal from 'react-native-modal';
 
 import CustomScreen from '../../components/common/CustomScreen';
 import CustomText from '../../components/common/CustomText';
 import colors from '../../config/colors';
 import CustomHeaderChat from '../../components/custom/CustomHeaderChat';
-import { VoiceIcon, ArrowSend, PaperClip, VoiceRecord } from '../../../assets/svg';
+import { VoiceIcon, ArrowSend, PaperClip, VoiceRecord, CancelIcon1, PlayIcon, PauseIcon } from '../../../assets/svg';
+import Sound from 'react-native-sound';
 import { postData, getData } from '../../services/common.service';
 import urls from '../../services/urls.json';
 import errorHandler from '../../utils/errorHandler';
@@ -46,6 +49,9 @@ const ChatScreen = () => {
   const [loading, setLoading] = useState(false);
   const [partner, setPartner] = useState(null);
   const [chatId, setChatId] = useState(null);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [playingVoiceId, setPlayingVoiceId] = useState(null);
+  const soundRef = useRef(null);
 
   const messages = useSelector(selectChatMessages(chatId));
 
@@ -62,7 +68,7 @@ const ChatScreen = () => {
 
 
   const startChat = async () => {
-    setLoading(true);
+    // setLoading(true);
     const response = await postData(urls.STARTPRIVATECHAT, { user_id: senderId });
     if (response?.data?.status) {
       const chatDetail = response.data.data;
@@ -84,6 +90,7 @@ const ChatScreen = () => {
   const fetchMessages = async (currentChatId) => {
     const response = await getData(`${urls.GETCHATMSGS}${currentChatId}/messages/?vehicle_id=${config?.selectVehicle?.id}`);
     if (response?.data?.status) {
+      console.log(response?.data)
       dispatch(setMessages({
         chatId: currentChatId,
         messages: [...response.data.data.items].reverse()
@@ -120,6 +127,38 @@ const ChatScreen = () => {
   const renderItem = ({ item }) => {
     const isMe = String(item.sender.id) === String(user.user_id);
     const time = item.created_at ? new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+    const isImage = item.file_type === 'image' && item.file;
+    const isVoice = item.file_type === 'voice' && item.file;
+
+    const playVoice = (url, msgId) => {
+      if (playingVoiceId === msgId) {
+        soundRef.current?.pause();
+        setPlayingVoiceId(null);
+        return;
+      }
+
+      if (soundRef.current) {
+        soundRef.current.stop();
+        soundRef.current.release();
+      }
+
+      setPlayingVoiceId(msgId);
+      soundRef.current = new Sound(url, '', (error) => {
+        if (error) {
+          console.log('failed to load the sound', error);
+          setPlayingVoiceId(null);
+          return;
+        }
+        soundRef.current.play((success) => {
+          if (success) {
+            console.log('successfully finished playing');
+          } else {
+            console.log('playback failed due to audio decoding errors');
+          }
+          setPlayingVoiceId(null);
+        });
+      });
+    };
 
     return (
       <View style={[
@@ -129,14 +168,40 @@ const ChatScreen = () => {
         <View style={[
           styles.messageBubble,
           isMe ? styles.myMessageBubble : styles.otherMessageBubble,
-          { alignItems: isMe ? 'flex-end' : 'flex-start' }
+          { alignItems: isMe ? 'flex-end' : 'flex-start' },
+          isImage && styles.imageBubble
         ]}>
-          <CustomText style={styles.messageText}>
-            {item.content}
-          </CustomText>
+          {isImage ? (
+            <TouchableOpacity onPress={() => setSelectedImage(item.file)}>
+              <Image
+                source={{ uri: item.file }}
+                style={styles.chatImage}
+                resizeMode="cover"
+              />
+            </TouchableOpacity>
+          ) : isVoice ? (
+            <View style={styles.voiceContainer}>
+              <TouchableOpacity
+                onPress={() => playVoice(item.file, item.id)}
+                style={styles.playButton}
+              >
+                {playingVoiceId === item.id ? (
+                  <PauseIcon width={wp(6)} height={wp(6)} fill={isMe ? colors.white : colors.neonTeal500} />
+                ) : (
+                  <PlayIcon width={wp(6)} height={wp(6)} fill={isMe ? colors.white : colors.neonTeal500} />
+                )}
+              </TouchableOpacity>
+              <View style={styles.voiceWaveform} />
+            </View>
+          ) : (
+            <CustomText style={styles.messageText}>
+              {item.content}
+            </CustomText>
+          )}
           <CustomText style={[
             styles.timeText,
-            isMe ? styles.myTimeText : styles.otherTimeText
+            isMe ? styles.myTimeText : styles.otherTimeText,
+            isImage && styles.imageTimeText
           ]}>
             {time}
           </CustomText>
@@ -205,6 +270,29 @@ const ChatScreen = () => {
           </KeyboardAvoidingView>
         )}
       </View>
+
+      <Modal
+        isVisible={!!selectedImage}
+        onBackdropPress={() => setSelectedImage(null)}
+        onBackButtonPress={() => setSelectedImage(null)}
+        style={styles.modal}
+        useNativeDriver
+        hideModalContentWhileAnimating
+      >
+        <View style={styles.modalContent}>
+          <TouchableOpacity
+            style={styles.closeButton}
+            onPress={() => setSelectedImage(null)}
+          >
+            <CancelIcon1 width={wp(7)} height={wp(7)} />
+          </TouchableOpacity>
+          <Image
+            source={{ uri: selectedImage }}
+            style={styles.previewImage}
+            resizeMode="contain"
+          />
+        </View>
+      </Modal>
     </CustomScreen>
   );
 };
@@ -306,5 +394,68 @@ const styles = StyleSheet.create({
     height: hp(5.1),
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  imageBubble: {
+    paddingVertical: hp(0.5),
+    paddingHorizontal: wp(1),
+    overflow: 'hidden',
+  },
+  chatImage: {
+    width: wp(65),
+    height: wp(50),
+    borderRadius: wp(6),
+  },
+  imageTimeText: {
+    position: 'absolute',
+    bottom: hp(1),
+    right: wp(3),
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    paddingHorizontal: wp(2),
+    borderRadius: wp(2),
+    color: colors.white,
+  },
+  modal: {
+    margin: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    width: wp(100),
+    height: hp(100),
+    backgroundColor: 'black',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  closeButton: {
+    position: 'absolute',
+    top: hp(6),
+    right: wp(5),
+    zIndex: 10,
+    padding: wp(2),
+  },
+  previewImage: {
+    width: wp(100),
+    height: hp(80),
+  },
+  voiceContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: hp(0.5),
+    width: wp(50),
+  },
+  playButton: {
+    width: wp(10),
+    height: wp(10),
+    borderRadius: wp(5),
+    backgroundColor: 'rgba(0,0,0,0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  voiceWaveform: {
+    flex: 1,
+    height: hp(0.5),
+    backgroundColor: 'rgba(0,0,0,0.1)',
+    marginLeft: wp(3),
+    borderRadius: wp(1),
   },
 });

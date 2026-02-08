@@ -104,3 +104,5 @@ export { default as ArrowSend } from "./arrowSend.svg";
 export { default as SearchInput } from "./searchInput.svg";
 export { default as PaperClip } from "./paperClip.svg";
 export { default as VoiceRecord } from "./voiceRecord.svg";
+export { default as PlayIcon } from "./play.svg";
+export { default as PauseIcon } from "./pause.svg";
