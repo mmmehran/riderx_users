@@ -22,7 +22,7 @@ import CustomScreen from '../../components/common/CustomScreen';
 import CustomText from '../../components/common/CustomText';
 import colors from '../../config/colors';
 import CustomHeaderChat from '../../components/custom/CustomHeaderChat';
-import { VoiceIcon, ArrowSend } from '../../../assets/svg';
+import { VoiceIcon, ArrowSend, PaperClip, VoiceRecord } from '../../../assets/svg';
 import { postData, getData } from '../../services/common.service';
 import urls from '../../services/urls.json';
 import errorHandler from '../../utils/errorHandler';
@@ -185,12 +185,21 @@ const ChatScreen = () => {
                   returnKeyType="send"
                   onSubmitEditing={sendMessage}
                 />
-                <TouchableOpacity onPress={sendMessage} style={styles.sendButton1}>
-                  <ArrowSend width={wp(4.5)} height={wp(4.5)} />
+                <TouchableOpacity
+                  // onPress={sendMessage}
+                  style={styles.sendButton1}>
+                  <PaperClip width={wp(4.6)} height={wp(4.6)} />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  // onPress={sendMessage}
+                  style={[styles.sendButton1, { marginLeft: wp(1) }]}>
+                  <VoiceRecord width={wp(7.5)} height={wp(7.5)} />
                 </TouchableOpacity>
               </View>
-              <TouchableOpacity style={styles.sendButton}>
-                <VoiceIcon width={wp(11.5)} height={wp(11.5)} />
+              <TouchableOpacity
+                onPress={sendMessage}
+                style={styles.sendButton}>
+                <ArrowSend width={wp(5)} height={wp(5)} />
               </TouchableOpacity>
             </View>
           </KeyboardAvoidingView>
@@ -282,17 +291,18 @@ const styles = StyleSheet.create({
     height: hp(5.1),
     fontSize: wp(4),
     color: colors.neutral900,
-    width: wp(68)
+    width: wp(61)
   },
   sendButton: {
-    width: hp(6),
+    width: hp(5.1),
     height: hp(5.1),
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: wp(3),
+    borderRadius: wp(20),
+    backgroundColor: colors.black,
   },
   sendButton1: {
-    width: hp(3),
+    width: hp(3.2),
     height: hp(5.1),
     justifyContent: 'center',
     alignItems: 'center',

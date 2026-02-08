@@ -102,3 +102,5 @@ export { default as Message1 } from "./message1.svg";
 export { default as VoiceIcon } from "./voiceIcon.svg";
 export { default as ArrowSend } from "./arrowSend.svg";
 export { default as SearchInput } from "./searchInput.svg";
+export { default as PaperClip } from "./paperClip.svg";
+export { default as VoiceRecord } from "./voiceRecord.svg";
