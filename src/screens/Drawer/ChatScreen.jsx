@@ -9,7 +9,10 @@ import {
   Platform,
   ActivityIndicator,
   Image,
+  Alert,
 } from 'react-native';
+import ImagePicker from 'react-native-image-crop-picker';
+import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
@@ -34,6 +37,7 @@ import { authenticated } from '../../redux/reducers/authenticationReducer';
 import { postFormData } from '../../services/file.services';
 import { addMessage, setMessages, selectChatMessages } from '../../redux/reducers/chatReducer';
 import routes from '../../navigation/routes';
+import TakePictureModal from '../../modal/TakePictureModal';
 
 const ChatScreen = () => {
   const { t } = useTranslation();
@@ -53,6 +57,8 @@ const ChatScreen = () => {
   const [playingVoiceId, setPlayingVoiceId] = useState(null);
   const [voiceProgress, setVoiceProgress] = useState(0);
   const [voiceDuration, setVoiceDuration] = useState(0);
+  const [imageToUpload, setImageToUpload] = useState(null);
+  const [showPictureModal, setShowPictureModal] = useState(false);
   const soundRef = useRef(null);
   const progressInterval = useRef(null);
 
@@ -97,6 +103,25 @@ const ChatScreen = () => {
     setLoading(false);
   };
 
+  const handlePickImage = () => {
+    setShowPictureModal(true);
+  };
+
+  const onImageSelect = (cameraObject) => {
+    if (cameraObject?.assets?.[0]) {
+      const asset = cameraObject.assets[0];
+      setImageToUpload({
+        uri: asset.uri,
+        type: asset.type,
+        name: asset.fileName,
+      });
+    }
+  };
+
+  const removeImage = () => {
+    setImageToUpload(null);
+  };
+
   const fetchMessages = async (currentChatId) => {
     const response = await getData(`${urls.GETCHATMSGS}${currentChatId}/messages/?vehicle_id=${config?.selectVehicle?.id}`);
     if (response?.data?.status) {
@@ -111,16 +136,27 @@ const ChatScreen = () => {
   };
 
   const sendMessage = async () => {
-    if (inputText.trim().length === 0 || !chatId) return;
+    if ((inputText.trim().length === 0 && !imageToUpload) || !chatId) return;
+    // Removed full screen loading for better UX during message sending
     try {
       const formData = new FormData();
-      formData.append('content', inputText);
+      if (inputText.trim()) {
+        formData.append('content', inputText);
+      }
+      if (imageToUpload) {
+        formData.append('file', {
+          uri: imageToUpload.uri,
+          type: imageToUpload.type,
+          name: imageToUpload.name,
+        });
+      }
       const url = `${urls.GETCHATMSGS}${chatId}/send_message?vehicle_id=${config?.selectVehicle?.id}`;
       const response = await postFormData(url, formData);
       if (response && response.data && response.data.status) {
         const newMessage = response.data.data;
         dispatch(addMessage({ chatId, message: newMessage }));
         setInputText('');
+        setImageToUpload(null);
         setTimeout(() => {
           flatListRef.current?.scrollToEnd({ animated: true });
         }, 100);
@@ -276,6 +312,15 @@ const ChatScreen = () => {
               onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
             />
 
+            {imageToUpload && (
+              <View style={styles.previewContainer}>
+                <Image source={{ uri: imageToUpload.uri }} style={styles.previewThumb} />
+                <TouchableOpacity style={styles.removeImageBtn} onPress={removeImage}>
+                  <CancelIcon1 width={wp(5)} height={wp(5)} fill={colors.white} />
+                </TouchableOpacity>
+              </View>
+            )}
+
             <View style={styles.inputContainer}>
               <View style={styles.input}>
                 <TextInput
@@ -288,7 +333,7 @@ const ChatScreen = () => {
                   onSubmitEditing={sendMessage}
                 />
                 <TouchableOpacity
-                  // onPress={sendMessage}
+                  onPress={handlePickImage}
                   style={styles.sendButton1}>
                   <PaperClip width={wp(4.6)} height={wp(4.6)} />
                 </TouchableOpacity>
@@ -330,6 +375,12 @@ const ChatScreen = () => {
           />
         </View>
       </Modal>
+
+      <TakePictureModal
+        isVisible={showPictureModal}
+        onBackdropPress={() => setShowPictureModal(false)}
+        onSelect={onImageSelect}
+      />
     </CustomScreen>
   );
 };
@@ -431,6 +482,28 @@ const styles = StyleSheet.create({
     height: hp(5.1),
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  previewContainer: {
+    flexDirection: 'row',
+    padding: wp(4),
+    backgroundColor: colors.neutral100,
+    borderTopWidth: 1,
+    borderTopColor: colors.neutral200,
+    alignItems: 'center',
+  },
+  previewThumb: {
+    width: wp(15),
+    height: wp(15),
+    borderRadius: wp(2),
+    marginRight: wp(2),
+  },
+  removeImageBtn: {
+    position: 'absolute',
+    top: hp(1),
+    left: wp(14),
+    backgroundColor: colors.red,
+    borderRadius: wp(3),
+    padding: wp(0.5),
   },
   imageBubble: {
     paddingVertical: hp(0.5),
