@@ -28,7 +28,7 @@ import CustomText from '../../components/common/CustomText';
 import colors from '../../config/colors';
 import CustomHeaderChat from '../../components/custom/CustomHeaderChat';
 import { VoiceIcon, ArrowSend, PaperClip, VoiceRecord, CancelIcon1, PlayIcon, PauseIcon } from '../../../assets/svg';
-import { useSound, useAudioRecorderWithStates } from 'react-native-nitro-sound';
+import { useSoundWithStates, useAudioRecorderWithStates } from 'react-native-nitro-sound';
 import { postData, getData } from '../../services/common.service';
 import urls from '../../services/urls.json';
 import errorHandler from '../../utils/errorHandler';
@@ -63,8 +63,11 @@ const ChatScreen = () => {
     pausePlayer,
     resumePlayer,
     stopPlayer,
-  } = useSound({
+  } = useSoundWithStates({
     subscriptionDuration: 0.1, // 100ms updates
+    onPlaybackEnd: () => {
+      setPlayingVoiceId(null);
+    },
   });
 
   const {
@@ -78,6 +81,14 @@ const ChatScreen = () => {
   } = useAudioRecorderWithStates({
     subscriptionDuration: 0.1,
   });
+
+  const mmss = (millis) => {
+    if (!millis || isNaN(millis)) return '00:00';
+    const totalSeconds = Math.floor(millis / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes < 10 ? '0' : ''}${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+  };
 
   const [isRecording, setIsRecording] = useState(false);
   const [recordedPath, setRecordedPath] = useState(null);
@@ -98,12 +109,7 @@ const ChatScreen = () => {
     }, [senderId]),
   );
 
-  // Update playingVoiceId when playback ends
-  useEffect(() => {
-    if (soundState.status === 'stopped' || soundState.status === 'finished') {
-      setPlayingVoiceId(null);
-    }
-  }, [soundState.status]);
+  // Removed useEffect for status reset, using onPlaybackEnd callback above
 
   const requestMicrophonePermission = async () => {
     const permission = Platform.OS === 'ios' ? PERMISSIONS.IOS.MICROPHONE : PERMISSIONS.ANDROID.RECORD_AUDIO;
@@ -174,8 +180,8 @@ const ChatScreen = () => {
 
   const playVoice = useCallback(async (url, msgId) => {
     try {
-      if (playingVoiceId === msgId) {
-        if (soundState.status === 'playing') {
+      if (String(playingVoiceId) === String(msgId)) {
+        if (soundState.isPlaying) {
           await pausePlayer();
         } else {
           await resumePlayer();
@@ -188,7 +194,7 @@ const ChatScreen = () => {
     } catch (error) {
       errorHandler(error);
     }
-  }, [playingVoiceId, soundState.status, startPlayer, pausePlayer, resumePlayer]);
+  }, [playingVoiceId, soundState.isPlaying, startPlayer, pausePlayer, resumePlayer]);
 
 
 
@@ -304,27 +310,39 @@ const ChatScreen = () => {
               />
             </TouchableOpacity>
           ) : isVoice ? (
-            <View style={styles.voiceContainer}>
+            <View style={styles.voiceWaveformContainer}>
               <TouchableOpacity
                 onPress={() => playVoice(item.file, item.id)}
                 style={styles.playButton}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
-                {playingVoiceId === item.id && soundState.status === 'playing' ? (
-                  <PauseIcon width={wp(5)} height={wp(5)} fill={colors.neonTeal300} />
+                {String(playingVoiceId) === String(item.id) && soundState.isPlaying ? (
+                  <PauseIcon width={wp(4)} height={wp(4)} fill={isMe ? colors.white : colors.neonTeal300} />
                 ) : (
-                  <PlayIcon width={wp(5)} height={wp(5)} fill={colors.neonTeal300} />
+                  <PlayIcon width={wp(4)} height={wp(4)} fill={isMe ? colors.white : colors.neonTeal300} />
                 )}
               </TouchableOpacity>
-              <View style={styles.voiceWaveform}>
-                {playingVoiceId === item.id && (
-                  <View
-                    style={[
-                      styles.voiceProgressBar,
-                      { width: `${(soundState.currentPosition / soundState.duration) * 100}%` }
-                    ]}
-                  />
-                )}
+              <View style={styles.waveformWrapper}>
+                <View style={styles.voiceWaveform}>
+                  {String(playingVoiceId) === String(item.id) && (
+                    <View
+                      style={[
+                        styles.voiceProgressBar,
+                        {
+                          width: (soundState.playback?.duration > 0)
+                            ? `${Math.min(100, (soundState.playback.position / soundState.playback.duration) * 100)}%`
+                            : '0%'
+                        },
+                        isMe && { backgroundColor: colors.white }
+                      ]}
+                    />
+                  )}
+                </View>
+                <CustomText style={[styles.voiceDuration, isMe && { color: colors.white }]}>
+                  {String(playingVoiceId) === String(item.id)
+                    ? `${mmss(soundState.playback?.position)} / ${mmss(soundState.playback?.duration)}`
+                    : 'Voice Message'}
+                </CustomText>
               </View>
             </View>
           ) : (
@@ -368,6 +386,7 @@ const ChatScreen = () => {
               data={messages}
               keyExtractor={(item) => item.id}
               renderItem={renderItem}
+              extraData={{ playingVoiceId, isPlaying: soundState.isPlaying, position: soundState.playback?.position, duration: soundState.playback?.duration }}
               contentContainerStyle={styles.listContent}
               showsVerticalScrollIndicator={false}
               onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
@@ -499,7 +518,7 @@ const styles = StyleSheet.create({
     borderRadius: wp(7),
   },
   myMessageBubble: {
-    backgroundColor: "#D1FFF4",
+    backgroundColor: colors.neonTeal300,
     borderBottomRightRadius: wp(0.5),
   },
   otherMessageBubble: {
@@ -631,31 +650,40 @@ const styles = StyleSheet.create({
     width: wp(100),
     height: hp(80),
   },
-  voiceContainer: {
+  voiceWaveformContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: hp(0.5),
-    width: wp(50),
+    minWidth: wp(45),
+  },
+  waveformWrapper: {
+    flex: 1,
+    marginLeft: wp(3),
+    justifyContent: 'center',
   },
   playButton: {
-    width: wp(10),
-    height: wp(10),
-    borderRadius: wp(5),
-    backgroundColor: 'rgba(0,0,0,0.1)',
+    width: wp(9),
+    height: wp(9),
+    borderRadius: wp(4.5),
+    backgroundColor: 'rgba(0,0,0,0.05)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   voiceWaveform: {
-    flex: 1,
-    height: hp(0.5),
+    height: hp(0.4),
     backgroundColor: 'rgba(0,0,0,0.1)',
-    marginLeft: wp(3),
+    width: '100%',
     borderRadius: wp(1),
     overflow: 'hidden',
   },
   voiceProgressBar: {
     height: '100%',
     backgroundColor: colors.neonTeal300,
+  },
+  voiceDuration: {
+    fontSize: wp(2.8),
+    color: colors.neutral500,
+    marginTop: hp(0.4),
   },
   recordingContainer: {
     flex: 1,
