@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -28,7 +28,7 @@ import CustomText from '../../components/common/CustomText';
 import colors from '../../config/colors';
 import CustomHeaderChat from '../../components/custom/CustomHeaderChat';
 import { VoiceIcon, ArrowSend, PaperClip, VoiceRecord, CancelIcon1, PlayIcon, PauseIcon } from '../../../assets/svg';
-import Sound from 'react-native-sound';
+import { useSound } from 'react-native-nitro-sound';
 import { postData, getData } from '../../services/common.service';
 import urls from '../../services/urls.json';
 import errorHandler from '../../utils/errorHandler';
@@ -55,12 +55,18 @@ const ChatScreen = () => {
   const [chatId, setChatId] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
   const [playingVoiceId, setPlayingVoiceId] = useState(null);
-  const [voiceProgress, setVoiceProgress] = useState(0);
-  const [voiceDuration, setVoiceDuration] = useState(0);
   const [imageToUpload, setImageToUpload] = useState(null);
   const [showPictureModal, setShowPictureModal] = useState(false);
-  const soundRef = useRef(null);
-  const progressInterval = useRef(null);
+  const {
+    state: soundState,
+    startPlayer,
+    pausePlayer,
+    resumePlayer,
+    stopPlayer,
+  } = useSound({
+    subscriptionDuration: 0.1, // 100ms updates
+  });
+
 
   const messages = useSelector(selectChatMessages(chatId));
 
@@ -72,14 +78,17 @@ const ChatScreen = () => {
         startChat();
       }
       return () => {
-        clearInterval(progressInterval.current);
-        if (soundRef.current) {
-          soundRef.current.stop();
-          soundRef.current.release();
-        }
+        stopPlayer();
       };
     }, [senderId]),
   );
+
+  // Update playingVoiceId when playback ends
+  useEffect(() => {
+    if (soundState.status === 'stopped' || soundState.status === 'finished') {
+      setPlayingVoiceId(null);
+    }
+  }, [soundState.status]);
 
 
 
@@ -176,52 +185,18 @@ const ChatScreen = () => {
     const isImage = item.file_type === 'image' && item.file;
     const isVoice = item.file_type === 'voice' && item.file;
 
-    const playVoice = (url, msgId) => {
+    const playVoice = async (url, msgId) => {
       if (playingVoiceId === msgId) {
-        soundRef.current?.pause();
-        clearInterval(progressInterval.current);
-        setPlayingVoiceId(null);
+        if (soundState.status === 'playing') {
+          await pausePlayer();
+        } else {
+          await resumePlayer();
+        }
         return;
       }
 
-      if (soundRef.current) {
-        soundRef.current.stop();
-        soundRef.current.release();
-        clearInterval(progressInterval.current);
-      }
-
       setPlayingVoiceId(msgId);
-      setVoiceProgress(0);
-
-      soundRef.current = new Sound(url, '', (error) => {
-        if (error) {
-          console.log('failed to load the sound', error);
-          setPlayingVoiceId(null);
-          return;
-        }
-
-        const duration = soundRef.current.getDuration();
-        setVoiceDuration(duration);
-
-        soundRef.current.play((success) => {
-          if (success) {
-            console.log('successfully finished playing');
-          } else {
-            console.log('playback failed due to audio decoding errors');
-          }
-          setPlayingVoiceId(null);
-          setVoiceProgress(0);
-          clearInterval(progressInterval.current);
-        });
-
-        progressInterval.current = setInterval(() => {
-          if (soundRef.current && soundRef.current.isPlaying()) {
-            soundRef.current.getCurrentTime((seconds) => {
-              setVoiceProgress(seconds);
-            });
-          }
-        }, 100);
-      });
+      await startPlayer(url);
     };
 
     return (
@@ -249,7 +224,7 @@ const ChatScreen = () => {
                 onPress={() => playVoice(item.file, item.id)}
                 style={styles.playButton}
               >
-                {playingVoiceId === item.id ? (
+                {playingVoiceId === item.id && soundState.status === 'playing' ? (
                   <PauseIcon width={wp(5)} height={wp(5)} fill={colors.neonTeal300} />
                 ) : (
                   <PlayIcon width={wp(5)} height={wp(5)} fill={colors.neonTeal300} />
@@ -260,7 +235,7 @@ const ChatScreen = () => {
                   <View
                     style={[
                       styles.voiceProgressBar,
-                      { width: `${(voiceProgress / voiceDuration) * 100}%` }
+                      { width: `${(soundState.currentPosition / soundState.duration) * 100}%` }
                     ]}
                   />
                 )}

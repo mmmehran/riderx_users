@@ -1,32 +1,28 @@
 // src/utils/sound.js
 import { Platform } from 'react-native';
-import Sound from 'react-native-sound';
+import Sound from 'react-native-nitro-sound';
 
-let ding = null;
-let isLoaded = false;
+let isSoundInit = false;
 
 // Keep audio mixed with other apps and audible in silent switch (iOS)
 export function initDing() {
-  if (Platform.OS === 'ios') {
-    Sound.setCategory('Playback', true); // play even with mute switch; mix with others
-    ding = new Sound('ding.mp3', Sound.MAIN_BUNDLE, (err) => {
-      if (err) { console.warn('ding load error (iOS)', err); return; }
-      isLoaded = true;
-    });
-  } else {
-    Sound.setCategory('Ambient', true);
-    ding = new Sound('ding', Sound.MAIN_BUNDLE, (err) => {
-      if (err) { console.warn('ding load error (Android)', err); return; }
-      isLoaded = true;
-    });
-  }
+  // react-native-nitro-sound doesn't require explicit initialization for basic playback
+  // but we can set up any global configurations here if needed.
+  isSoundInit = true;
 }
 
 // Replay from start even if still playing
-export function playDing() {
-  if (!ding || !isLoaded) return;
+export async function playDing() {
+  if (!isSoundInit) initDing();
   try {
-    ding.stop(() => ding.play());
+    // For bundled sounds, we might need platform specific paths
+    // On Android, resources are usually in raw folder. 
+    // On iOS, they are in the main bundle.
+    const dingPath = Platform.OS === 'ios' ? 'ding.mp3' : 'ding';
+
+    // stopPlayer returns a promise, ensuring we start fresh
+    await Sound.stopPlayer();
+    await Sound.startPlayer(dingPath);
   } catch (e) {
     console.warn('ding play error', e);
   }
@@ -34,9 +30,10 @@ export function playDing() {
 
 // Optional: free memory (e.g., on logout)
 export function releaseDing() {
-  if (ding) {
-    ding.release();
-    ding = null;
-    isLoaded = false;
+  try {
+    Sound.stopPlayer();
+    isSoundInit = false;
+  } catch (e) {
+    console.warn('ding release error', e);
   }
 }
