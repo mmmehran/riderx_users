@@ -28,7 +28,7 @@ import CustomText from '../../components/common/CustomText';
 import colors from '../../config/colors';
 import CustomHeaderChat from '../../components/custom/CustomHeaderChat';
 import { VoiceIcon, ArrowSend, PaperClip, VoiceRecord, CancelIcon1, PlayIcon, PauseIcon } from '../../../assets/svg';
-import { useSound } from 'react-native-nitro-sound';
+import { useSound, useAudioRecorderWithStates } from 'react-native-nitro-sound';
 import { postData, getData } from '../../services/common.service';
 import urls from '../../services/urls.json';
 import errorHandler from '../../utils/errorHandler';
@@ -67,6 +67,21 @@ const ChatScreen = () => {
     subscriptionDuration: 0.1, // 100ms updates
   });
 
+  const {
+    startRecorder,
+    stopRecorder,
+    pauseRecorder: pauseRec,
+    resumeRecorder: resumeRec,
+    mmss: mmssRec,
+    mmssss: mmssssRec,
+    state: recorderState,
+  } = useAudioRecorderWithStates({
+    subscriptionDuration: 0.1,
+  });
+
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordedPath, setRecordedPath] = useState(null);
+
 
   const messages = useSelector(selectChatMessages(chatId));
 
@@ -89,6 +104,91 @@ const ChatScreen = () => {
       setPlayingVoiceId(null);
     }
   }, [soundState.status]);
+
+  const requestMicrophonePermission = async () => {
+    const permission = Platform.OS === 'ios' ? PERMISSIONS.IOS.MICROPHONE : PERMISSIONS.ANDROID.RECORD_AUDIO;
+    const result = await check(permission);
+    if (result === RESULTS.GRANTED) return true;
+
+    const requestResult = await request(permission);
+    return requestResult === RESULTS.GRANTED;
+  };
+
+  const startRecording = async () => {
+    const hasPermission = await requestMicrophonePermission();
+    if (!hasPermission) {
+      Alert.alert(t('Permission Denied'), t('Please enable microphone access in settings.'));
+      return;
+    }
+
+    try {
+      setIsRecording(true);
+      setRecordedPath(null);
+      await startRecorder();
+    } catch (error) {
+      setIsRecording(false);
+      errorHandler(error);
+    }
+  };
+
+  const stopRecording = async (shouldSend = true) => {
+    try {
+      const path = await stopRecorder();
+      setIsRecording(false);
+      if (shouldSend) {
+        sendVoiceMessage(path);
+      }
+    } catch (error) {
+      console.log('Stop Recording Error:', error);
+      setIsRecording(false);
+      errorHandler(error);
+    }
+  };
+
+  const sendVoiceMessage = async (path) => {
+    if (!path || !chatId) return;
+    try {
+      const formData = new FormData();
+      formData.append('file', {
+        uri: path,
+        type: 'audio/m4a',
+        name: `voice_${Date.now()}.m4a`,
+      });
+      formData.append('file_type', 'voice');
+
+      const url = `${urls.GETCHATMSGS}${chatId}/send_message?vehicle_id=${config?.selectVehicle?.id}`;
+      const response = await postFormData(url, formData);
+      if (response && response.data && response.data.status) {
+        const newMessage = response.data.data;
+        dispatch(addMessage({ chatId, message: newMessage }));
+        setTimeout(() => {
+          flatListRef.current?.scrollToEnd({ animated: true });
+        }, 100);
+      } else {
+        errorHandler(response || { message: 'Network Error' });
+      }
+    } catch (error) {
+      errorHandler(error);
+    }
+  };
+
+  const playVoice = useCallback(async (url, msgId) => {
+    try {
+      if (playingVoiceId === msgId) {
+        if (soundState.status === 'playing') {
+          await pausePlayer();
+        } else {
+          await resumePlayer();
+        }
+        return;
+      }
+
+      setPlayingVoiceId(msgId);
+      await startPlayer(url);
+    } catch (error) {
+      errorHandler(error);
+    }
+  }, [playingVoiceId, soundState.status, startPlayer, pausePlayer, resumePlayer]);
 
 
 
@@ -134,7 +234,6 @@ const ChatScreen = () => {
   const fetchMessages = async (currentChatId) => {
     const response = await getData(`${urls.GETCHATMSGS}${currentChatId}/messages/?vehicle_id=${config?.selectVehicle?.id}`);
     if (response?.data?.status) {
-      console.log(response?.data)
       dispatch(setMessages({
         chatId: currentChatId,
         messages: [...response.data.data.items].reverse()
@@ -185,20 +284,6 @@ const ChatScreen = () => {
     const isImage = item.file_type === 'image' && item.file;
     const isVoice = item.file_type === 'voice' && item.file;
 
-    const playVoice = async (url, msgId) => {
-      if (playingVoiceId === msgId) {
-        if (soundState.status === 'playing') {
-          await pausePlayer();
-        } else {
-          await resumePlayer();
-        }
-        return;
-      }
-
-      setPlayingVoiceId(msgId);
-      await startPlayer(url);
-    };
-
     return (
       <View style={[
         styles.messageContainer,
@@ -223,6 +308,7 @@ const ChatScreen = () => {
               <TouchableOpacity
                 onPress={() => playVoice(item.file, item.id)}
                 style={styles.playButton}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
                 {playingVoiceId === item.id && soundState.status === 'playing' ? (
                   <PauseIcon width={wp(5)} height={wp(5)} fill={colors.neonTeal300} />
@@ -297,32 +383,55 @@ const ChatScreen = () => {
             )}
 
             <View style={styles.inputContainer}>
-              <View style={styles.input}>
-                <TextInput
-                  style={styles.input1}
-                  value={inputText}
-                  onChangeText={setInputText}
-                  placeholder={"Type a message"}
-                  placeholderTextColor={colors.neutral400}
-                  returnKeyType="send"
-                  onSubmitEditing={sendMessage}
-                />
+              {isRecording ? (
+                <View style={styles.recordingContainer}>
+                  <TouchableOpacity
+                    onPress={() => stopRecording(false)}
+                    style={styles.cancelRecBtn}>
+                    <CancelIcon1 width={wp(6)} height={wp(6)} fill={colors.red} />
+                  </TouchableOpacity>
+                  <View style={styles.recordingTimer}>
+                    <View style={styles.recordingDot} />
+                    <CustomText style={styles.recordingTimeText}>
+                      {mmssRec(Math.floor(recorderState.currentPosition / 1000))}
+                    </CustomText>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => stopRecording(true)}
+                    style={styles.sendRecBtn}>
+                    <ArrowSend width={wp(6)} height={wp(6)} fill={colors.black} />
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <View style={styles.input}>
+                  <TextInput
+                    style={styles.input1}
+                    value={inputText}
+                    onChangeText={setInputText}
+                    placeholder={"Type a message"}
+                    placeholderTextColor={colors.neutral400}
+                    returnKeyType="send"
+                    onSubmitEditing={sendMessage}
+                  />
+                  <TouchableOpacity
+                    onPress={handlePickImage}
+                    style={styles.sendButton1}>
+                    <PaperClip width={wp(4.6)} height={wp(4.6)} />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={startRecording}
+                    style={[styles.sendButton1, { marginLeft: wp(1) }]}>
+                    <VoiceRecord width={wp(7.5)} height={wp(7.5)} />
+                  </TouchableOpacity>
+                </View>
+              )}
+              {!isRecording && (
                 <TouchableOpacity
-                  onPress={handlePickImage}
-                  style={styles.sendButton1}>
-                  <PaperClip width={wp(4.6)} height={wp(4.6)} />
+                  onPress={sendMessage}
+                  style={styles.sendButton}>
+                  <ArrowSend width={wp(5)} height={wp(5)} />
                 </TouchableOpacity>
-                <TouchableOpacity
-                  // onPress={sendMessage}
-                  style={[styles.sendButton1, { marginLeft: wp(1) }]}>
-                  <VoiceRecord width={wp(7.5)} height={wp(7.5)} />
-                </TouchableOpacity>
-              </View>
-              <TouchableOpacity
-                onPress={sendMessage}
-                style={styles.sendButton}>
-                <ArrowSend width={wp(5)} height={wp(5)} />
-              </TouchableOpacity>
+              )}
             </View>
           </KeyboardAvoidingView>
         )}
@@ -547,5 +656,39 @@ const styles = StyleSheet.create({
   voiceProgressBar: {
     height: '100%',
     backgroundColor: colors.neonTeal300,
+  },
+  recordingContainer: {
+    flex: 1,
+    height: hp(5.1),
+    backgroundColor: colors.black,
+    borderRadius: wp(3),
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: wp(3),
+    marginRight: wp(2),
+  },
+  cancelRecBtn: {
+    padding: wp(1),
+  },
+  recordingTimer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  recordingDot: {
+    width: wp(2),
+    height: wp(2),
+    borderRadius: wp(1),
+    backgroundColor: colors.red,
+    marginRight: wp(2),
+  },
+  recordingTimeText: {
+    fontSize: wp(4.5),
+    fontWeight: '600',
+    color: colors.white,
+  },
+  sendRecBtn: {
+    padding: wp(1),
   },
 });
