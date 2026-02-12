@@ -24,11 +24,12 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
-import notifee, { AndroidImportance, AuthorizationStatus } from '@notifee/react-native';
+import notifee, { AndroidImportance, AuthorizationStatus, AndroidStyle } from '@notifee/react-native';
 import Geolocation from '@react-native-community/geolocation';
 import messaging from '@react-native-firebase/messaging';
 import { useTranslation } from 'react-i18next';
 import BackgroundService from 'react-native-background-actions';
+import store from '../../../redux/store';
 
 import AcceptOrderModal from '../../../modal/AcceptOrderModal';
 import AcceptedOrderModal from '../../../modal/AcceptedOrderModal';
@@ -428,6 +429,7 @@ const HomeMainScreen = ({ route }) => {
           setIsFollowing(false);
           setConfirmCancelModalVisible(true);
           await showLocalNotification({
+            id: `cancel_${payload?.message?.id}`,
             title: t('deliveryCancel'),
             body: t('deliveryWasCancel'),
             data: { delivery_id: String(payload?.message?.id ?? '') },
@@ -442,19 +444,53 @@ const HomeMainScreen = ({ route }) => {
         const messageObj = payload?.message?.message;
         const senderId = messageObj?.sender?.id;
         const chatId = payload?.message?.chat_id;
-        console.log(payload?.message)
+        const myId = user?.user_id;
+
+        // Don't show notification for my own messages
+        if (senderId && myId && String(senderId) === String(myId)) {
+          return;
+        }
 
         if (chatId) {
           dispatch(addMessage({ chatId, message: messageObj }));
         }
 
+        const currentMessages = store.getState().chat.messages[chatId] || [];
+
+        // Filter to only include the "last group" (latest consecutive block from same sender)
+        const lastGroup = [];
+        if (currentMessages.length > 0) {
+          const lastSenderId = currentMessages[currentMessages.length - 1]?.sender?.id;
+          for (let i = currentMessages.length - 1; i >= 0; i--) {
+            if (String(currentMessages[i]?.sender?.id) === String(lastSenderId)) {
+              lastGroup.unshift(currentMessages[i]);
+            } else {
+              break;
+            }
+          }
+        }
+
         await showLocalNotification({
+          id: `chat_${chatId}`,
           title: `${messageObj?.sender?.first_name} ${messageObj?.sender?.last_name} ${t('newMessage')}`,
           body: messageObj?.content,
           data: {
             type: 'chat',
             senderId: String(senderId),
             chatId: String(chatId),
+          },
+          style: {
+            type: AndroidStyle.MESSAGING,
+            person: {
+              name: `${messageObj?.sender?.first_name} ${messageObj?.sender?.last_name}`,
+            },
+            messages: lastGroup.map(m => ({
+              text: m.content || '',
+              timestamp: m.created_at ? new Date(m.created_at).getTime() : Date.now(),
+              person: {
+                name: `${m.sender?.first_name || ''} ${m.sender?.last_name || ''}`.trim() || 'User',
+              },
+            })),
           },
         });
       }
@@ -525,11 +561,12 @@ const HomeMainScreen = ({ route }) => {
     return ref.current;
   };
 
-  const showLocalNotification = useCallback(async ({ title, body, data }) => {
+  const showLocalNotification = useCallback(async ({ title, body, data, id, style }) => {
     try {
       if (Platform.OS === 'android') {
         const channelId = await createNotifChannelOnce(channelIdRef);
         await notifee.displayNotification({
+          id: id,
           title,
           body,
           data,
@@ -537,16 +574,19 @@ const HomeMainScreen = ({ route }) => {
             channelId: channelId || 'orders',
             smallIcon: 'ic_launcher',
             pressAction: { id: 'open_accept', launchActivity: 'default' },
+            style: style,
           },
         });
       } else {
         await notifee.displayNotification({
+          id: id,
           title,
           body,
           data,
           ios: {
             sound: 'dingios.caf',
             foregroundPresentationOptions: { alert: true, sound: true, badge: true },
+            threadId: data?.chatId ? `chat_${data.chatId}` : undefined,
           },
           pressAction: { id: 'open_accept' },
         });
