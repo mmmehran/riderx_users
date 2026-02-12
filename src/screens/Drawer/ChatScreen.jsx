@@ -57,6 +57,7 @@ const ChatScreen = () => {
   const [playingVoiceId, setPlayingVoiceId] = useState(null);
   const [imageToUpload, setImageToUpload] = useState(null);
   const [showPictureModal, setShowPictureModal] = useState(false);
+  const [sending, setSending] = useState(false);
   const {
     state: soundState,
     startPlayer,
@@ -162,6 +163,7 @@ const ChatScreen = () => {
       });
       formData.append('file_type', 'voice');
 
+      setSending(true);
       const url = `${urls.GETCHATMSGS}${chatId}/send_message?vehicle_id=${config?.selectVehicle?.id}`;
       const response = await postFormData(url, formData);
       if (response && response.data && response.data.status) {
@@ -175,6 +177,8 @@ const ChatScreen = () => {
       }
     } catch (error) {
       errorHandler(error);
+    } finally {
+      setSending(false);
     }
   };
 
@@ -265,6 +269,7 @@ const ChatScreen = () => {
         });
       }
       const url = `${urls.GETCHATMSGS}${chatId}/send_message?vehicle_id=${config?.selectVehicle?.id}`;
+      setSending(true);
       const response = await postFormData(url, formData);
       if (response && response.data && response.data.status) {
         const newMessage = response.data.data;
@@ -281,6 +286,8 @@ const ChatScreen = () => {
     } catch (error) {
       console.log('Send Message Catch Error:', error);
       errorHandler(error);
+    } finally {
+      setSending(false);
     }
   };
 
@@ -370,6 +377,10 @@ const ChatScreen = () => {
         status={partner ? 'Online' : 'Offline'}
         backPress={() => navigation.goBack()}
       />
+      <View style={[
+        styles.socketStatusIndicator,
+        { backgroundColor: config?.socketStatus ? colors.successBase : colors.neutral400 }
+      ]} />
       <View style={styles.container}>
         {loading ? (
           <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -378,8 +389,8 @@ const ChatScreen = () => {
         ) : (
           <KeyboardAvoidingView
             style={{ flex: 1 }}
-            behavior={Platform.OS === "ios" ? "padding" : undefined}
-            keyboardVerticalOffset={Platform.OS === "ios" ? hp(8) : 0}
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            keyboardVerticalOffset={hp(9)}
           >
             <FlatList
               ref={flatListRef}
@@ -417,8 +428,14 @@ const ChatScreen = () => {
                   </View>
                   <TouchableOpacity
                     onPress={() => stopRecording(true)}
-                    style={styles.sendRecBtn}>
-                    <ArrowSend width={wp(6)} height={wp(6)} fill={colors.black} />
+                    style={styles.sendRecBtn}
+                    disabled={sending}
+                  >
+                    {sending ? (
+                      <ActivityIndicator size="small" color={colors.black} />
+                    ) : (
+                      <ArrowSend width={wp(6)} height={wp(6)} fill={colors.black} />
+                    )}
                   </TouchableOpacity>
                 </View>
               ) : (
@@ -447,8 +464,14 @@ const ChatScreen = () => {
               {!isRecording && (
                 <TouchableOpacity
                   onPress={sendMessage}
-                  style={styles.sendButton}>
-                  <ArrowSend width={wp(5)} height={wp(5)} />
+                  style={styles.sendButton}
+                  disabled={sending}
+                >
+                  {sending ? (
+                    <ActivityIndicator size="small" color={colors.white} />
+                  ) : (
+                    <ArrowSend width={wp(5)} height={wp(5)} />
+                  )}
                 </TouchableOpacity>
               )}
             </View>
@@ -718,5 +741,16 @@ const styles = StyleSheet.create({
   },
   sendRecBtn: {
     padding: wp(1),
+  },
+  socketStatusIndicator: {
+    width: wp(2.5),
+    height: wp(2.5),
+    borderRadius: wp(1.25),
+    position: 'absolute',
+    top: hp(2.5),
+    right: wp(14),
+    zIndex: 1000,
+    borderWidth: 1,
+    borderColor: colors.white,
   },
 });
