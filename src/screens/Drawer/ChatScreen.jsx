@@ -291,11 +291,35 @@ const ChatScreen = () => {
     }
   };
 
-  const renderItem = ({ item }) => {
+  // Inverted FlatList requires data to be reversed (Newest First)
+  const reversedMessages = React.useMemo(() => {
+    return messages ? [...messages].reverse() : [];
+  }, [messages]);
+
+  // Track previous message count to handle auto-scroll on new message
+  const prevMsgCount = useRef(0);
+
+  useEffect(() => {
+    if (messages?.length > 0) {
+      const isNewMessage = messages.length > prevMsgCount.current;
+      // Initial load is handled by inverted={true} automatically starting at bottom
+
+      if (isNewMessage) {
+        // Scroll to bottom (offset 0 in inverted list) when new message arrives
+        setTimeout(() => {
+          flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+        }, 200);
+        prevMsgCount.current = messages.length;
+      }
+    }
+  }, [messages?.length]);
+
+  const renderItem = useCallback(({ item }) => {
     const isMe = String(item.sender.id) === String(user.user_id);
     const time = item.created_at ? new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
     const isImage = item.file_type === 'image' && item.file;
     const isVoice = item.file_type === 'voice' && item.file;
+    const isPlaying = String(playingVoiceId) === String(item.id);
 
     return (
       <View style={[
@@ -323,7 +347,7 @@ const ChatScreen = () => {
                 style={styles.playButton}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
-                {String(playingVoiceId) === String(item.id) && soundState.isPlaying ? (
+                {isPlaying && soundState.isPlaying ? (
                   <PauseIcon width={wp(4)} height={wp(4)} fill={isMe ? colors.white : colors.neonTeal300} />
                 ) : (
                   <PlayIcon width={wp(4)} height={wp(4)} fill={isMe ? colors.white : colors.neonTeal300} />
@@ -331,7 +355,7 @@ const ChatScreen = () => {
               </TouchableOpacity>
               <View style={styles.waveformWrapper}>
                 <View style={styles.voiceWaveform}>
-                  {String(playingVoiceId) === String(item.id) && (
+                  {isPlaying && (
                     <View
                       style={[
                         styles.voiceProgressBar,
@@ -346,7 +370,7 @@ const ChatScreen = () => {
                   )}
                 </View>
                 <CustomText style={[styles.voiceDuration, isMe && { color: colors.white }]}>
-                  {String(playingVoiceId) === String(item.id)
+                  {isPlaying
                     ? `${mmss(soundState.playback?.position)} / ${mmss(soundState.playback?.duration)}`
                     : 'Voice Message'}
                 </CustomText>
@@ -367,7 +391,7 @@ const ChatScreen = () => {
         </View>
       </View>
     );
-  };
+  }, [user.user_id, playingVoiceId, soundState, playVoice]);
 
   return (
     <CustomScreen>
@@ -394,13 +418,17 @@ const ChatScreen = () => {
           >
             <FlatList
               ref={flatListRef}
-              data={messages}
+              data={reversedMessages} // Use reversed data
+              inverted={true} // Start from bottom
               keyExtractor={(item) => item.id}
               renderItem={renderItem}
               extraData={{ playingVoiceId, isPlaying: soundState.isPlaying, position: soundState.playback?.position, duration: soundState.playback?.duration }}
               contentContainerStyle={styles.listContent}
               showsVerticalScrollIndicator={false}
-              onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+              removeClippedSubviews={true}
+              initialNumToRender={15}
+              maxToRenderPerBatch={10}
+              windowSize={5}
             />
 
             {imageToUpload && (
