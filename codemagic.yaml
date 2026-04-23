@@ -1,0 +1,162 @@
+workflows:
+
+  react-native-android:
+    name: React Native Android
+    max_build_duration: 120
+    instance_type: mac_mini_m2
+
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: develop
+          include: true
+
+    environment:
+      android_signing:
+        - riderx
+
+      groups:
+        - google_play
+        - riderx
+
+      vars:
+        PACKAGE_NAME: "com.riderx"
+
+      node: 25.7.0
+
+    cache:
+      cache_paths:
+        - ~/.npm
+        - ~/.gradle
+        - node_modules
+
+    scripts:
+      - name: Create .env file
+        script: |
+          cat > .env <<EOF
+          API_URL_TEST=$API_URL_TEST
+          API_URL_PROD=$API_URL_PROD
+          MAP_BOX_TOKEN=$MAP_BOX_TOKEN
+          WEB_CLIENT_ID=$WEB_CLIENT_ID
+          IOS_CLIENT_ID=$IOS_CLIENT_ID
+          EOF
+
+      - name: Install npm dependencies
+        script: |
+          npm ci
+
+      - name: Set Android SDK location
+        script: |
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > "$CM_BUILD_DIR/android/local.properties"
+
+      - name: Build Android release AAB
+        script: |
+          cd android
+          ./gradlew bundleRelease
+
+
+    artifacts:
+      - android/app/build/outputs/**/*.aab
+
+    publishing:
+      email:
+        recipients:
+          - tech@peaktowertech.com
+        notify:
+          success: true
+          failure: true
+
+      google_play:
+        credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
+        track: internal
+
+
+
+  react-native-ios:
+    name: React Native iOS
+    max_build_duration: 120
+    instance_type: mac_mini_m2
+
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: develop
+          include: true
+
+    integrations:
+      app_store_connect: codemagic
+
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.bytebridger.riderx
+
+      groups:
+        - riderx  
+
+      vars:
+        XCODE_WORKSPACE: "riderx.xcworkspace"
+        XCODE_SCHEME: "riderx"
+        APP_ID: 6749232669
+
+      node: 25.7.0
+      xcode: latest
+      cocoapods: default
+
+    cache:
+      cache_paths:
+        - ~/.npm
+        - node_modules
+        - ~/Library/Caches/CocoaPods
+        - ios/Pods
+
+    scripts:
+      - name: Create .env file
+        script: |
+          cat > .env <<EOF
+          API_URL_TEST=$API_URL_TEST
+          API_URL_PROD=$API_URL_PROD
+          MAP_BOX_TOKEN=$MAP_BOX_TOKEN
+          WEB_CLIENT_ID=$WEB_CLIENT_ID
+          IOS_CLIENT_ID=$IOS_CLIENT_ID
+          EOF
+
+      - name: Install npm dependencies
+        script: |
+          npm ci
+
+      - name: Install CocoaPods dependencies
+        script: |
+          cd ios
+          pod install
+
+      - name: Set up code signing settings on Xcode project
+        script: |
+          xcode-project use-profiles --warn-only
+
+      - name: Build IPA for TestFlight
+        script: |
+          xcode-project build-ipa \
+            --workspace "$CM_BUILD_DIR/ios/$XCODE_WORKSPACE" \
+            --scheme "$XCODE_SCHEME"
+
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.app
+      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.dSYM
+
+    publishing:
+      email:
+        recipients:
+          - tech@peaktowertech.com
+        notify:
+          success: true
+          failure: true
+
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        submit_to_app_store: false

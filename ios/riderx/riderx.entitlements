@@ -8,5 +8,10 @@
 	<array>
 		<string>Default</string>
 	</array>
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:p3.riderx.me</string>
+		<string>applinks:s.riderx.me</string>
+	</array>
 </dict>
 </plist>

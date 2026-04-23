@@ -2085,6 +2085,8 @@ PODS:
     - ReactCommon/turbomodule/core
     - TOCropViewController (~> 2.8.0)
     - Yoga
+  - RNInAppBrowser (3.7.1):
+    - React-Core
   - RNLocalize (3.5.2):
     - DoubleConversion
     - glog
@@ -2536,6 +2538,7 @@ DEPENDENCIES:
   - RNGestureHandler (from `../node_modules/react-native-gesture-handler`)
   - "RNGoogleSignin (from `../node_modules/@react-native-google-signin/google-signin`)"
   - RNImageCropPicker (from `../node_modules/react-native-image-crop-picker`)
+  - RNInAppBrowser (from `../node_modules/react-native-inappbrowser-reborn`)
   - RNLocalize (from `../node_modules/react-native-localize`)
   - "rnmapbox-maps (from `../node_modules/@rnmapbox/maps`)"
   - "RNNotifee (from `../node_modules/@notifee/react-native`)"
@@ -2746,6 +2749,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/@react-native-google-signin/google-signin"
   RNImageCropPicker:
     :path: "../node_modules/react-native-image-crop-picker"
+  RNInAppBrowser:
+    :path: "../node_modules/react-native-inappbrowser-reborn"
   RNLocalize:
     :path: "../node_modules/react-native-localize"
   rnmapbox-maps:
@@ -2873,6 +2878,7 @@ SPEC CHECKSUMS:
   RNGestureHandler: 4fbe7fbce86b6b546f75c9db974974262f75ef5d
   RNGoogleSignin: 9a3687206bd121982d42993da2063f5a271e383c
   RNImageCropPicker: 2889fd7ef4b4bb7aeef8a0b598661f934f01f5e1
+  RNInAppBrowser: 904d24dc75e8e6c6c98a3160329192608946f9df
   RNLocalize: a46aae37770c521a04f389892f10111b7f51ac4d
   rnmapbox-maps: 8a083b8f817dbf896db642d9a7c824e5599b27da
   RNNotifee: 5e3b271e8ea7456a36eec994085543c9adca9168

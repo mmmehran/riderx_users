@@ -66,6 +66,24 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <intent-filter android:autoVerify="true">
+    <action android:name="android.intent.action.VIEW" />
+
+    <category android:name="android.intent.category.DEFAULT" />
+    <category android:name="android.intent.category.BROWSABLE" />
+
+    <!-- Replace with your domain -->
+    <data
+        android:scheme="https"
+        android:host="p3.riderx.me"
+         />
+    <data
+        android:scheme="https"
+        android:host="s.riderx.me"
+         />     
+    <data android:pathPrefix="/payment/success" /> 
+    <data android:pathPrefix="/payment/cancel" />        
+</intent-filter>
         </activity>
     </application>
 </manifest>

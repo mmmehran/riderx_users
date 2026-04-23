@@ -1,13 +1,16 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
   SafeAreaView,
   StyleSheet,
   Platform,
   StatusBar,
+  Linking
 } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { useDispatch, useSelector } from 'react-redux';
+import InAppBrowser from 'react-native-inappbrowser-reborn';
+
 
 import colors from '../../config/colors';
 import {
@@ -28,16 +31,56 @@ export default function Sender({ route }) {
     } catch { }
   }, [user]);
 
+  const handlePaymentUrl = async (url) => {
+    if (await InAppBrowser.isAvailable()) {
+      await InAppBrowser.open(url, {
+        showTitle: true,
+        enableUrlBarHiding: false,
+        enableDefaultShare: false,
+      });
+      return;
+    } else {
+      Linking.openURL(url);
+    }
+  }
+
+  const [webUrl, setWebUrl] = useState('');
+
+  useEffect(() => {
+    setWebUrl(user?.social_auth_callback_url ?? '')
+    const handleUrl = ({ url }) => {
+      // Example: myapp://payment-success?status=ok
+      if (url.includes('/payment/success')) {
+        // Convert to your web URL if needed
+        const newUrl = url;
+
+        setWebUrl(newUrl);
+      }
+      if (url.includes('/payment/cancel')) {
+        // Convert to your web URL if needed
+        const newUrl = url;
+
+        setWebUrl(newUrl);
+      }
+    };
+
+    Linking.addEventListener('url', handleUrl);
+
+    return () => {
+      Linking.removeAllListeners('url')
+    };
+  }, [user?.social_auth_callback_url]);
+
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.screen}>
         <View style={{ flex: 1 }}>
-          {user?.social_auth_callback_url && (
+          {webUrl.length > 0 && (
             <WebView
               key={user?.user_id || 'guest'}
               style={{ flex: 1 }}
-              source={{ uri: user?.social_auth_callback_url }}
-              javaScriptEnabled
+              source={{ uri: webUrl }}
+              javaScriptEnabled={true}
               onMessage={onMessage}
               allowsInlineMediaPlayback
               mediaPlaybackRequiresUserAction={false}
@@ -45,6 +88,15 @@ export default function Sender({ route }) {
               cacheEnabled={false}
               thirdPartyCookiesEnabled={false}
               domStorageEnabled={false}
+              setSupportMultipleWindows={true}
+              javaScriptCanOpenWindowsAutomatically={true}
+              onShouldStartLoadWithRequest={(request) => {
+                if (request.url.includes("vivapayments")) {
+                  handlePaymentUrl(request.url)
+                  return false;
+                }
+                return true;
+              }}
             />
           )}
         </View>
