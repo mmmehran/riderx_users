@@ -1,11 +1,13 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
 import {
   View,
   SafeAreaView,
   StyleSheet,
   Platform,
   StatusBar,
-  Linking
+  Linking,
+  BackHandler,
+  ToastAndroid,
 } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { useDispatch, useSelector } from 'react-redux';
@@ -22,16 +24,25 @@ export default function Sender({ route }) {
   const dispatch = useDispatch();
   const user = useSelector(authenticated);
 
-  const onMessage = useCallback(e => {
-    try {
-      const data = JSON.parse(e.nativeEvent.data);
-      if (data?.type === 'LOGOUT') {
-        dispatch(logout());
-      }
-    } catch { }
-  }, [user]);
+  const webViewRef = useRef(null);
+  const canGoBackRef = useRef(false);
+  const lastBackPress = useRef(0);
 
-  const handlePaymentUrl = async (url) => {
+  const [webUrl, setWebUrl] = useState('');
+
+  const onMessage = useCallback(
+    e => {
+      try {
+        const data = JSON.parse(e.nativeEvent.data);
+        if (data?.type === 'LOGOUT') {
+          dispatch(logout());
+        }
+      } catch { }
+    },
+    [dispatch],
+  );
+
+  const handlePaymentUrl = async url => {
     if (await InAppBrowser.isAvailable()) {
       await InAppBrowser.open(url, {
         showTitle: true,
@@ -42,34 +53,53 @@ export default function Sender({ route }) {
     } else {
       Linking.openURL(url);
     }
-  }
-
-  const [webUrl, setWebUrl] = useState('');
+  };
 
   useEffect(() => {
-    setWebUrl(user?.social_auth_callback_url ?? '')
+    setWebUrl(user?.social_auth_callback_url ?? '');
+
     const handleUrl = ({ url }) => {
-      // Example: myapp://payment-success?status=ok
-      if (url.includes('/payment/success')) {
-        // Convert to your web URL if needed
-        const newUrl = url;
-
-        setWebUrl(newUrl);
-      }
-      if (url.includes('/payment/cancel')) {
-        // Convert to your web URL if needed
-        const newUrl = url;
-
-        setWebUrl(newUrl);
+      if (url.includes('/payment/success') || url.includes('/payment/cancel')) {
+        setWebUrl(url);
       }
     };
 
-    Linking.addEventListener('url', handleUrl);
+    const subscription = Linking.addEventListener('url', handleUrl);
 
     return () => {
-      Linking.removeAllListeners('url')
+      subscription.remove();
     };
   }, [user?.social_auth_callback_url]);
+
+  // ✅ BACK HANDLER (WebView + Double back exit)
+  useEffect(() => {
+    const onBackPress = () => {
+      // 1. If WebView can go back
+      if (canGoBackRef.current && webViewRef.current) {
+        webViewRef.current.goBack();
+        return true;
+      }
+
+      // 2. Double back to exit
+      const now = Date.now();
+      if (lastBackPress.current && now - lastBackPress.current < 2000) {
+        BackHandler.exitApp();
+        return true;
+      }
+
+      lastBackPress.current = now;
+      ToastAndroid.show('Press back again to exit', ToastAndroid.SHORT);
+
+      return true;
+    };
+
+    const subscription = BackHandler.addEventListener(
+      'hardwareBackPress',
+      onBackPress,
+    );
+
+    return () => subscription.remove();
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -77,6 +107,7 @@ export default function Sender({ route }) {
         <View style={{ flex: 1 }}>
           {webUrl.length > 0 && (
             <WebView
+              ref={webViewRef}
               key={user?.user_id || 'guest'}
               style={{ flex: 1 }}
               source={{ uri: webUrl }}
@@ -90,12 +121,15 @@ export default function Sender({ route }) {
               domStorageEnabled={false}
               setSupportMultipleWindows={true}
               javaScriptCanOpenWindowsAutomatically={true}
-              onShouldStartLoadWithRequest={(request) => {
-                if (request.url.includes("vivapayments")) {
-                  handlePaymentUrl(request.url)
+              onShouldStartLoadWithRequest={request => {
+                if (request.url.includes('vivapayments')) {
+                  handlePaymentUrl(request.url);
                   return false;
                 }
                 return true;
+              }}
+              onNavigationStateChange={navState => {
+                canGoBackRef.current = navState.canGoBack;
               }}
             />
           )}
