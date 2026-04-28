@@ -47,7 +47,7 @@ PODS:
   - GoogleDataTransport (10.1.0):
     - nanopb (~> 3.30910.0)
     - PromisesObjC (~> 2.4)
-  - GoogleSignIn (9.0.0):
+  - GoogleSignIn (9.1.0):
     - AppAuth (~> 2.0)
     - AppCheckCore (~> 11.0)
     - GTMAppAuth (~> 5.0)
@@ -109,15 +109,14 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
-  - MapboxCommon (23.11.4)
-  - MapboxCoreMaps (10.19.2):
-    - MapboxCommon (~> 23.11)
-  - MapboxMaps (10.19.4):
-    - MapboxCommon (= 23.11.4)
-    - MapboxCoreMaps (= 10.19.2)
-    - MapboxMobileEvents (= 2.0.0)
-    - Turf (= 2.8.0)
-  - MapboxMobileEvents (2.0.0)
+  - MapboxCommon (24.18.3):
+    - Turf (= 4.0.0)
+  - MapboxCoreMaps (11.18.3):
+    - MapboxCommon (= 24.18.3)
+  - MapboxMaps (11.18.3):
+    - MapboxCommon (= 24.18.3)
+    - MapboxCoreMaps (= 11.18.3)
+    - Turf (= 4.0.0)
   - nanopb (3.30910.0):
     - nanopb/decode (= 3.30910.0)
     - nanopb/encode (= 3.30910.0)
@@ -2111,16 +2110,16 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
-  - rnmapbox-maps (10.1.39):
-    - MapboxMaps (~> 10.19.0)
+  - rnmapbox-maps (10.3.0):
+    - MapboxMaps (~> 11.18.2)
     - React
     - React-Core
-    - rnmapbox-maps/DynamicLibrary (= 10.1.39)
+    - rnmapbox-maps/DynamicLibrary (= 10.3.0)
     - Turf
-  - rnmapbox-maps/DynamicLibrary (10.1.39):
+  - rnmapbox-maps/DynamicLibrary (10.3.0):
     - DoubleConversion
     - hermes-engine
-    - MapboxMaps (~> 10.19.0)
+    - MapboxMaps (~> 11.18.2)
     - RCT-Folly
     - RCTRequired
     - RCTTypeSafety
@@ -2447,7 +2446,13 @@ PODS:
   - Sentry/HybridSDK (8.53.2)
   - SocketRocket (0.7.1)
   - TOCropViewController (2.8.0)
-  - Turf (2.8.0)
+  - Turf (4.0.0)
+  - WebEngage (6.20.2):
+    - WebEngage/Core (= 6.20.2)
+    - WebEngage/Location (= 6.20.2)
+  - WebEngage/Core (6.20.2)
+  - WebEngage/Location (6.20.2):
+    - WebEngage/Core
   - Yoga (0.0.0)
 
 DEPENDENCIES:
@@ -2548,6 +2553,9 @@ DEPENDENCIES:
   - "RNSentry (from `../node_modules/@sentry/react-native`)"
   - RNSVG (from `../node_modules/react-native-svg`)
   - RNWorklets (from `../node_modules/react-native-worklets`)
+  - WebEngage
+  - WebEngage/Core
+  - WebEngage/Location
   - Yoga (from `../node_modules/react-native/ReactCommon/yoga`)
 
 SPEC REPOS:
@@ -2569,13 +2577,13 @@ SPEC REPOS:
     - MapboxCommon
     - MapboxCoreMaps
     - MapboxMaps
-    - MapboxMobileEvents
     - nanopb
     - PromisesObjC
     - Sentry
     - SocketRocket
     - TOCropViewController
     - Turf
+    - WebEngage
 
 EXTERNAL SOURCES:
   boost:
@@ -2789,17 +2797,16 @@ SPEC CHECKSUMS:
   fmt: a40bb5bd0294ea969aaaba240a927bd33d878cdd
   glog: 5683914934d5b6e4240e497e0f4a3b42d1854183
   GoogleDataTransport: aae35b7ea0c09004c3797d53c8c41f66f219d6a7
-  GoogleSignIn: c7f09cfbc85a1abf69187be091997c317cc33b77
+  GoogleSignIn: fcee2257188d5eda57a5e2b6a715550ffff9206d
   GoogleUtilities: 00c88b9a86066ef77f0da2fab05f65d7768ed8e1
   GTMAppAuth: 217a876b249c3c585a54fd6f73e6b58c4f5c4238
   GTMSessionFetcher: 5aea5ba6bd522a239e236100971f10cb71b96ab6
   hermes-engine: 314be5250afa5692b57b4dd1705959e1973a8ebe
   lottie-ios: a881093fab623c467d3bce374367755c272bdd59
   lottie-react-native: debb478b96f9276e96cccbbea2397df187ce6ebf
-  MapboxCommon: cc47fafe3fe5408ca49240aa80fa64f27f275711
-  MapboxCoreMaps: 35685edba03e44468aed57c3dfd7f8795edafda8
-  MapboxMaps: f87023cf0d72b180b40ea0b6fb4b2d7db6b73b71
-  MapboxMobileEvents: d044b9edbe0ec7df60f6c2c9634fe9a7f449266b
+  MapboxCommon: 371fd6db596531464b6fd751ae7daa382fe2da2b
+  MapboxCoreMaps: 811c4196843f5554b10a807d1231270d372ff148
+  MapboxMaps: 0e8fdc25eb3b1c2ff5cf9317266fe984eeb0e18f
   nanopb: fad817b59e0457d11a5dfbde799381cd727c1275
   NitroModules: ed85c8ead23755c76e2eb0cc51b1cc1c077de6b4
   NitroSound: 38e0518a30cfc9deac6b79864323f1098588fa4e
@@ -2880,7 +2887,7 @@ SPEC CHECKSUMS:
   RNImageCropPicker: 2889fd7ef4b4bb7aeef8a0b598661f934f01f5e1
   RNInAppBrowser: 904d24dc75e8e6c6c98a3160329192608946f9df
   RNLocalize: a46aae37770c521a04f389892f10111b7f51ac4d
-  rnmapbox-maps: 8a083b8f817dbf896db642d9a7c824e5599b27da
+  rnmapbox-maps: c1eb2b02488ea325d2af4193c3243deb7cbcc690
   RNNotifee: 5e3b271e8ea7456a36eec994085543c9adca9168
   RNPermissions: f911a4f89f8da133ab788bab7d5bcbd27a2430c6
   RNReanimated: 34f5a65606f038eb85448fc4444590ec300407af
@@ -2891,9 +2898,10 @@ SPEC CHECKSUMS:
   Sentry: 59993bffde4a1ac297ba6d268dc4bbce068d7c1b
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   TOCropViewController: 797deaf39c90e6e9ddd848d88817f6b9a8a09888
-  Turf: aa2ede4298009639d10db36aba1a7ebaad072a5e
+  Turf: c9eb11a65d96af58cac523460fd40fec5061b081
+  WebEngage: 34c9df82ceb2203d33a72cc315aac0879897f92e
   Yoga: 50518ade05048235d91a78b803336dbb5b159d5d
 
-PODFILE CHECKSUM: 27aa8f8c10d51d9a9196ec00298777a610040977
+PODFILE CHECKSUM: 4ce0cadd573fe62afcb6986d2bf3d6b7a82561d6
 
 COCOAPODS: 1.16.2
