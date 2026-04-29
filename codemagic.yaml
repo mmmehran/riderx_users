@@ -102,7 +102,7 @@ workflows:
         APP_ID: 6749232669
 
       node: 25.7.0
-      xcode: 24.2
+      xcode: 26.2
       cocoapods: default
 
     cache:
