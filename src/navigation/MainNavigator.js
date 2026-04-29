@@ -17,7 +17,7 @@ const MainNavigator = () => {
     return (
         <Stack.Navigator
             screenOptions={{ headerShown: false }}
-            initialRouteName={user?.authenticated ? user?.is_rider ? (/^[^@\s]+@bb\.com$/i.test(user?.email) ? routes.DRAWERNAVIGATOR : routes.INSTALLDRIVERAPP) : routes.SENDER : routes.AUTHNAVIGATOR}
+            initialRouteName={user?.authenticated ? user?.is_rider ? (/^[^@\s]+@bb\.com$/i.test(user?.email) ? routes.DRAWERNAVIGATOR : routes.SENDER) : routes.SENDER : routes.AUTHNAVIGATOR}
         >
             <Stack.Screen
                 name={routes.AUTHNAVIGATOR}
