@@ -12,6 +12,7 @@ import {
 import { WebView } from 'react-native-webview';
 import { useDispatch, useSelector } from 'react-redux';
 import InAppBrowser from 'react-native-inappbrowser-reborn';
+import { AppState } from 'react-native';
 
 
 import colors from '../../config/colors';
@@ -44,31 +45,55 @@ export default function Sender({ route }) {
 
   const handlePaymentUrl = async url => {
     if (await InAppBrowser.isAvailable()) {
-      await InAppBrowser.open(url, {
+      var r = await InAppBrowser.openAuth(url, 'riderxapp://', {
         showTitle: true,
         enableUrlBarHiding: false,
         enableDefaultShare: false,
       });
+      handleUrl(r)
       return;
     } else {
       Linking.openURL(url);
+    }
+  };
+  const handleUrl = ({ url }) => {
+    if (!url) return;
+
+
+    const normalizedUrl = url.replace('riderxapp://', 'https://');
+
+    if (
+      normalizedUrl.includes('/payment/success') ||
+      normalizedUrl.includes('/payment/cancel')
+    ) {
+      setWebUrl(normalizedUrl);
     }
   };
 
   useEffect(() => {
     setWebUrl(user?.social_auth_callback_url ?? '');
 
-    const handleUrl = ({ url }) => {
-      const normalizedUrl = url.replace('riderxapp://', 'https://')
-      if (normalizedUrl.includes('/payment/success') || normalizedUrl.includes('/payment/cancel')) {
-        setWebUrl(normalizedUrl);
-      }
-    };
 
-    const subscription = Linking.addEventListener('url', handleUrl);
+    // 🔹 Handle cold start
+    Linking.getInitialURL().then(url => {
+      if (url) handleUrl({ url });
+    });
+
+    // 🔹 Handle when already open (sometimes unreliable)
+    const sub = Linking.addEventListener('url', handleUrl);
+
+    // 🔥 KEY FIX: check again when app resumes
+    const appStateSub = AppState.addEventListener('change', state => {
+      if (state === 'active') {
+        Linking.getInitialURL().then(url => {
+          if (url) handleUrl({ url });
+        });
+      }
+    });
 
     return () => {
-      subscription.remove();
+      sub.remove();
+      appStateSub.remove();
     };
   }, [user?.social_auth_callback_url]);
 
@@ -116,10 +141,9 @@ export default function Sender({ route }) {
               onMessage={onMessage}
               allowsInlineMediaPlayback
               mediaPlaybackRequiresUserAction={false}
-              incognito
-              cacheEnabled={false}
-              thirdPartyCookiesEnabled={false}
-              domStorageEnabled={false}
+              cacheEnabled={true}
+              thirdPartyCookiesEnabled={true}
+              domStorageEnabled={true}
               setSupportMultipleWindows={true}
               javaScriptCanOpenWindowsAutomatically={true}
               onShouldStartLoadWithRequest={request => {
