@@ -59,8 +59,9 @@ export default function Sender({ route }) {
     setWebUrl(user?.social_auth_callback_url ?? '');
 
     const handleUrl = ({ url }) => {
-      if (url.includes('/payment/success') || url.includes('/payment/cancel')) {
-        setWebUrl(url);
+      const normalizedUrl = url.replace('riderxapp://', 'https://')
+      if (normalizedUrl.includes('/payment/success') || normalizedUrl.includes('/payment/cancel')) {
+        setWebUrl(normalizedUrl);
       }
     };
 
