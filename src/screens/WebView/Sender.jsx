@@ -45,13 +45,22 @@ export default function Sender({ route }) {
 
   const handlePaymentUrl = async url => {
     if (await InAppBrowser.isAvailable()) {
-      var r = await InAppBrowser.openAuth(url, 'riderxapp://', {
-        showTitle: true,
-        enableUrlBarHiding: false,
-        enableDefaultShare: false,
-      });
-      handleUrl(r)
-      return;
+      try {
+        const baseLink = user?.social_auth_callback_url ?? ''
+        let redirect = ''
+        const match = baseLink.match(/^https?:\/\/[^/]+/);
+        redirect = match ? match[0] : 'riderxapp://';
+
+        var r = await InAppBrowser.openAuth(url, 'riderxapp://', {
+          showTitle: true,
+          enableUrlBarHiding: false,
+          enableDefaultShare: false,
+        });
+        handleUrl({ url: r.url ?? ((redirect.startsWith('http') && r.type == 'cancel') ? `${redirect}/payment/cancel` : null) })
+        return;
+      } catch (err) {
+        console.log(err)
+      }
     } else {
       Linking.openURL(url);
     }
