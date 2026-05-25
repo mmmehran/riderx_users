@@ -81,7 +81,8 @@
         android:host="s.riderx.me"
          />     
     <data android:pathPrefix="/payment/success" /> 
-    <data android:pathPrefix="/payment/cancel" />        
+    <data android:pathPrefix="/payment/cancel" />   
+    <data android:pathPrefix="/profile/wallet" />     
 </intent-filter>
 <intent-filter>
     <action android:name="android.intent.action.VIEW" />

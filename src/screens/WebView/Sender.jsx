@@ -20,6 +20,7 @@ import {
   logout,
   authenticated,
 } from '../../redux/reducers/authenticationReducer';
+import { getDeepLink } from '../../utils/deepLinkHolder';
 
 export default function Sender({ route }) {
   const dispatch = useDispatch();
@@ -27,6 +28,8 @@ export default function Sender({ route }) {
 
   const webViewRef = useRef(null);
   const canGoBackRef = useRef(false);
+  const currentUrl = useRef('direct_login')
+  const reservedDeeplink = useRef(getDeepLink())
   const lastBackPress = useRef(0);
 
   const [webUrl, setWebUrl] = useState('');
@@ -42,7 +45,15 @@ export default function Sender({ route }) {
     },
     [dispatch],
   );
+  function toWalletUrl(url) {
+    const match = url.match(/^(https?:\/\/[^/?#]+)/);
 
+    if (!match) {
+      throw new Error('Invalid URL');
+    }
+
+    return `${match[1]}/profile/wallet`;
+  }
   const handlePaymentUrl = async url => {
     if (await InAppBrowser.isAvailable()) {
       try {
@@ -67,19 +78,33 @@ export default function Sender({ route }) {
   };
   const handleUrl = ({ url }) => {
     if (!url) return;
+    try {
 
 
-    const normalizedUrl = url.replace('riderxapp://', 'https://');
+      const normalizedUrl = url.replace('riderxapp://', 'https://');
 
-    if (
-      normalizedUrl.includes('/payment/success') ||
-      normalizedUrl.includes('/payment/cancel')
-    ) {
-      setWebUrl(normalizedUrl);
+      if (
+        normalizedUrl.includes('/payment/success') ||
+        normalizedUrl.includes('/payment/cancel')
+      ) {
+        setWebUrl(normalizedUrl);
+      } else if (user?.social_auth_callback_url && normalizedUrl.endsWith('/profile/wallet')) {
+        const newUrl = toWalletUrl(user?.social_auth_callback_url)
+        if (currentUrl.current.includes('direct_login')) {
+          reservedDeeplink.current = newUrl
+        } else {
+          setWebUrl(newUrl)
+        }
+      }
+    } catch (err) {
+      console.error(err)
     }
   };
 
   useEffect(() => {
+    if (!user?.social_auth_callback_url) {
+      return () => { }
+    }
     setWebUrl(user?.social_auth_callback_url ?? '');
 
 
@@ -164,6 +189,11 @@ export default function Sender({ route }) {
               }}
               onNavigationStateChange={navState => {
                 canGoBackRef.current = navState.canGoBack;
+                currentUrl.current = navState.url
+                if (reservedDeeplink.current && user?.social_auth_callback_url && !currentUrl.current.includes('direct_login')) {
+                  setWebUrl(reservedDeeplink.current)
+                  reservedDeeplink.current = null
+                }
               }}
             />
           )}

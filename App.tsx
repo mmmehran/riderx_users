@@ -1,11 +1,11 @@
-import React, {useState, useMemo,useEffect} from 'react';
-import {NavigationContainer} from '@react-navigation/native';
-import {GestureHandlerRootView} from 'react-native-gesture-handler';
+import React, { useState, useMemo, useEffect } from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Toast from 'react-native-toast-message';
-import {Provider} from 'react-redux';
-import {PersistGate} from 'redux-persist/integration/react';
-import {SafeAreaProvider} from 'react-native-safe-area-context';
-import {I18nextProvider} from 'react-i18next';
+import { Provider } from 'react-redux';
+import { PersistGate } from 'redux-persist/integration/react';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { I18nextProvider } from 'react-i18next';
 import * as Sentry from '@sentry/react-native';
 import { navigationRef, navigate } from './src/navigation/navigationRef';
 import messaging from '@react-native-firebase/messaging';
@@ -15,15 +15,17 @@ import notifee, { EventType } from '@notifee/react-native';
 import BaseNavigator from './src/navigation/BaseNavigator';
 import toastConfig from './src/config/toastConfig';
 import AppContext from './src/components/common/AppContext';
-import store, {persistor} from './src/redux/store';
-import i18n , {initLanguage} from './src/utils/i18n';
+import store, { persistor } from './src/redux/store';
+import i18n, { initLanguage } from './src/utils/i18n';
 import { initDing } from './src/utils/sounds';
 import routes from './src/navigation/routes';
+import { Linking } from 'react-native';
+import { setDeepLink } from './src/utils/deepLinkHolder';
 
 const App = () => {
   const [userDevice, setUserDevice] = useState([]);
 
-    useEffect(() => { initDing(); }, []);
+  useEffect(() => { initDing(); }, []);
 
   Sentry.init({
     dsn: 'https://803479b298ab176f5d18e98120497989@o4504479126192128.ingest.us.sentry.io/4509932668518400',
@@ -45,7 +47,7 @@ const App = () => {
   });
 
 
-   useEffect(() => {
+  useEffect(() => {
     initLanguage(); // sets stored/device language + RTL
   }, []);
 
@@ -76,28 +78,28 @@ const App = () => {
 
   const handleNotificationPress = (data: any) => {
     if (!data) return;
-    
+
     // Check if there is an active order
     const state = store.getState();
     const hasActiveOrder = !!state.config.selectedOrder;
 
     if (hasActiveOrder && data.id) {
-       // Navigate to MultiOrder screen (NEXTTRIP)
-       navigate(routes.DRAWERNAVIGATOR, {
-         screen: routes.NEXTTRIP,
-         params: { data: [data], show: false },
-       });
+      // Navigate to MultiOrder screen (NEXTTRIP)
+      navigate(routes.DRAWERNAVIGATOR, {
+        screen: routes.NEXTTRIP,
+        params: { data: [data], show: false },
+      });
     } else {
-       // Navigate to Home screen
-       goToHomeMainWith({ ...data, refreshDeliveries: true });
+      // Navigate to Home screen
+      goToHomeMainWith({ ...data, refreshDeliveries: true });
     }
   };
 
   useEffect(() => {
     // 1) Cold start from a push (FCM)
     messaging().getInitialNotification().then(initial => {
-       console.log('FCM Initial Notification:', initial);
-       if (initial?.data) handleNotificationPress(initial.data);
+      console.log('FCM Initial Notification:', initial);
+      if (initial?.data) handleNotificationPress(initial.data);
     });
 
     // 2) Background → foreground (user tapped FCM)
@@ -130,6 +132,12 @@ const App = () => {
       }
     });
 
+    Linking.getInitialURL().then((v) => {
+      if (v) {
+        setDeepLink(v)
+      }
+    })
+
     // // 4) Handle cold start from Notifee
     // notifee.getInitialNotification().then(initial => {
     //   if (initial?.notification?.data?.type === 'chat') {
@@ -149,8 +157,8 @@ const App = () => {
         <AppContext.Provider value={globalState}>
           <Provider store={store}>
             <PersistGate loading={null} persistor={persistor}>
-              <GestureHandlerRootView style={{flex: 1}}>
-                <NavigationContainer  ref={navigationRef} >
+              <GestureHandlerRootView style={{ flex: 1 }}>
+                <NavigationContainer ref={navigationRef} >
                   <BaseNavigator />
                 </NavigationContainer>
               </GestureHandlerRootView>
