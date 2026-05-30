@@ -1,16 +1,16 @@
-import React, {useEffect} from 'react';
-import {View, StyleSheet, ImageBackground, Platform} from 'react-native';
+import React, { useEffect } from 'react';
+import { View, StyleSheet, ImageBackground, Platform } from 'react-native';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
-import {useNavigation} from '@react-navigation/native';
-import {useSelector} from 'react-redux';
+import { useNavigation } from '@react-navigation/native';
+import { useSelector } from 'react-redux';
 
 import routes from '../../navigation/routes';
 import colors from '../../config/colors';
-import {selectConfig} from '../../redux/reducers/configReducer';
-import {isAndroid15Plus} from '../../utils/helpers';
+import { selectConfig } from '../../redux/reducers/configReducer';
+import { isAndroid15Plus } from '../../utils/helpers';
 
 const Splash = props => {
   const navigation = useNavigation();
@@ -27,7 +27,7 @@ const Splash = props => {
   }, []);
 
   return (
-    <View style={[styles.container, isAndroid15Plus && {marginBottom: hp(12)}]}>
+    <View style={[styles.container, isAndroid15Plus && { marginBottom: hp(12) }]}>
       <ImageBackground
         style={{
           width: wp(100),
