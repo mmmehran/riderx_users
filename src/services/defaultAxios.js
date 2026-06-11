@@ -2,8 +2,10 @@ import axios from "axios";
 import { API_URL_TEST, API_URL_PROD } from "@env";
 import store from "../redux/store";
 import errorHandler from '../utils/errorHandler';
-import {version} from '../../package.json';
-import {Platform} from 'react-native'
+import { version } from '../../package.json';
+import { Platform } from 'react-native'
+import DeviceInfo from 'react-native-device-info';
+
 
 const instance = axios.create();
 const instanceWithAuthorization = axios.create();
@@ -18,23 +20,33 @@ store.subscribe(() => {
 
 export const addEmailUser = (email) => {
    if (email)
-        instanceWithAuthorization.defaults.headers.common["user-email"] = email
+      instanceWithAuthorization.defaults.headers.common["user-email"] = email
 };
 
 export const setConfigTest = () => {
    instance.defaults.baseURL = API_URL_TEST
+   instance.defaults.headers.common["app"] = "user"
+   instance.defaults.headers.common["app-version"] = version
+   instance.defaults.headers.common["app-platform"] = Platform?.OS
+   instance.defaults.headers.common["app-platform-version"] = DeviceInfo.getBuildNumber()
    instanceWithAuthorization.defaults.baseURL = API_URL_TEST
+   instanceWithAuthorization.defaults.headers.common["app"] = "user"
    instanceWithAuthorization.defaults.headers.common["app-version"] = version
    instanceWithAuthorization.defaults.headers.common["app-platform"] = Platform?.OS
-   instanceWithAuthorization.defaults.headers.common["app-platform-version"] = Platform?.constants?.Version
+   instanceWithAuthorization.defaults.headers.common["app-platform-version"] = DeviceInfo.getBuildNumber()
 };
 
 export const setConfig = () => {
    instance.defaults.baseURL = API_URL_PROD
+   instance.defaults.headers.common["app"] = "user"
+   instance.defaults.headers.common["app-version"] = version
+   instance.defaults.headers.common["app-platform"] = Platform?.OS
+   instance.defaults.headers.common["app-platform-version"] = DeviceInfo.getBuildNumber()
    instanceWithAuthorization.defaults.baseURL = API_URL_PROD
+   instanceWithAuthorization.defaults.headers.common["app"] = "user"
    instanceWithAuthorization.defaults.headers.common["app-version"] = version
-   instanceWithAuthorization.defaults.headers.common["app-platform"] =  Platform?.OS
-   instanceWithAuthorization.defaults.headers.common["app-platform-version"] = Platform?.constants?.Version
+   instanceWithAuthorization.defaults.headers.common["app-platform"] = Platform?.OS
+   instanceWithAuthorization.defaults.headers.common["app-platform-version"] = DeviceInfo.getBuildNumber()
 };
 
 export const addContentTypeFormData = () => {

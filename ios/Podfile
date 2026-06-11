@@ -92,3 +92,12 @@ target 'riderx' do
     end
   end
 end
+
+target 'NotificationService' do
+  use_frameworks! :linkage => :static           
+end
+
+# ContentExtension Target
+target 'ContentExtension' do
+  use_frameworks! :linkage => :static           
+end

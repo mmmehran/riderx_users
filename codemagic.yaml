@@ -138,7 +138,15 @@ workflows:
       - name: Install CocoaPods dependencies
         script: |
           cd ios
-          pod install
+
+          if ! pod install; then
+            echo "pod install failed, patching project.pbxproj..."
+
+            sed -i.bak 's/objectVersion = 70;/objectVersion = 60;/g' riderx.xcodeproj/project.pbxproj
+
+            echo "Retrying pod install..."
+            pod install
+          fi
 
       - name: Set up code signing settings on Xcode project
         script: |

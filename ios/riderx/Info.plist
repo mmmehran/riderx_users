@@ -124,5 +124,15 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
+	<key>WEGAlternateAppSupport</key>
+	<string>YES</string>
+	<key>WEGEnvironment</key>
+	<string>DEFAULT</string>
+	<key>WEGLicenseCode</key>
+	<string>~47b65038</string>
+	<key>WEGLogLevel</key>
+	<string>VERBOSE</string>
+	<key>WEGManualIntegration</key>
+	<true/>
 </dict>
 </plist>

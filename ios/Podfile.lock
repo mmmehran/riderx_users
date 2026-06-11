@@ -1603,6 +1603,9 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
+  - react-native-webengage (1.6.2):
+    - React-Core
+    - WebEngage (>= 6.16.1)
   - react-native-webview (13.16.0):
     - DoubleConversion
     - glog
@@ -1975,6 +1978,8 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
+  - RNDeviceInfo (15.0.2):
+    - React-Core
   - RNFBApp (23.4.0):
     - Firebase/CoreOnly (= 12.3.0)
     - React-Core
@@ -2507,6 +2512,7 @@ DEPENDENCIES:
   - "react-native-geolocation (from `../node_modules/@react-native-community/geolocation`)"
   - react-native-idle-timer (from `../node_modules/react-native-idle-timer`)
   - react-native-safe-area-context (from `../node_modules/react-native-safe-area-context`)
+  - react-native-webengage (from `../node_modules/react-native-webengage`)
   - react-native-webview (from `../node_modules/react-native-webview`)
   - React-NativeModulesApple (from `../node_modules/react-native/ReactCommon/react/nativemodule/core/platform/ios`)
   - React-oscompat (from `../node_modules/react-native/ReactCommon/oscompat`)
@@ -2541,6 +2547,7 @@ DEPENDENCIES:
   - ReactCommon/turbomodule/core (from `../node_modules/react-native/ReactCommon`)
   - "RNAppleAuthentication (from `../node_modules/@invertase/react-native-apple-authentication`)"
   - "RNCAsyncStorage (from `../node_modules/@react-native-async-storage/async-storage`)"
+  - RNDeviceInfo (from `../node_modules/react-native-device-info`)
   - "RNFBApp (from `../node_modules/@react-native-firebase/app`)"
   - "RNFBMessaging (from `../node_modules/@react-native-firebase/messaging`)"
   - RNGestureHandler (from `../node_modules/react-native-gesture-handler`)
@@ -2684,6 +2691,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-idle-timer"
   react-native-safe-area-context:
     :path: "../node_modules/react-native-safe-area-context"
+  react-native-webengage:
+    :path: "../node_modules/react-native-webengage"
   react-native-webview:
     :path: "../node_modules/react-native-webview"
   React-NativeModulesApple:
@@ -2752,6 +2761,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/@invertase/react-native-apple-authentication"
   RNCAsyncStorage:
     :path: "../node_modules/@react-native-async-storage/async-storage"
+  RNDeviceInfo:
+    :path: "../node_modules/react-native-device-info"
   RNFBApp:
     :path: "../node_modules/@react-native-firebase/app"
   RNFBMessaging:
@@ -2852,6 +2863,7 @@ SPEC CHECKSUMS:
   react-native-geolocation: fcd6daeef13402b1cbb3aadc7711b4e6ed9d89e0
   react-native-idle-timer: 451ec5df38395c80e998a8ffa2da4237a4d9eb97
   react-native-safe-area-context: 5e61d0541825a113f60c01e061974355fec8d7c1
+  react-native-webengage: d9611aada8a0824f5633b646a7e3cebc57e1a653
   react-native-webview: f0d598682cbc88a97d66da4121873d3467f76635
   React-NativeModulesApple: df8e5bc59e78ca3040ffbf41336889f3bd0fad68
   React-oscompat: ef5df1c734f19b8003e149317d041b8ce1f7d29c
@@ -2886,6 +2898,7 @@ SPEC CHECKSUMS:
   ReactCommon: 1511ef100f1afa4c199fe52fe7a8d2529a41429a
   RNAppleAuthentication: c3dddf5918126c9aae85dc2e2ce9fb87835e9e04
   RNCAsyncStorage: c1dca434eda758348a549efb46822b4091d76804
+  RNDeviceInfo: 4c852998208b60dc192ae3529e5867817719ad1e
   RNFBApp: 0211ae65fadcb017cc787b2bd539847330687b93
   RNFBMessaging: 97dc90cb79d1d015250d9d10032c920f1d49c354
   RNGestureHandler: 4fbe7fbce86b6b546f75c9db974974262f75ef5d
@@ -2908,6 +2921,6 @@ SPEC CHECKSUMS:
   WebEngage: 34c9df82ceb2203d33a72cc315aac0879897f92e
   Yoga: 50518ade05048235d91a78b803336dbb5b159d5d
 
-PODFILE CHECKSUM: 4ce0cadd573fe62afcb6986d2bf3d6b7a82561d6
+PODFILE CHECKSUM: c584c6e76008408bb1c3f430f0e5edea28efe987
 
 COCOAPODS: 1.16.2

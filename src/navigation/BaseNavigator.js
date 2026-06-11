@@ -16,6 +16,7 @@ import { setSelectVehicle } from '../redux/reducers/configReducer';
 import { getData } from '../services/common.service';
 import urls from '../services/urls.json';
 import errorHandler from '../utils/errorHandler';
+import InstallUserApp from "../screens/WebView/InstallUserApp";
 
 const Stack = createNativeStackNavigator();
 
@@ -90,6 +91,11 @@ const BaseNavigator = () => {
       <Stack.Screen
         name={routes.MAINNAVIGATOR}
         component={MainNavigator}
+        options={{ fullScreenGestureEnabled: false }}
+      />
+      <Stack.Screen
+        name={routes.INSTALLUSERAPP}
+        component={InstallUserApp}
         options={{ fullScreenGestureEnabled: false }}
       />
     </Stack.Navigator>

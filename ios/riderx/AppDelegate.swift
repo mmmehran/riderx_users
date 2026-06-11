@@ -3,12 +3,17 @@ import React
 import React_RCTAppDelegate
 import ReactAppDependencyProvider
 import Firebase
+import WebEngage
+import webengageBridge
+//import TSBackgroundFetch
+
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
   var window: UIWindow?
 
   var reactNativeDelegate: ReactNativeDelegate?
   var reactNativeFactory: RCTReactNativeFactory?
+  var weBridge: WEGWebEngageBridge?
 
   func application(
     _ application: UIApplication,
@@ -29,7 +34,36 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
       launchOptions: launchOptions
     )
 
+
+    
+    if #available(iOS 10.0, *) {
+      UNUserNotificationCenter.current().delegate = self
+    }
+WebEngage.sharedInstance().application(application, didFinishLaunchingWithOptions: launchOptions)
+    self.weBridge = WEGWebEngageBridge()
+    WebEngage.sharedInstance().pushNotificationDelegate = self.weBridge
+    WebEngage.sharedInstance().application(application, didFinishLaunchingWithOptions: launchOptions, notificationDelegate: self.weBridge)
+    //TSBackgroundFetch.sharedInstance()?.didFinishLaunching()
+    if #available(iOS 10.0, *) {
+      UNUserNotificationCenter.current().delegate = self as? UNUserNotificationCenterDelegate
+    }
+
     return true
+  }
+
+ 
+  
+}
+
+extension AppDelegate: UNUserNotificationCenterDelegate {
+  func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+    WEGManualIntegration.userNotificationCenter(center, willPresent: notification)
+    completionHandler([.alert, .badge, .sound])
+  }
+
+  func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
+    WEGManualIntegration.userNotificationCenter(center, didReceive: response)
+    completionHandler()
   }
 }
 

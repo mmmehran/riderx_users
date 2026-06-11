@@ -21,6 +21,8 @@ import { initDing } from './src/utils/sounds';
 import routes from './src/navigation/routes';
 import { Linking } from 'react-native';
 import { setDeepLink } from './src/utils/deepLinkHolder';
+import WebEngage from 'react-native-webengage';
+import WebEngagePlugin from 'react-native-webengage';
 
 const App = () => {
   const [userDevice, setUserDevice] = useState([]);
@@ -49,6 +51,32 @@ const App = () => {
 
   useEffect(() => {
     initLanguage(); // sets stored/device language + RTL
+  }, []);
+
+  useEffect(() => {
+    // onMessage Firebase Method is invoked when a notification is displayed on foreground
+    const onMessageHandler = messaging().onMessage(async remoteMessage => {
+      const webengage: WebEngagePlugin = new WebEngage();
+      // Pass push payload to WebEngage
+      webengage.push.onMessageReceived(remoteMessage);     // Add This  
+    });
+    return () => {
+      onMessageHandler();
+    };
+  }, []);
+
+
+  useEffect(() => {
+    const webengage = new WebEngage();
+    const registerDeviceAndSendToken = async () => {
+      await messaging().registerDeviceForRemoteMessages();
+      // Get Token From Firebase
+      const token = await messaging().getToken();
+      // Pass Token to WebEngage
+      webengage.push.sendFcmToken(token);                     // Add This
+    };
+
+    registerDeviceAndSendToken();
   }, []);
 
 

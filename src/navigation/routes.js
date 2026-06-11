@@ -6,6 +6,7 @@ export default Object.freeze({
     LOGIN: "login",
     DRAWERNAVIGATOR: "drawerNavigator",
     INSTALLDRIVERAPP: "INSTALLDRIVERAPP",
+    INSTALLUSERAPP: "INSTALLUSERAPP",
     HOMEMAIN: "homeMain",
     CHOOSESERVICE: "chooseService",
     LOGINEMAIL: "loginEmail",
