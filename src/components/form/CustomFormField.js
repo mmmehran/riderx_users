@@ -52,13 +52,14 @@ const CustomFormField = ({
                     placeholder={inputName}
                     value={otherprops?.value}
                     onFocus={() => setFocus(true)}
+                    editable={editable ?? true}
                     onBlur={() => {
                         setFieldTouched(name);
                         setFocus(false);
                     }}
                     style={[styles.input, input,
                     noIcon && { width: wp(85) },
-                    password && { width: wp(72), paddingRight:wp(2) },
+                    password && { width: wp(72), paddingRight: wp(2) },
                     eye && { width: wp(63) }]}
                     secureTextEntry={password ? !showPassword : false}
                 ></TextInput>
@@ -97,10 +98,10 @@ const styles = StyleSheet.create({
         borderRadius: wp(3),
         flexDirection: "row",
         alignItems: "center",
-        marginTop:hp(0.5),
-        borderWidth:wp(0.33),
-        borderColor:colors.neutral200,
-        paddingLeft:wp(3)
+        marginTop: hp(0.5),
+        borderWidth: wp(0.33),
+        borderColor: colors.neutral200,
+        paddingLeft: wp(3)
     },
     errorStyle: {
         borderColor: colors.error900
@@ -111,8 +112,8 @@ const styles = StyleSheet.create({
         textAlign: "left",
         width: wp(77),
         fontSize: wp(3.8),
-    fontFamily: 'arial',
-        marginLeft:wp(2),
+        fontFamily: 'arial',
+        marginLeft: wp(2),
     },
     title: {
         fontSize: wp(3.5),

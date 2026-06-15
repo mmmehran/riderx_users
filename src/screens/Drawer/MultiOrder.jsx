@@ -18,6 +18,8 @@ import errorHandler from '../../utils/errorHandler';
 import { selectConfig } from '../../redux/reducers/configReducer';
 import routes from '../../navigation/routes';
 import MultiOrderRenderItem from '../../components/renderItems/MultiOrderRenderItem';
+import urls from '../../services/urls.json';
+
 
 const MultiOrder = ({ route }) => {
   const navigation = useNavigation();
@@ -33,7 +35,7 @@ const MultiOrder = ({ route }) => {
         const vehicleId = config?.selectVehicle?.id;
         const deliveryId = route?.params?.data?.[0]?.id;
         if (vehicleId && deliveryId) {
-          const response = await getData(`vehicle/${vehicleId}/optimal_route?new_delivery_id=${deliveryId}`);
+          const response = await getData(`${urls.OPTIMALROUTEBASE}${vehicleId}/optimal_route?new_delivery_id=${deliveryId}`);
           if (response?.data?.status) {
             setMultiOrder(response?.data?.data)
           }

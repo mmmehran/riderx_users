@@ -394,7 +394,7 @@ const HomeMainScreen = ({ route }) => {
 
     const anyLogger = async (event, payload) => {
       if (event === 'delivery_create_by_sender') {
-        const orders = [payload?.message].filter(Boolean);
+        const orders = [payload?.message].filter(Boolean).filter((e) => !e.is_multi_drop_off);;
         if (selectedOrderRef.current != null) {
           playDing();
           setSuggestOrder(orders)
@@ -730,7 +730,7 @@ const HomeMainScreen = ({ route }) => {
 
   /* ───────── Data fetchers ───────── */
   const getLastDelivery = async () => {
-    const responseMergeOrder = await getData(`vehicle/${config?.selectVehicle?.id}/optimal_route`);
+    const responseMergeOrder = await getData(`${urls.OPTIMALROUTEBASE}${config?.selectVehicle?.id}/optimal_route`);
     if (responseMergeOrder?.data?.status) {
       if (responseMergeOrder?.data?.data?.length) {
         const responseDetailOrder = await getData(`${urls.GETLASTDELIVERYDETAIL}?id=${responseMergeOrder?.data?.data[0]?.id}`);
@@ -759,7 +759,7 @@ const HomeMainScreen = ({ route }) => {
     setShowAcceptOrder(false);
     const response = await getData(`${urls.GETLISTDELIVERY}?page=1&status=created`);
     if (response?.data?.status) {
-      const orders = response?.data?.data?.items || [];
+      const orders = (response?.data?.data?.items || []).filter((e) => !e.is_multi_drop_off);
       setData(orders);
       if (orders.length > 0) {
         playDing();
@@ -815,7 +815,7 @@ const HomeMainScreen = ({ route }) => {
     });
 
     if (response?.data?.status) {
-      const responseMergeOrder = await getData(status == 'accepted' ? `vehicle/${config?.selectVehicle?.id}/optimal_route?new_delivery_id=${order?.id}` : `vehicle/${config?.selectVehicle?.id}/optimal_route`);
+      const responseMergeOrder = await getData(status == 'accepted' ? `${urls.OPTIMALROUTEBASE}${config?.selectVehicle?.id}/optimal_route?new_delivery_id=${order?.id}` : `${urls.OPTIMALROUTEBASE}${config?.selectVehicle?.id}/optimal_route`);
       if (responseMergeOrder?.data?.status) {
         if (responseMergeOrder?.data?.data?.length) {
           const responseDetailOrder = await getData(`${urls.GETLASTDELIVERYDETAIL}?id=${responseMergeOrder?.data?.data[0]?.id}`);

@@ -200,6 +200,7 @@ const EditMyAccount = () => {
                       inputName={t('enterYourFirstName')}
                       input={{ textAlign: 'left' }}
                       autoCapitalize="none"
+                      editable={false}
                       value={values?.firstName}
                       icon={<UserNameIcon width={wp(4.5)} height={wp(4.5)} />}
                     />
@@ -208,6 +209,7 @@ const EditMyAccount = () => {
                       inputName={t('enterYourLastName')}
                       input={{ textAlign: 'left' }}
                       autoCapitalize="none"
+                      editable={false}
                       value={values?.lastName}
                       icon={<UserNameIcon width={wp(4.5)} height={wp(4.5)} />}
                     />
