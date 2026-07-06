@@ -180,6 +180,7 @@ export default function Sender({ route }) {
               domStorageEnabled={true}
               setSupportMultipleWindows={true}
               javaScriptCanOpenWindowsAutomatically={true}
+              sharedCookiesEnabled={true}
               onShouldStartLoadWithRequest={request => {
                 if (request.url.includes('vivapayments')) {
                   handlePaymentUrl(request.url);
