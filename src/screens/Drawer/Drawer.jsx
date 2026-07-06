@@ -74,18 +74,18 @@ const LoginEmail = props => {
       icon: <Settings width={wp(6)} height={wp(6)}></Settings>,
       onPress: () => props?.navigation.navigate(routes.APPSETTINGS),
     },
-    {
-      id: 5,
-      name: t('orderSteps'),
-      icon: <FindRide width={wp(6)} height={wp(6)}></FindRide>,
-      onPress: () => props?.navigation.navigate(routes.NEXTTRIP, { data: [config?.selectedOrder], show: true }),
-    },
-    {
-      id: 6,
-      name: t('messageList'),
-      icon: <Message1 width={wp(5.5)} height={wp(5.5)}></Message1>,
-      onPress: () => props?.navigation.navigate(routes.CHATLIST, { back: true }),
-    },
+    // {
+    //   id: 5,
+    //   name: t('orderSteps'),
+    //   icon: <FindRide width={wp(6)} height={wp(6)}></FindRide>,
+    //   onPress: () => props?.navigation.navigate(routes.NEXTTRIP, { data: [config?.selectedOrder], show: true }),
+    // },
+    // {
+    //   id: 6,
+    //   name: t('messageList'),
+    //   icon: <Message1 width={wp(5.5)} height={wp(5.5)}></Message1>,
+    //   onPress: () => props?.navigation.navigate(routes.CHATLIST, { back: true }),
+    // },
 
     //   id: 4,
     //   name: t('VehicleInfo'),

@@ -729,12 +729,69 @@ const HomeMainScreen = ({ route }) => {
   };
 
   /* ───────── Data fetchers ───────── */
-  const getLastDelivery = async () => {
-    const responseMergeOrder = await getData(`${urls.OPTIMALROUTEBASE}${config?.selectVehicle?.id}/optimal_route`);
+  const [getLastDeliveryLoading, setGetLastDeliveryLoading] = useState(false);
+  const [getListDeliveryLoading, setGetListDeliveryLoading] = useState(false);
+  const getLastDelivery = async (changesStatus) => {
+    if (!config?.selectVehicle?.id) return
+    setGetLastDeliveryLoading(true);
+    let responseMergeOrder = await getData(urls.GETRIDERHISTORY + "?status=reserved");
+    const reservedLength = responseMergeOrder?.data?.data?.items?.length;
+    if (reservedLength && reservedLength > 0) {
+      responseMergeOrder = {
+        data: {
+          data: [
+            {
+              id: responseMergeOrder?.data?.data?.items[0].id
+            }
+          ],
+          status: "success"
+        }
+      }
+    } else {
+      responseMergeOrder = await getData(`${urls.OPTIMALROUTEBASE}${config?.selectVehicle?.id}/optimal_route`);
+    }
+    setGetLastDeliveryLoading(false);
+    const removeAcceptedOrder = () => {
+      setMapHeight(100);
+      resetRoute();
+      setSelectedOrder(null);
+      setIsNavOn(false);
+      setIsFollowing(false);
+      dispatch(setSelectedOrder1(null))
+    }
     if (responseMergeOrder?.data?.status) {
       if (responseMergeOrder?.data?.data?.length) {
-        const responseDetailOrder = await getData(`${urls.GETLASTDELIVERYDETAIL}?id=${responseMergeOrder?.data?.data[0]?.id}`);
+        setGetLastDeliveryLoading(true);
+        let responseDetailOrder = null;
+        let idx = 0;
+        while (idx < responseMergeOrder?.data?.data?.length) {
+          responseDetailOrder = await getData(`${urls.GETLASTDELIVERYDETAIL}?id=${responseMergeOrder?.data?.data[idx]?.id}`);
+          if (['request_new_driver',
+            'shipment_destroyed',
+            'address_not_found', 'completed'].includes(responseDetailOrder?.data?.data?.status)) {
+            idx = idx + 1
+            if (idx == responseMergeOrder?.data?.data?.length) {
+              responseDetailOrder = {
+                data: {
+                  status: true,
+                  data: {
+                    status: 'reserve_approved'
+                  }
+                }
+              }
+            }
+          } else {
+            break;
+          }
+        }
+
+        setGetLastDeliveryLoading(false);
         if (responseDetailOrder?.data?.status) {
+          if (responseDetailOrder?.data?.data?.status == 'reserve_approved') {
+            removeAcceptedOrder();
+            getDeliveryLists();
+            return;
+          }
           setMapHeight(60);
           setIsAccepted(true);
           setShowAcceptOrder(false);
@@ -744,10 +801,13 @@ const HomeMainScreen = ({ route }) => {
           setFollowMode('course');
           setSelectedOrder(responseDetailOrder?.data?.data);
           dispatch(setSelectedOrder1(responseDetailOrder?.data?.data))
-          showToastWarning(t('goNextTrip'))
+          if (responseDetailOrder?.data?.data?.status != 'reserved') {
+            showToastWarning(t(changesStatus == 'accepted' ? 'goNextAcceptedTrip' : 'goNextTrip'))
+          }
 
         } else errorHandler(responseDetailOrder);
       } else {
+        removeAcceptedOrder();
         getDeliveryLists();
       }
     }
@@ -757,9 +817,11 @@ const HomeMainScreen = ({ route }) => {
   const getDeliveryLists = async () => {
     setCurrentOrderIndex(null);
     setShowAcceptOrder(false);
+    setGetListDeliveryLoading(true)
     const response = await getData(`${urls.GETLISTDELIVERY}?page=1&status=created`);
+    setGetListDeliveryLoading(false)
     if (response?.data?.status) {
-      const orders = (response?.data?.data?.items || []).filter((e) => !e.is_multi_drop_off);
+      const orders = (response?.data?.data?.items || []).filter((e) => e.status == 'created' && !e.is_multi_drop_off && !e.pickup_schedule);
       setData(orders);
       if (orders.length > 0) {
         playDing();
@@ -802,66 +864,96 @@ const HomeMainScreen = ({ route }) => {
     [requireVehicleOrToast],
   );
 
+
   const changeStatusOrderAccept = async (order, status, pin, valueResoan) => {
-    // status !== 'cancel' && setLoadingChangeStatus(true);
-    const response = await sendData(urls.CHANGESTATUSORDER, {
+
+    let toSendData = {
       vehicle_id: config?.selectVehicle?.id,
       delivery_id: order?.id,
       status,
       secure_pin: pin ? pin : null,
       rider_arrive_to_pickup_calculated_time:
         status == 'accepted' ? isoWithOffsetPlusMinutes(pickUpTimeUpdate) : null,
-      description: valueResoan ? valueResoan : null,
-    });
+      description: (valueResoan ? valueResoan : null),
+    };
+    for (const key in toSendData) {
+      if (!toSendData[key]) {
+        delete toSendData[key]
+      }
+    }
 
+    const response = await sendData(urls.CHANGESTATUSORDER, toSendData);
     if (response?.data?.status) {
-      const responseMergeOrder = await getData(status == 'accepted' ? `${urls.OPTIMALROUTEBASE}${config?.selectVehicle?.id}/optimal_route?new_delivery_id=${order?.id}` : `${urls.OPTIMALROUTEBASE}${config?.selectVehicle?.id}/optimal_route`);
-      if (responseMergeOrder?.data?.status) {
-        if (responseMergeOrder?.data?.data?.length) {
-          const responseDetailOrder = await getData(`${urls.GETLASTDELIVERYDETAIL}?id=${responseMergeOrder?.data?.data[0]?.id}`);
-          if (responseDetailOrder?.data?.status) {
-            if (status === 'accepted') {
-              setMapHeight(60);
-              setIsAccepted(true);
-              setShowAcceptOrder(false);
-              setCurrentOrderIndex(null);
-              setIsNavOn(true);
-              setIsFollowing(true);
-              setFollowMode('course');
-            }
-            setSelectedOrder(responseDetailOrder?.data?.data);
-            dispatch(setSelectedOrder1(responseDetailOrder?.data?.data))
-            status === 'completed' ?
-              showToast(`${t('anamount')} ${order?.rider_fee} ${t("hasBeen")}`)
-              : showToastWarning(t('goNextTrip'))
+      if (status == 'reserved') {
+        showToast(t('orderReserved'));
+        await getLastDelivery();
+        removeOrderById(order?.id);
+        return
+      }
+      if (status == 'accepted' && order?.status != 'reserved') {
+        await getLastDelivery(status);
+        removeOrderById(order?.id);
+        return
+      }
+      if (order?.status == 'reserved' && !(status == 'cancel' || status == 'accepted')) {
+        await getLastDelivery();
+        return
+      }
 
-          }
-          else errorHandler(responseDetailOrder);
+      if (status == 'accepted') {
+        if (order?.status == 'reserved') {
+          showToast(t("ReserveApproved"));
+          setMapHeight(100);
+          resetRoute();
+          setSelectedOrder(null);
+          setIsNavOn(false);
+          setIsFollowing(false);
+          dispatch(setSelectedOrder1(null))
         } else {
-          if (
-            ['completed', 'cancel', 'request_new_driver', 'shipment_destroyed', 'address_not_found'].includes(status)
-          ) {
-            status === 'completed' && setCompleteOrderPrice(order?.rider_fee || 0);
-            setMapHeight(100);
-            resetRoute();
-            setSelectedOrder(null);
-            setIsNavOn(false);
-            setIsFollowing(false);
-            status !== 'completed' && showToast(t('cancelOrder'));
-            status === 'completed' && setConfirmCompleteModalVisible(true);
-            dispatch(setSelectedOrder1(null))
-          }
+          setMapHeight(60);
+          setIsAccepted(true);
+          setShowAcceptOrder(false);
+          setCurrentOrderIndex(null);
+          setIsNavOn(true);
+          setIsFollowing(true);
+          setFollowMode('course');
         }
       }
-      else errorHandler(responseMergeOrder);
+      if (status === 'completed') {
+        showToast(`${t('anamount')} ${order?.rider_fee} ${t("hasBeen")}`);
+      }
+      if (
+        ['completed', 'cancel', 'request_new_driver', 'shipment_destroyed', 'address_not_found'].includes(status)
+      ) {
+        status === 'completed' && setCompleteOrderPrice(order?.rider_fee || 0);
+        setMapHeight(100);
+        resetRoute();
+        setSelectedOrder(null);
+        setIsNavOn(false);
+        setIsFollowing(false);
+        status !== 'completed' && showToast(t('cancelOrder'));
+        if (status === 'completed') {
+          setConfirmCompleteModalVisible(true);
+        }
+        dispatch(setSelectedOrder1(null))
+        getLastDelivery();
+      } else {
+        await getLastDelivery(status);
+      }
     } else {
+      if (__DEV__) {
+        console.log([toSendData, order, status, pin, valueResoan])
+      }
       if (response?.status == 400) {
         if (response?.response?.data?.message == "Validation error : update delivery  Delivery Not Found") {
           removeOrderById(order?.id);
           showToastWarning(`${t('deliveryId')} ${order?.id} ${t('acceptByAnother')}`);
+        } else {
+          errorHandler(response);
         }
       } else {
         errorHandler(response);
+        await getLastDelivery();
       }
       status !== 'cancel' && setLoadingChangeStatus(false);
       return;

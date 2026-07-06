@@ -7,9 +7,19 @@ import { Platform } from 'react-native'
 import DeviceInfo from 'react-native-device-info';
 
 
-const instance = axios.create();
-const instanceWithAuthorization = axios.create();
-const emptyInstance = axios.create();
+const instance = axios.create({
+   timeout: 12 * 1000,
+   timeoutErrorMessage: 'Request Timeout'
+});
+const instanceWithAuthorization = axios.create({
+   timeout: 12 * 1000,
+   timeoutErrorMessage: 'Request Timeout'
+});
+const emptyInstance = axios.create({
+   timeout: 12 * 1000,
+   timeoutErrorMessage: 'Request Timeout'
+});
+
 
 store.subscribe(() => {
    const accessToken = store.getState().auth.token

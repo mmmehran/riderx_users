@@ -119,18 +119,6 @@ const AcceptedOrderModal = ({ order, changeOrder, loading, insets, onModalPositi
               </CustomText>
             </View>
           </View>
-          <TouchableOpacity
-            onPress={() => {
-              //  const targetUserId = order?.status !== 'pickup' ? order?.sender?.id : order?.receiver?.id;
-              const targetUserId = order?.sender?.id
-              navigation.navigate(routes.CHAT, { senderId: String(targetUserId) });
-            }}
-            style={[
-              styles.buttonCall1,
-              { backgroundColor: colors.black, marginRight: wp(2) },
-            ]}>
-            <MessageIcon1 width={wp(5)} height={wp(5)}></MessageIcon1>
-          </TouchableOpacity>
           <TouchableOpacity onPress={makeCall} style={styles.buttonCall1}>
             <PhoneIcon width={wp(5)} height={wp(5)}></PhoneIcon>
           </TouchableOpacity>
