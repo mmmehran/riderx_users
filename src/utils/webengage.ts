@@ -11,7 +11,7 @@ export const trackLogin = (userData) => {
     }
     // Identify the user
     webengage.user.login(String(userData?.user_id));
-    webengage.user.setAttribute("user_type", "business");
+    webengage.user.setAttribute("user_type", userData?.is_rider ? 'rider' : 'sender');
 
     // Set user attributes
     if (userData.email) {
