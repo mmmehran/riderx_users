@@ -23,6 +23,7 @@ import urls from '../../services/urls.json';
 import errorHandler from '../../utils/errorHandler';
 import { showToast, showError } from '../../utils/helpers';
 import { setConfig, setConfigTest } from '../../services/defaultAxios';
+import { trackLogin, trackLogout } from '../../utils/webengage';
 
 
 
@@ -35,6 +36,7 @@ export default function SignUpSender({ route }) {
       const data = JSON.parse(e.nativeEvent.data);
       if (data?.type === 'LOGOUT') {
         dispatch(logout());
+        trackLogout()
       }
       if (data?.type === 'google_auth') {
         handleGoogleLogin()
@@ -79,6 +81,7 @@ export default function SignUpSender({ route }) {
       if (response?.data?.status) {
         if (response?.data?.data) {
           dispatch(login(response?.data?.data));
+          trackLogin(response?.data?.data)
         }
         showToast(response?.data?.message);
       } else {
@@ -117,6 +120,7 @@ export default function SignUpSender({ route }) {
       if (response?.data?.status) {
         if (response?.data?.data) {
           dispatch(login(response?.data?.data));
+          trackLogin(response?.data?.data)
         }
         showToast(response?.data?.message);
       } else {

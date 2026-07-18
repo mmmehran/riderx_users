@@ -41,6 +41,7 @@ import colors from '../../config/colors';
 import i18n, { applyLanguage } from '../../utils/i18n';
 import routes from '../../navigation/routes';
 import { version } from '../../../package.json';
+import { trackLogin } from '../../utils/webengage';
 
 const LANGS = [
   { code: 'en', label: 'English', rtl: false },
@@ -148,6 +149,7 @@ const LoginEmail = props => {
           applyLanguage(response.data.data.language);
         }
         dispatch(login(response?.data?.data));
+        trackLogin(response?.data?.data)
       }
       showToast(response?.data?.message);
     } else {
@@ -202,6 +204,7 @@ const LoginEmail = props => {
 
       if (response?.data?.status) {
         dispatch(login(response?.data?.data));
+        trackLogin(response?.data?.data)
         showToast(response?.data?.message);
       } else {
         errorHandler(response);
@@ -242,6 +245,7 @@ const LoginEmail = props => {
       if (response?.data?.status) {
         if (response?.data?.data) {
           dispatch(login(response?.data?.data));
+          trackLogin(response?.data?.data)
         }
         showToast(response?.data?.message);
       } else {

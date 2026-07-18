@@ -21,6 +21,7 @@ import {
   authenticated,
 } from '../../redux/reducers/authenticationReducer';
 import { getDeepLink } from '../../utils/deepLinkHolder';
+import { trackLogout } from '../../utils/webengage';
 
 export default function Sender({ route }) {
   const dispatch = useDispatch();
@@ -40,6 +41,7 @@ export default function Sender({ route }) {
         const data = JSON.parse(e.nativeEvent.data);
         if (data?.type === 'LOGOUT') {
           dispatch(logout());
+          trackLogout()
         }
       } catch { }
     },

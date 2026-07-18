@@ -34,6 +34,7 @@ import {
 } from '../../redux/reducers/authenticationReducer';
 import { logouConfig } from '../../redux/reducers/configReducer';
 import routes from '../../navigation/routes';
+import { trackLogout } from '../../utils/webengage';
 
 const MyAccount = () => {
   const navigation = useNavigation();
@@ -71,6 +72,7 @@ const MyAccount = () => {
     if (response?.data?.status) {
       dispatch(logout());
       dispatch(logouConfig());
+      trackLogout()
     } else {
       errorHandler(response);
     }

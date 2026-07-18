@@ -1,6 +1,7 @@
 import store from "../redux/store";
 import { logout } from "../redux/reducers/authenticationReducer";
 import refreshToken from "./refreshToken";
+import { trackLogout } from "./webengage";
 
 const checkToken = async () => {
 
@@ -19,6 +20,7 @@ const checkToken = async () => {
       if (!token) return;
       else if (expireTokenEnd < nowTime) {
          store.dispatch(logout());
+         trackLogout()
       } else if (ninetyPercentTimestamp < nowTime) {
          await refreshToken();
       }
