@@ -30,7 +30,7 @@ const App = () => {
   useEffect(() => { initDing(); }, []);
 
   Sentry.init({
-    dsn: 'https://803479b298ab176f5d18e98120497989@o4504479126192128.ingest.us.sentry.io/4509932668518400',
+    dsn: 'https://517fd9838e281bbff678301e43f8df48@sentry2.pttp.me/29',
 
     // Adds more context data to events (IP address, cookies, user, etc.)
     // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/

@@ -76,15 +76,15 @@ def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
 android {
     ndkVersion rootProject.ext.ndkVersion
     buildToolsVersion rootProject.ext.buildToolsVersion
-    compileSdk rootProject.ext.compileSdkVersion
+    compileSdk 36
 
     namespace "com.riderx"
     defaultConfig {
         applicationId "com.riderx"
         minSdkVersion rootProject.ext.minSdkVersion
-        targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 205
-        versionName "2.0.5"
+        targetSdkVersion 36
+        versionCode 206
+        versionName "2.0.6"
     }
 
     signingConfigs {
