@@ -1,5 +1,5 @@
 // src/screens/auth/ResetPasswordOtp.js
-import React, {useRef, useState} from 'react';
+import React, { useRef, useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -12,26 +12,35 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
-import {KeyboardAwareScrollView} from 'react-native-keyboard-aware-scroll-view';
-import {useTranslation} from 'react-i18next';
-import {useNavigation} from '@react-navigation/native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import { useTranslation } from 'react-i18next';
+import { useNavigation, useRoute } from '@react-navigation/native';
 
 import CustomScreen from '../../components/common/CustomScreen';
 import CustomText from '../../components/common/CustomText';
 import CustomButton from '../../components/common/CustomButton';
 import colors from '../../config/colors';
-import {ArrowLeft2} from '../../../assets/svg/index';
+import { ArrowLeft2 } from '../../../assets/svg/index';
 
-import {postData} from '../../services/common.service';
+import { postData } from '../../services/common.service';
 import urls from '../../services/urls.json';
 import errorHandler from '../../utils/errorHandler';
-import {showToast} from '../../utils/helpers';
-import {setConfigTest, setConfig} from '../../services/defaultAxios';
+import { showToast } from '../../utils/helpers';
+import { setConfigTest, setConfig } from '../../services/defaultAxios';
 import routes from '../../navigation/routes';
+import { applyLanguage } from '../../utils/i18n';
+import { login } from '../../redux/reducers/authenticationReducer';
+import { useDispatch } from 'react-redux';
+import { trackLogin } from '../../utils/webengage';
 
 const ResetPasswordOtp = route => {
-  const {t} = useTranslation();
+  const { t } = useTranslation();
   const navigation = useNavigation();
+
+  const rt = useRoute();
+
+  const isPhoneOtp = rt?.params?.is_phone_otp
+
 
   const OTP_LEN = 6;
 
@@ -49,6 +58,8 @@ const ResetPasswordOtp = route => {
 
   const code = digits.join('');
 
+  const dispatch = useDispatch()
+
   const focusAt = idx => {
     const ref = refs[idx]?.current;
     ref && ref.focus();
@@ -58,17 +69,29 @@ const ResetPasswordOtp = route => {
     try {
       setLoading(true);
       Keyboard.dismiss();
-      const email = route?.route?.params?.email;
-      if (/^[^@\s]+@bb\.com$/i.test(email)) setConfigTest();
-      else setConfig();
+      if (!isPhoneOtp) {
+        const email = route?.route?.params?.email;
+        if (/^[^@\s]+@bb\.com$/i.test(email)) setConfigTest();
+        else setConfig();
+      }
       await new Promise(r => setTimeout(r, 300));
-      const response = await postData(
-        urls.RESETPASSWORD,
-        {email, type: 'app'},
-        false,
-      );
-      if (response?.data?.status) showToast(response?.data?.message);
-      else errorHandler(response);
+      if (isPhoneOtp) {
+        const response = await postData(
+          urls.OTPREQUEST,
+          { phone: rt.params.phone },
+          false,
+        );
+        if (response?.data?.status) showToast(response?.data?.message);
+        else errorHandler(response);
+      } else {
+        const response = await postData(
+          urls.RESETPASSWORD,
+          { email, type: 'app' },
+          false,
+        );
+        if (response?.data?.status) showToast(response?.data?.message);
+        else errorHandler(response);
+      }
     } catch (e) {
       errorHandler(e);
     } finally {
@@ -123,22 +146,48 @@ const ResetPasswordOtp = route => {
     }
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (code.length < OTP_LEN) {
       showToast(t(`Please enter the ${OTP_LEN}-digit code`));
       return;
     }
-    navigation.navigate(routes.RESETPASSWORD, {
-      code,
-      email: route?.route?.params?.email,
-    });
+    if (isPhoneOtp) {
+      setLoading(true);
+      Keyboard.dismiss();
+      await new Promise(r => setTimeout(r, 300));
+      const f = { ...rt.params.phone }
+      delete f["full"]
+      const response = await postData(
+        urls.OTPLOGIN,
+        { phone: f, code },
+        false,
+      );
+      if (response?.data?.status) {
+        if (response?.data?.data) {
+          if (response.data.data.language) {
+            applyLanguage(response.data.data.language);
+          }
+          dispatch(login(response?.data?.data));
+          trackLogin(response?.data?.data);
+        }
+        showToast(response?.data?.message);
+      } else {
+        errorHandler(response);
+      }
+      setLoading(false);
+    } else {
+      navigation.navigate(routes.RESETPASSWORD, {
+        code,
+        email: route?.route?.params?.email,
+      });
+    }
   };
 
   return (
     <CustomScreen>
       <KeyboardAwareScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{flexGrow: 1}}>
+        contentContainerStyle={{ flexGrow: 1 }}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
           style={styles.buttonBack}>
@@ -149,7 +198,7 @@ const ResetPasswordOtp = route => {
         <CustomText style={styles.title1}>
           {t('verificationContnet')}
           {'  '}
-          {route?.route?.params?.email}
+          {route?.route?.params?.email ?? rt?.params?.phone?.full}
         </CustomText>
 
         {/* OTP 6 cells */}
@@ -183,7 +232,7 @@ const ResetPasswordOtp = route => {
                 autoCorrect={false}
                 autoCapitalize="none"
                 selectionColor={colors.blue}
-                {...(i === 0 ? {autoFocus: true} : {})}
+                {...(i === 0 ? { autoFocus: true } : {})}
               />
             </TouchableOpacity>
           ))}
@@ -202,7 +251,7 @@ const ResetPasswordOtp = route => {
         {/* Resend */}
         <TouchableOpacity style={styles.signUpContainer} onPress={resendCode}>
           <CustomText style={styles.textSignu}>{t('dontrecieve')} </CustomText>
-          <CustomText style={[styles.textSignu, {color: colors.neutral900}]}>
+          <CustomText style={[styles.textSignu, { color: colors.neutral900 }]}>
             {t('resend')}
           </CustomText>
         </TouchableOpacity>

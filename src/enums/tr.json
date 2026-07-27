@@ -179,5 +179,6 @@
   "newMessage": "Yeni Mesaj",
   "messageList": "Mesaj Listesi",
   "findHere": "Burada bul...",
-  "noChatsFound": "Sohbet bulunamadı"
+  "noChatsFound": "Sohbet bulunamadı",
+  "continueWithMobile": "Cep Telefonu ile Devam Et"
 }

@@ -26,7 +26,6 @@
   "UPDATEPACKAGESTATUS": "driver/rider/update_delivery_to_person_status",
   "SOCIALLOGIN": "user/social/auth/allauth/google/callback/app/",
   "SOCIALLOGINAPPLE": "user/social/auth/allauth/apple/callback/app/",
-
   "SIGNUP": "Account/Add",
   "PROFILE": "Account/Get",
   "FORGOTPASS": "Account/GetKey",
@@ -91,9 +90,10 @@
   "SETCONTACT": "Contact/Set",
   "GETCONTACT": "Contact/GetAll",
   "PUTCONTACT": "Contact/Put",
-
   "REFRESH_TOKEN": "/auth/reNewToken",
   "STARTPRIVATECHAT": "driver/delivery/start_chat",
   "GETCHATMSGS": "user/chats/",
-  "GETCHATDETAIL": "user/chats/"
+  "GETCHATDETAIL": "user/chats/",
+  "OTPREQUEST": "user/otp/mobile_login_request/",
+  "OTPLOGIN": "user/otp/mobile_login_verify/"
 }

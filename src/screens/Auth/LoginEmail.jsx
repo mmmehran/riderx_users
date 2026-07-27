@@ -42,6 +42,8 @@ import i18n, { applyLanguage } from '../../utils/i18n';
 import routes from '../../navigation/routes';
 import { version } from '../../../package.json';
 import { trackLogin } from '../../utils/webengage';
+import CustomButton from '../../components/common/CustomButton';
+
 
 const LANGS = [
   { code: 'en', label: 'English', rtl: false },
@@ -320,6 +322,10 @@ const LoginEmail = props => {
             </View>
             <View style={styles.line}></View>
           </View>
+          <CustomButton
+            style={{ marginTop: hp(1.62) }}
+            onPress={() => navigation.navigate(routes.RESETPASSWORDEMAIL, { is_phone_otp: true })}
+          >{t('continueWithMobile')}</CustomButton>
           <View style={styles.rowSocial}>
             <TouchableOpacity
               onPress={handleGoogleLogin}
@@ -412,7 +418,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: hp(3),
+    marginTop: hp(1),
   },
   rowVersion: {
     flexDirection: 'row',

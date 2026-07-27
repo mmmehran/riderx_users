@@ -164,8 +164,8 @@
   "confimedDelivery": "Lieferung bestätigen",
   "SavingsCard": "Sparkarte",
   "history": "Verlauf",
-  "appSettings":"App Einstellungen",
-  "externalMap":"Externe Karte",
+  "appSettings": "App Einstellungen",
+  "externalMap": "Externe Karte",
   "selectExternalMapContent": "Wähle eine App, um die Navigation außerhalb der RiderX-App zu starten",
   "selectMapStyleContent": "Wähle, wie die Karte in der App aussehen soll",
   "mapAppNotInstalled": "{{app}} ist auf diesem Gerät nicht installiert",
@@ -179,5 +179,6 @@
   "newMessage": "Neue Nachricht",
   "messageList": "Nachrichtenliste",
   "findHere": "Hier suchen...",
-  "noChatsFound": "Keine Chats gefunden"
+  "noChatsFound": "Keine Chats gefunden",
+  "continueWithMobile": "Mit Mobiltelefon fortfahren"
 }

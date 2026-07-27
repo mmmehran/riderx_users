@@ -1,56 +1,92 @@
-import React, {useState, useRef} from 'react';
-import {View, StyleSheet, Keyboard, TouchableOpacity} from 'react-native';
+import React, { useState, useRef } from 'react';
+import { View, StyleSheet, Keyboard, TouchableOpacity } from 'react-native';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
 import * as Yup from 'yup';
-import {KeyboardAwareScrollView} from 'react-native-keyboard-aware-scroll-view';
-import {useTranslation} from 'react-i18next';
-import {useNavigation} from '@react-navigation/native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import { useTranslation } from 'react-i18next';
+import { useNavigation, useRoute } from '@react-navigation/native';
 
 import CustomScreen from '../../components/common/CustomScreen';
-import {Form, Input, Button} from '../../components/form/index';
-import {postData} from '../../services/common.service';
+import { Form, Input, Button } from '../../components/form/index';
+import { postData } from '../../services/common.service';
 import urls from '../../services/urls.json';
 import errorHandler from '../../utils/errorHandler';
-import {showToast} from '../../utils/helpers';
-import {PersonIcon, ArrowLeft2} from '../../../assets/svg/index';
+import { showToast } from '../../utils/helpers';
+import { PersonIcon, ArrowLeft2 } from '../../../assets/svg/index';
 import CustomText from '../../components/common/CustomText';
 import colors from '../../config/colors';
 import routes from '../../navigation/routes';
-import {setConfigTest, setConfig} from '../../services/defaultAxios';
+import { setConfigTest, setConfig } from '../../services/defaultAxios';
+import PhoneFormField from '../../components/form/PhoneInputField';
 
 const ResetPasswordEmail = props => {
   const formikRef = useRef(null);
-  const {t} = useTranslation();
+  const { t } = useTranslation();
   const navigation = useNavigation();
 
   const [loading, setLoading] = useState(false);
+  const route = useRoute();
+
+  const isPhoneOtp = route?.params?.is_phone_otp
 
   const validationSchema = Yup.object().shape({
     email: Yup.string().required(),
   });
 
+  const validationSchemaOTP = Yup.object().shape({
+    phoneNumber: Yup.string(),
+    phoneCountry: Yup.string().nullable(),
+    phoneDialCode: Yup.string().nullable(),
+  });
+
   const onSubmit = async value => {
+    console.log(value)
     setLoading(true);
     Keyboard.dismiss();
-    if (/^[^@\s]+@bb\.com$/i.test(value?.email)) setConfigTest();
-    else setConfig();
-    await new Promise(r => setTimeout(r, 300));
-    const response = await postData(
-      urls.RESETPASSWORD,
-      {
-        email: value.email,
-        type: 'app',
-      },
-      false,
-    );
-    if (response?.data?.status) {
-      showToast(response?.data?.message);
-      navigation.navigate(routes.RESETPASSWORDOTP, {email: value.email});
+    if (value?.email) {
+      if (/^[^@\s]+@bb\.com$/i.test(value?.email)) setConfigTest();
+      else setConfig();
     } else {
-      errorHandler(response);
+      //TODO change config test
+      setConfigTest()
+    }
+    await new Promise(r => setTimeout(r, 300));
+    if (isPhoneOtp) {
+      const phone = {
+        country_code: (value?.phoneDialCode || '').replace(/^\+/, ''),
+        number: value?.phoneNumber || '',
+        country_symbol: value?.phoneCountry || 'AT',
+      }
+      const response = await postData(
+        urls.OTPREQUEST,
+        { phone },
+        false,
+      );
+      if (response?.data?.status) {
+        showToast(response?.data?.message);
+        phone.full = `+${phone.country_code}${phone.number}`
+        navigation.navigate(routes.RESETPASSWORDOTP, { phone, is_phone_otp: true });
+      } else {
+        errorHandler(response);
+      }
+    } else {
+      const response = await postData(
+        urls.RESETPASSWORD,
+        {
+          email: value.email,
+          type: 'app',
+        },
+        false,
+      );
+      if (response?.data?.status) {
+        showToast(response?.data?.message);
+        navigation.navigate(routes.RESETPASSWORDOTP, { email: value.email });
+      } else {
+        errorHandler(response);
+      }
     }
     setLoading(false);
   };
@@ -59,34 +95,46 @@ const ResetPasswordEmail = props => {
     <CustomScreen>
       <KeyboardAwareScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{flexGrow: 1}}>
+        contentContainerStyle={{ flexGrow: 1 }}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
           style={styles.buttonBack}>
           <ArrowLeft2></ArrowLeft2>
         </TouchableOpacity>
         <CustomText style={styles.title}>
-          {t('enterYourPhoneOrEmail')}
+          {t(isPhoneOtp ? 'enterYourPhone' : 'enterYourPhoneOrEmail')}
         </CustomText>
         <View style={styles.formContainer}>
           <Form
-            initialValues={{email: ''}}
-            validationSchema={validationSchema}
+            initialValues={isPhoneOtp ? {
+              phoneNumber: '',
+              phoneCountry: 'AT',
+              phoneDialCode: '43',
+            } : { email: '' }}
+            validationSchema={isPhoneOtp ? validationSchemaOTP : validationSchema}
             onSubmit={onSubmit}
             innerRef={formikRef}
             enableReinitialize>
-            {({values}) => (
+            {({ values }) => (
               <>
-                <Input
+                {!isPhoneOtp && <Input
                   name="email"
                   inputName={t('enterPhoneOrEmail')}
-                  input={{textAlign: 'left'}}
+                  input={{ textAlign: 'left' }}
                   autoCapitalize="none"
                   value={values?.email}
                   icon={
                     <PersonIcon width={wp(4.5)} height={wp(4.5)}></PersonIcon>
                   }
-                />
+                />}
+                {isPhoneOtp && <PhoneFormField
+                  star
+                  name="phoneNumber"
+                  countryField="phoneCountry"
+                  dialCodeField="phoneDialCode"
+                  defaultCode="AT"
+                  placeholder={t('enterYourPhone')}
+                />}
                 <Button loading={loading}>{t('Continue')}</Button>
               </>
             )}
@@ -155,9 +203,9 @@ const styles = StyleSheet.create({
     fontFamily: 'YaldeviJaffna-Bold',
     fontSize: wp(3.3),
   },
-  logoContainer: {alignItems: 'center', marginTop: hp(5)},
-  formContainer: {flex: 1, marginTop: hp(3)},
-  text: {textAlign: 'center', color: colors.blue},
+  logoContainer: { alignItems: 'center', marginTop: hp(5) },
+  formContainer: { flex: 1, marginTop: hp(3) },
+  text: { textAlign: 'center', color: colors.blue },
   rememberRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -220,7 +268,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'transparent',
   },
-  checkboxChecked: {borderColor: colors.blue},
+  checkboxChecked: { borderColor: colors.blue },
   checkboxDot: {
     width: wp(3.6),
     height: wp(3.6),
@@ -240,13 +288,13 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: wp(6),
     borderTopRightRadius: wp(6),
   },
-  sheetTitle: {fontSize: wp(4.3), marginBottom: hp(1.5)},
+  sheetTitle: { fontSize: wp(4.3), marginBottom: hp(1.5) },
   optionRow: {
     paddingVertical: hp(1.8),
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: 'rgba(0,0,0,0.08)',
   },
-  optionText: {fontSize: wp(4)},
+  optionText: { fontSize: wp(4) },
   appleRow: {
     marginTop: hp(3),
     alignItems: 'center',
