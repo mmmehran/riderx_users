@@ -77,6 +77,14 @@ const App = () => {
     };
 
     registerDeviceAndSendToken();
+
+    // WebEngage iOS delivers push deeplinks here instead of via Linking
+    webengage.push.onClick((notificationData: any) => {
+      const deeplink = notificationData?.deeplink;
+      if (deeplink) {
+        setDeepLink(String(deeplink));
+      }
+    });
   }, []);
 
 

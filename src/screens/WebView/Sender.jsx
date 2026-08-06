@@ -20,7 +20,7 @@ import {
   logout,
   authenticated,
 } from '../../redux/reducers/authenticationReducer';
-import { getDeepLink } from '../../utils/deepLinkHolder';
+import { getDeepLink, setDeepLinkListener } from '../../utils/deepLinkHolder';
 import { trackLogout } from '../../utils/webengage';
 
 export default function Sender({ route }) {
@@ -81,8 +81,6 @@ export default function Sender({ route }) {
   const handleUrl = ({ url }) => {
     if (!url) return;
     try {
-
-
       const normalizedUrl = url.replace('riderxapp://', 'https://');
 
       if (
@@ -90,13 +88,17 @@ export default function Sender({ route }) {
         normalizedUrl.includes('/payment/cancel')
       ) {
         setWebUrl(normalizedUrl);
-      } else if (user?.social_auth_callback_url && normalizedUrl.endsWith('/profile/wallet')) {
+      } else if (user?.social_auth_callback_url && normalizedUrl.includes('/profile/wallet')) {
         const newUrl = toWalletUrl(user?.social_auth_callback_url)
         if (currentUrl.current.includes('direct_login')) {
           reservedDeeplink.current = newUrl
         } else {
           setWebUrl(newUrl)
         }
+      } else {
+        Linking.openURL(url).catch(err =>
+          console.error('Failed to open deeplink', err),
+        );
       }
     } catch (err) {
       console.error(err)
@@ -109,11 +111,20 @@ export default function Sender({ route }) {
     }
     setWebUrl(user?.social_auth_callback_url ?? '');
 
+    // Process deeplink captured before Sender was ready
+    if (reservedDeeplink.current) {
+      const pending = reservedDeeplink.current;
+      reservedDeeplink.current = null;
+      handleUrl({ url: pending });
+    }
 
     // 🔹 Handle cold start
     Linking.getInitialURL().then(url => {
       if (url) handleUrl({ url });
     });
+
+    // 🔹 WebEngage push deeplinks (via setDeepLink)
+    setDeepLinkListener(url => handleUrl({ url }));
 
     // 🔹 Handle when already open (sometimes unreliable)
     const sub = Linking.addEventListener('url', handleUrl);
@@ -121,6 +132,8 @@ export default function Sender({ route }) {
     // 🔥 KEY FIX: check again when app resumes
     const appStateSub = AppState.addEventListener('change', state => {
       if (state === 'active') {
+        const pending = getDeepLink();
+        if (pending) handleUrl({ url: pending });
         Linking.getInitialURL().then(url => {
           if (url) handleUrl({ url });
         });
@@ -128,6 +141,7 @@ export default function Sender({ route }) {
     });
 
     return () => {
+      setDeepLinkListener(null);
       sub.remove();
       appStateSub.remove();
     };
