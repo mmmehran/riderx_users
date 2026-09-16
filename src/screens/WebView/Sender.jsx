@@ -1,21 +1,17 @@
 import React, { useCallback, useEffect, useState, useRef } from 'react';
 import {
   View,
-  SafeAreaView,
   StyleSheet,
-  Platform,
-  StatusBar,
   Linking,
   BackHandler,
   ToastAndroid,
+  AppState,
 } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { useDispatch, useSelector } from 'react-redux';
 import InAppBrowser from 'react-native-inappbrowser-reborn';
-import { AppState } from 'react-native';
 
-
-import colors from '../../config/colors';
+import CustomScreen from '../../components/common/CustomScreen';
 import {
   logout,
   authenticated,
@@ -178,56 +174,76 @@ export default function Sender({ route }) {
   }, []);
 
   return (
-    <View style={styles.container}>
-      <SafeAreaView style={styles.screen}>
-        <View style={{ flex: 1 }}>
-          {webUrl.length > 0 && (
-            <WebView
-              ref={webViewRef}
-              key={user?.user_id || 'guest'}
-              style={{ flex: 1 }}
-              source={{ uri: webUrl }}
-              javaScriptEnabled={true}
-              onMessage={onMessage}
-              allowsInlineMediaPlayback
-              mediaPlaybackRequiresUserAction={false}
-              cacheEnabled={true}
-              thirdPartyCookiesEnabled={true}
-              domStorageEnabled={true}
-              setSupportMultipleWindows={true}
-              javaScriptCanOpenWindowsAutomatically={true}
-              sharedCookiesEnabled={true}
-              onShouldStartLoadWithRequest={request => {
-                if (request.url.includes('vivapayments')) {
-                  handlePaymentUrl(request.url);
-                  return false;
-                }
-                return true;
-              }}
-              onNavigationStateChange={navState => {
-                canGoBackRef.current = navState.canGoBack;
-                currentUrl.current = navState.url
-                if (reservedDeeplink.current && user?.social_auth_callback_url && !currentUrl.current.includes('direct_login')) {
-                  setWebUrl(reservedDeeplink.current)
-                  reservedDeeplink.current = null
-                }
-              }}
-            />
-          )}
-        </View>
-      </SafeAreaView>
-    </View>
+    <CustomScreen>
+      <View style={styles.webviewWrap} collapsable={false}>
+        {webUrl.length > 0 && (
+          <WebView
+            ref={webViewRef}
+            key={user?.user_id || 'guest'}
+            style={styles.webview}
+            containerStyle={styles.webviewContainer}
+            source={{ uri: webUrl }}
+            javaScriptEnabled={true}
+            onMessage={onMessage}
+            allowsInlineMediaPlayback
+            mediaPlaybackRequiresUserAction={false}
+            cacheEnabled={true}
+            thirdPartyCookiesEnabled={true}
+            domStorageEnabled={true}
+            setSupportMultipleWindows={true}
+            javaScriptCanOpenWindowsAutomatically={true}
+            sharedCookiesEnabled={true}
+            bounces={false}
+            overScrollMode="never"
+            nestedScrollEnabled
+            scrollEnabled
+            automaticallyAdjustContentInsets={false}
+            contentInsetAdjustmentBehavior="never"
+            showsHorizontalScrollIndicator={false}
+            injectedJavaScript={PREVENT_WEBVIEW_OVERSCROLL}
+            onShouldStartLoadWithRequest={request => {
+              if (request.url.includes('vivapayments')) {
+                handlePaymentUrl(request.url);
+                return false;
+              }
+              return true;
+            }}
+            onNavigationStateChange={navState => {
+              canGoBackRef.current = navState.canGoBack;
+              currentUrl.current = navState.url
+              if (reservedDeeplink.current && user?.social_auth_callback_url && !currentUrl.current.includes('direct_login')) {
+                setWebUrl(reservedDeeplink.current)
+                reservedDeeplink.current = null
+              }
+            }}
+          />
+        )}
+      </View>
+    </CustomScreen>
   );
 }
 
+const PREVENT_WEBVIEW_OVERSCROLL = `
+  (function() {
+    try {
+      var style = document.createElement('style');
+      style.innerHTML = 'html, body { overscroll-behavior: none; }';
+      document.head.appendChild(style);
+    } catch (e) {}
+    true;
+  })();
+`;
+
 const styles = StyleSheet.create({
-  container: {
+  webviewWrap: {
     flex: 1,
-    backgroundColor: colors.screenBackGround,
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+    overflow: 'hidden',
   },
-  screen: {
+  webviewContainer: {
     flex: 1,
-    backgroundColor: colors.screenBackGround,
+    overflow: 'hidden',
+  },
+  webview: {
+    flex: 1,
   },
 });

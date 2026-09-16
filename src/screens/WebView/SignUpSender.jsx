@@ -1,16 +1,14 @@
 import React, { useCallback, useEffect } from 'react';
 import {
   View,
-  SafeAreaView,
   StyleSheet,
   Platform,
-  StatusBar,
 } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { useDispatch, useSelector } from 'react-redux';
 import { appleAuth } from '@invertase/react-native-apple-authentication';
 
-import colors from '../../config/colors';
+import CustomScreen from '../../components/common/CustomScreen';
 import {
   logout,
   authenticated,
@@ -137,36 +135,56 @@ export default function SignUpSender({ route }) {
   };
 
   return (
-    <View style={styles.container}>
-      <SafeAreaView style={styles.screen}>
-        <View style={{ flex: 1 }}>
-          <WebView
-            key={user?.user_id || 'guest'}
-            style={{ flex: 1 }}
-            source={{ uri: 'https://s.riderx.me/register' }}
-            javaScriptEnabled
-            onMessage={onMessage}
-            allowsInlineMediaPlayback
-            mediaPlaybackRequiresUserAction={false}
-            incognito
-            cacheEnabled={false}
-            thirdPartyCookiesEnabled={false}
-            domStorageEnabled={false}
-          />
-        </View>
-      </SafeAreaView>
-    </View>
+    <CustomScreen>
+      <View style={styles.webviewWrap} collapsable={false}>
+        <WebView
+          key={user?.user_id || 'guest'}
+          style={styles.webview}
+          containerStyle={styles.webviewContainer}
+          source={{ uri: 'https://s.riderx.me/register' }}
+          javaScriptEnabled
+          onMessage={onMessage}
+          allowsInlineMediaPlayback
+          mediaPlaybackRequiresUserAction={false}
+          incognito
+          cacheEnabled={false}
+          thirdPartyCookiesEnabled={false}
+          domStorageEnabled={false}
+          bounces={false}
+          overScrollMode="never"
+          nestedScrollEnabled
+          scrollEnabled
+          automaticallyAdjustContentInsets={false}
+          contentInsetAdjustmentBehavior="never"
+          showsHorizontalScrollIndicator={false}
+          injectedJavaScript={PREVENT_WEBVIEW_OVERSCROLL}
+        />
+      </View>
+    </CustomScreen>
   );
 }
 
+const PREVENT_WEBVIEW_OVERSCROLL = `
+  (function() {
+    try {
+      var style = document.createElement('style');
+      style.innerHTML = 'html, body { overscroll-behavior: none; }';
+      document.head.appendChild(style);
+    } catch (e) {}
+    true;
+  })();
+`;
+
 const styles = StyleSheet.create({
-  container: {
+  webviewWrap: {
     flex: 1,
-    backgroundColor: colors.screenBackGround,
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+    overflow: 'hidden',
   },
-  screen: {
+  webviewContainer: {
     flex: 1,
-    backgroundColor: colors.screenBackGround,
+    overflow: 'hidden',
+  },
+  webview: {
+    flex: 1,
   },
 });
